@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Controller - Kết nối</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🕒 Điều Khiển ESP32 Smart Clock</h1>
+            <p>Kết nối đến ESP32 của bạn</p>
+        </div>
+        
+        <div class="connection-form">
+            <h2>🔌 Nhập Thông Tin ESP32</h2>
+            
+            <div class="form-group">
+                <label for="espIp">Địa chỉ IP của ESP32:</label>
+                <input type="text" id="espIp" placeholder="192.168.1.100" value="">
+            </div>
+            
+            <div class="form-group">
+                <label for="port">Port (mặc định: 80):</label>
+                <input type="number" id="port" value="80" min="1" max="65535">
+            </div>
+            
+            <div class="instructions">
+                <h3>📋 Hướng dẫn lấy IP:</h3>
+                <ul>
+                    <li>1. Kiểm tra Serial Monitor trong Arduino IDE</li>
+                    <li>2. Nhìn màn hình OLED của ESP32</li>
+                    <li>3. IP có dạng: 192.168.x.x</li>
+                </ul>
+            </div>
+            
+            <button onclick="connectToESP()" class="btn-connect">🔗 Kết Nối</button>
+            
+            <div class="saved-devices" id="savedDevices">
+                <h3>📱 Thiết bị đã lưu:</h3>
+                <!-- Danh sách thiết bị sẽ hiển thị ở đây -->
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
