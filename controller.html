@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Controller - Điều Khiển</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header với thông tin kết nối -->
+        <div class="header">
+            <h1>🎛️ Điều Khiển ESP32</h1>
+            <div class="connection-status">
+                <span id="connectionStatus">Đang kết nối...</span>
+                <span id="espIpDisplay"></span>
+            </div>
+        </div>
+        
+        <!-- Thông tin hệ thống -->
+        <div class="info-panel">
+            <div class="info-item">
+                <span>📶 Trạng thái:</span>
+                <span id="systemStatus">Đang cập nhật...</span>
+            </div>
+            <div class="info-item">
+                <span>🌡️ Nhiệt độ:</span>
+                <span id="temperature">--°C</span>
+            </div>
+            <div class="info-item">
+                <span>💧 Độ ẩm:</span>
+                <span id="humidity">--%</span>
+            </div>
+        </div>
+        
+        <!-- Điều khiển báo thức -->
+        <div class="control-section">
+            <h2>⏰ Điều Khiển Báo Thức</h2>
+            
+            <div class="time-selector">
+                <div class="time-input">
+                    <input type="number" id="alarmHour" min="0" max="23" value="12" placeholder="Giờ">
+                    <span>:</span>
+                    <input type="number" id="alarmMinute" min="0" max="59" value="0" placeholder="Phút">
+                </div>
+                
+                <div class="sound-selector">
+                    <label>Âm thanh:</label>
+                    <select id="alarmSound">
+                        <option value="0">Beep</option>
+                        <option value="1">Melody 1</option>
+                        <option value="2">Melody 2</option>
+                    </select>
+                </div>
+                
+                <div class="button-group">
+                    <button onclick="setAlarm('enable')" class="btn-enable">🚨 Bật Báo Thức</button>
+                    <button onclick="setAlarm('disable')" class="btn-disable">🔇 Tắt Báo Thức</button>
+                    <button onclick="snoozeAlarm()" class="btn-snooze">⏸️ Tạm Dừng</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Điều khiển nút nhấn -->
+        <div class="control-section">
+            <h2>🎮 Điều Khiển Nút Nhấn</h2>
+            <div class="button-grid">
+                <button onclick="pressButton(1)" class="btn-virtual">NÚT 1<br><small>(Chọn/Menu)</small></button>
+                <button onclick="pressButton(2)" class="btn-virtual">NÚT 2<br><small>(Tăng)</small></button>
+                <button onclick="pressButton(3)" class="btn-virtual">NÚT 3<br><small>(Giảm)</small></button>
+                <button onclick="resetESP()" class="btn-reset">🔄 Reset ESP32</button>
+            </div>
+        </div>
+        
+        <!-- Cài đặt nâng cao -->
+        <div class="control-section">
+            <h2>⚙️ Cài đặt Nâng Cao</h2>
+            <div class="advanced-controls">
+                <button onclick="toggleSleepMode()" class="btn-sleep">💤 Tắt/Mở Sleep Mode</button>
+                <button onclick="getWeather()" class="btn-weather">🌤️ Cập nhật Thời tiết</button>
+                <button onclick="syncTime()" class="btn-time">🕐 Đồng bộ Thời gian</button>
+            </div>
+        </div>
+        
+        <!-- Logs -->
+        <div class="logs-section">
+            <h2>📝 Logs & Thông báo</h2>
+            <div class="log-container" id="logContainer">
+                <!-- Logs sẽ hiển thị ở đây -->
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
