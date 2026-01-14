@@ -1,11 +1,24 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
-    <title>Đồng Hồ Thông Minh</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đồng Hồ Thông Minh - Điều Khiển ESP32</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕒</text></svg>">
     <style>
+        :root {
+            --primary: #4CAF50;
+            --primary-dark: #388E3C;
+            --secondary: #2196F3;
+            --danger: #f44336;
+            --warning: #ff9800;
+            --dark: #333;
+            --light: #f5f5f5;
+            --gray: #757575;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -17,33 +30,53 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            color: #333;
         }
         
         .container {
-            max-width: 800px;
+            max-width: 500px;
             margin: 0 auto;
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
+            backdrop-filter: blur(10px);
         }
         
         .header {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
             padding: 25px;
             text-align: center;
+            position: relative;
         }
         
         .header h1 {
-            font-size: 28px;
-            margin-bottom: 5px;
+            font-size: 24px;
+            margin-bottom: 8px;
+            font-weight: 600;
         }
         
         .header p {
             opacity: 0.9;
             font-size: 14px;
         }
+        
+        .connection-status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .connected { color: #4CAF50; }
+        .disconnected { color: #f44336; }
         
         .main-content {
             padding: 20px;
@@ -56,13 +89,19 @@
             margin-bottom: 20px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.05);
             border: 1px solid #e0e0e0;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
         
         .card-title {
-            color: #333;
-            margin-bottom: 15px;
+            color: var(--dark);
+            margin-bottom: 20px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #4CAF50;
+            border-bottom: 2px solid var(--primary);
             font-size: 18px;
             display: flex;
             align-items: center;
@@ -70,142 +109,153 @@
         }
         
         .card-title i {
-            color: #4CAF50;
+            color: var(--primary);
         }
         
         .form-group {
-            margin-bottom: 15px;
-        }
-        
-        .form-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
         
         label {
             display: block;
-            margin-bottom: 5px;
-            color: #555;
+            margin-bottom: 8px;
+            color: var(--dark);
             font-weight: 500;
+            font-size: 14px;
         }
         
-        input, select {
-            padding: 10px 15px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        input:focus, select:focus {
-            outline: none;
-            border-color: #4CAF50;
+        .time-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
         }
         
         .time-input {
-            width: 70px;
-            text-align: center;
+            width: 80px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 18px;
             font-weight: bold;
+            text-align: center;
+            transition: border-color 0.3s;
         }
         
-        .select-wrapper {
-            flex: 1;
+        .time-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .time-separator {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--dark);
         }
         
         select {
             width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
         }
         
         .button-group {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 20px;
         }
         
         .btn {
-            padding: 12px 25px;
+            flex: 1;
+            padding: 14px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
-            flex: 1;
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
         }
         
         .btn-secondary {
-            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            background: linear-gradient(135deg, var(--secondary) 0%, #1976D2 100%);
             color: white;
-        }
-        
-        .btn-secondary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
         }
         
         .btn-danger {
-            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            background: linear-gradient(135deg, var(--danger) 0%, #d32f2f 100%);
             color: white;
-        }
-        
-        .btn-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
         }
         
         .btn-warning {
-            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            background: linear-gradient(135deg, var(--warning) 0%, #f57c00 100%);
             color: white;
         }
         
-        .btn-warning:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);
+        .btn-purple {
+            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+            color: white;
         }
         
-        .btn-small {
-            padding: 8px 15px;
+        .quick-controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .quick-btn {
+            padding: 15px;
             font-size: 14px;
-            flex: none;
-            min-width: 80px;
         }
         
-        .status {
-            padding: 10px;
-            border-radius: 8px;
-            margin: 15px 0;
+        .status-indicator {
+            padding: 12px;
+            border-radius: 10px;
             text-align: center;
             font-weight: 600;
+            margin: 15px 0;
+            transition: all 0.3s;
         }
         
         .status-on {
-            background: #d4edda;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
             color: #155724;
-            border: 1px solid #c3e6cb;
+            border: 1px solid #b1dfbb;
         }
         
         .status-off {
-            background: #f8d7da;
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
             color: #721c24;
-            border: 1px solid #f5c6cb;
+            border: 1px solid #f1b0b7;
         }
         
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 15px;
             margin-top: 15px;
         }
@@ -213,465 +263,831 @@
         .info-item {
             background: #f8f9fa;
             padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #4CAF50;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
         }
         
         .info-item strong {
             display: block;
-            color: #333;
+            color: var(--dark);
             margin-bottom: 5px;
-        }
-        
-        .info-item span {
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .quick-controls {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .alarm-status {
-            display: inline-block;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-        
-        .alarm-on {
-            background: #4CAF50;
-            color: white;
-        }
-        
-        .alarm-off {
-            background: #9e9e9e;
-            color: white;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-        
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            text-align: center;
-        }
-        
-        .success {
-            background: #d4edda;
-            color: #155724;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            text-align: center;
-        }
-        
-        .password-form {
-            background: #fff3cd;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            margin: 20px 0;
-        }
-        
-        .password-input {
-            width: 200px;
-            margin: 10px;
-        }
-        
-        .sleep-info {
-            background: #e3f2fd;
-            border-left: 4px solid #2196F3;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
             font-size: 13px;
         }
         
-        .refresh-btn {
+        .info-item span {
+            color: var(--gray);
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .sleep-info {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-left: 4px solid var(--secondary);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 13px;
+            color: #0c5460;
+        }
+        
+        .qr-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px dashed var(--primary);
+            text-align: center;
+        }
+        
+        #qrCode {
+            width: 200px;
+            height: 200px;
+            margin: 15px auto;
+            display: none;
+        }
+        
+        .toast {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #4CAF50;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0, 0, 0, 0.9);
             color: white;
-            width: 50px;
-            height: 50px;
+            padding: 15px 25px;
+            border-radius: 50px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.4s;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 90%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        .install-prompt {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 25px rgba(76, 175, 80, 0.3);
+            z-index: 999;
+            font-size: 24px;
             transition: all 0.3s;
+            display: none;
         }
         
-        .refresh-btn:hover {
-            transform: rotate(180deg);
+        .install-prompt:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 35px rgba(76, 175, 80, 0.4);
         }
         
-        @media (max-width: 600px) {
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--gray);
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+            border: 1px solid #f1b0b7;
+        }
+        
+        @media (max-width: 480px) {
             .container {
-                border-radius: 10px;
+                border-radius: 15px;
             }
             
             .header {
-                padding: 15px;
+                padding: 20px 15px;
             }
             
             .main-content {
-                padding: 10px;
+                padding: 15px;
             }
             
-            .form-row {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .time-input {
-                width: 100%;
+            .card {
+                padding: 15px;
+                margin-bottom: 15px;
             }
             
             .button-group {
                 flex-direction: column;
             }
+            
+            .quick-controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .time-input {
+                width: 70px;
+                padding: 10px;
+            }
         }
     </style>
 </head>
-<body>21"; // Thay bằng IP thực của ESP
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-clock"></i> Đồng Hồ Thông Minh</h1>
+            <p>Điều khiển ESP32 từ xa qua Web Interface</p>
+            <div class="connection-status">
+                <i class="fas fa-wifi" id="wifiStatusIcon"></i>
+                <span id="wifiStatusText">Đang kết nối...</span>
+            </div>
+        </div>
         
-        // Templates HTML
-        const templates = {
-            locked: `
+        <div class="main-content" id="mainContent">
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <p>Đang kết nối đến ESP32...</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="install-prompt" id="installBtn" title="Cài đặt ứng dụng">
+        <i class="fas fa-download"></i>
+    </div>
+
+    <script>
+        // ========== BIẾN TOÀN CỤC ==========
+        let espData = {
+            ipAddress: "",
+            alarmHour: 12,
+            alarmMinute: 0,
+            alarmEnabled: false,
+            temperature: 25.0,
+            humidity: 60.0,
+            currentAlarmSound: 0,
+            soundNames: ["Beep", "Melody 1", "Melody 2"]
+        };
+        
+        let espIP = "";
+        let isConnected = false;
+        let connectionRetries = 0;
+        const maxRetries = 5;
+        
+        // ========== HÀM HIỂN THỊ GIAO DIỆN ==========
+        function renderLockedScreen() {
+            return `
                 <div class="card">
-                    <div class="card-title">🔒 Khóa Bảo Mật</div>
-                    <div class="password-form">
-                        <p>Vui lòng nhập mật khẩu để truy cập giao diện điều khiển</p>
-                        <input type="password" id="password" class="password-input" placeholder="Nhập mật khẩu">
-                        <div class="button-group">
-                            <button class="btn btn-primary" onclick="unlock()">Mở Khóa</button>
+                    <div class="card-title">
+                        <i class="fas fa-lock"></i> Khóa Bảo Mật
+                    </div>
+                    <div class="form-group">
+                        <p style="text-align: center; margin-bottom: 20px; color: #666;">
+                            Vui lòng nhập mật khẩu để truy cập giao diện điều khiển
+                        </p>
+                        <input type="password" id="passwordInput" class="time-input" placeholder="Mật khẩu" style="width: 100%;">
+                        <div class="button-group" style="margin-top: 20px;">
+                            <button class="btn btn-primary" onclick="unlockInterface()">
+                                <i class="fas fa-unlock"></i> Mở Khóa
+                            </button>
                         </div>
-                        <p id="passwordError" style="color: red; margin-top: 10px; display: none;">Mật khẩu không đúng!</p>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <strong>Địa chỉ IP:</strong>
+                            <span id="deviceIp">${espData.ipAddress || "Chưa xác định"}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Trạng thái WiFi:</strong>
+                            <span id="wifiInfo">Đang kết nối...</span>
+                        </div>
                     </div>
                     <div class="sleep-info">
-                        <strong>💡 Lưu ý:</strong> Hệ thống sẽ tự động vào chế độ ngủ sau 30 phút không hoạt động
+                        <i class="fas fa-mobile-alt"></i> <strong>Truy cập Mobile:</strong> 
+                        Scan QR code tại <a href="#" onclick="showQRCode(); return false;">đây</a>
                     </div>
                 </div>
-            `,
-            
-            main: (data) => `
+                
+                <div class="qr-section" id="qrSection" style="display: none;">
+                    <h3><i class="fas fa-qrcode"></i> QR Code Truy Cập</h3>
+                    <img id="qrCodeImg" src="" alt="QR Code" style="display: none;">
+                    <p style="margin: 10px 0; font-size: 14px; color: #666;">
+                        Mở camera điện thoại và scan QR code để truy cập
+                    </p>
+                    <button class="btn btn-secondary" onclick="hideQRCode()">
+                        <i class="fas fa-times"></i> Đóng
+                    </button>
+                </div>
+            `;
+        }
+        
+        function renderMainScreen() {
+            return `
                 <div class="card">
-                    <div class="card-title">⏰ Cài Đặt Báo Thức</div>
+                    <div class="card-title">
+                        <i class="fas fa-bell"></i> Cài Đặt Báo Thức
+                    </div>
+                    
                     <div class="form-group">
                         <label>Thời gian báo thức:</label>
-                        <div class="form-row">
-                            <input type="number" id="alarmHour" class="time-input" min="0" max="23" value="${data.alarmHour}" placeholder="Giờ">
-                            <span style="font-size: 20px; font-weight: bold;">:</span>
-                            <input type="number" id="alarmMinute" class="time-input" min="0" max="59" value="${data.alarmMinute}" placeholder="Phút">
+                        <div class="time-input-group">
+                            <input type="number" id="alarmHour" class="time-input" min="0" max="23" 
+                                   value="${espData.alarmHour}" placeholder="HH">
+                            <span class="time-separator">:</span>
+                            <input type="number" id="alarmMinute" class="time-input" min="0" max="59" 
+                                   value="${espData.alarmMinute}" placeholder="MM">
                         </div>
                     </div>
                     
                     <div class="form-group">
                         <label>Âm thanh báo thức:</label>
-                        <div class="select-wrapper">
-                            <select id="alarmSound">
-                                ${[0,1,2].map(i => `
-                                    <option value="${i}" ${data.currentAlarmSound == i ? 'selected' : ''}>
-                                        ${data.soundNames[i]}
-                                    </option>
-                                `).join('')}
-                            </select>
-                        </div>
+                        <select id="alarmSound">
+                            ${espData.soundNames.map((name, index) => `
+                                <option value="${index}" ${index === espData.currentAlarmSound ? 'selected' : ''}>
+                                    ${name}
+                                </option>
+                            `).join('')}
+                        </select>
                     </div>
                     
                     <div class="button-group">
                         <button class="btn btn-primary" onclick="setAlarm(true)">
-                            <span class="alarm-status ${data.alarmEnabled ? 'alarm-on' : 'alarm-off'}">
-                                ${data.alarmEnabled ? '● BẬT' : '○ TẮT'}
-                            </span>
+                            <i class="fas fa-play-circle"></i> BẬT
                         </button>
-                        <button class="btn btn-secondary" onclick="setAlarmDirect()">Áp Dụng</button>
-                        <button class="btn btn-warning" onclick="snoozeAlarm()">Tạm Dừng</button>
+                        <button class="btn btn-danger" onclick="setAlarm(false)">
+                            <i class="fas fa-stop-circle"></i> TẮT
+                        </button>
+                    </div>
+                    
+                    <div id="alarmStatus" class="status-indicator ${espData.alarmEnabled ? 'status-on' : 'status-off'}">
+                        <i class="fas ${espData.alarmEnabled ? 'fa-bell' : 'fa-bell-slash'}"></i>
+                        ${espData.alarmEnabled ? 'BÁO THỨC ĐANG BẬT' : 'BÁO THỨC ĐANG TẮT'}
                     </div>
                 </div>
                 
                 <div class="card">
-                    <div class="card-title">🎮 Điều Khiển Nhanh</div>
+                    <div class="card-title">
+                        <i class="fas fa-gamepad"></i> Điều Khiển Nhanh
+                    </div>
+                    
                     <div class="quick-controls">
-                        <button class="btn btn-secondary btn-small" onclick="simulateButton(1)">NÚT 1 (Chọn)</button>
-                        <button class="btn btn-secondary btn-small" onclick="simulateButton(2)">NÚT 2 (Tăng)</button>
-                        <button class="btn btn-secondary btn-small" onclick="simulateButton(3)">NÚT 3 (Giảm)</button>
-                        <button class="btn btn-warning btn-small" onclick="snoozeAlarm()">Tắt Chuông</button>
-                        <button class="btn btn-danger btn-small" onclick="resetSystem()">Khởi Động Lại</button>
+                        <button class="btn quick-btn btn-primary" onclick="sendButtonCommand(1)">
+                            <i class="fas fa-check-circle"></i> NÚT 1<br>
+                            <small>Chọn/Enter</small>
+                        </button>
+                        <button class="btn quick-btn btn-secondary" onclick="sendButtonCommand(2)">
+                            <i class="fas fa-arrow-up"></i> NÚT 2<br>
+                            <small>Tăng giá trị</small>
+                        </button>
+                        <button class="btn quick-btn btn-warning" onclick="sendButtonCommand(3)">
+                            <i class="fas fa-arrow-down"></i> NÚT 3<br>
+                            <small>Giảm giá trị</small>
+                        </button>
+                        <button class="btn quick-btn btn-purple" onclick="snoozeAlarm()">
+                            <i class="fas fa-pause-circle"></i> TẮT CHUÔNG<br>
+                            <small>Snooze Alarm</small>
+                        </button>
+                    </div>
+                    
+                    <div class="button-group" style="margin-top: 15px;">
+                        <button class="btn btn-danger" onclick="resetSystem()">
+                            <i class="fas fa-redo"></i> KHỞI ĐỘNG LẠI
+                        </button>
                     </div>
                 </div>
                 
                 <div class="card">
-                    <div class="card-title">📊 Thông Tin Hệ Thống</div>
+                    <div class="card-title">
+                        <i class="fas fa-chart-line"></i> Thông Tin Hệ Thống
+                    </div>
+                    
                     <div class="info-grid">
                         <div class="info-item">
-                            <strong>Địa chỉ IP:</strong>
-                            <span>${data.ipAddress}</span>
+                            <strong><i class="fas fa-network-wired"></i> Địa chỉ IP:</strong>
+                            <span id="displayIp">${espData.ipAddress}</span>
                         </div>
                         <div class="info-item">
-                            <strong>Trạng thái WiFi:</strong>
-                            <span>✅ Đã kết nối</span>
+                            <strong><i class="fas fa-thermometer-half"></i> Nhiệt độ:</strong>
+                            <span id="temperatureDisplay">${espData.temperature}°C</span>
                         </div>
                         <div class="info-item">
-                            <strong>Nhiệt độ:</strong>
-                            <span>${data.temperature}°C</span>
+                            <strong><i class="fas fa-tint"></i> Độ ẩm:</strong>
+                            <span id="humidityDisplay">${espData.humidity}%</span>
                         </div>
                         <div class="info-item">
-                            <strong>Độ ẩm:</strong>
-                            <span>${data.humidity}%</span>
+                            <strong><i class="fas fa-clock"></i> Thời gian:</strong>
+                            <span id="currentTime">${getCurrentTime()}</span>
                         </div>
                         <div class="info-item">
-                            <strong>Thời gian hiện tại:</strong>
-                            <span>${data.currentTime}</span>
+                            <strong><i class="fas fa-battery-three-quarters"></i> Uptime:</strong>
+                            <span id="uptimeDisplay">0 phút</span>
                         </div>
                         <div class="info-item">
-                            <strong>Trạng thái Sleep:</strong>
-                            <span>${data.sleepStatus}</span>
-                        </div>
-                        <div class="info-item">
-                            <strong>Thời gian hoạt động:</strong>
-                            <span>${data.uptime} phút</span>
-                        </div>
-                        <div class="info-item">
-                            <strong>Báo thức:</strong>
-                            <span class="alarm-status ${data.alarmEnabled ? 'alarm-on' : 'alarm-off'}">
-                                ${data.alarmEnabled ? 'ĐANG BẬT' : 'ĐANG TẮT'}
-                            </span>
+                            <strong><i class="fas fa-signal"></i> Tín hiệu WiFi:</strong>
+                            <span id="wifiSignal">- dBm</span>
                         </div>
                     </div>
+                    
                     <div class="sleep-info">
-                        <strong>💤 Chế độ tiết kiệm điện:</strong> Hệ thống tự động vào Light Sleep sau 30 phút không hoạt động. 
-                        Nhấn nút làm mới để reset bộ đếm.
+                        <i class="fas fa-power-off"></i> <strong>Chế độ tiết kiệm điện:</strong> 
+                        Hệ thống tự động ngủ sau 30 phút không hoạt động
                     </div>
                 </div>
                 
                 <div class="card">
-                    <div class="card-title">📱 Hướng Dẫn Sử Dụng</div>
-                    <div style="font-size: 14px; line-height: 1.6; color: #555;">
-                        <p><strong>• Điều khiển báo thức:</strong></p>
+                    <div class="card-title">
+                        <i class="fas fa-qrcode"></i> Truy Cập Nhanh
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-secondary" onclick="showQRCode()">
+                            <i class="fas fa-qrcode"></i> Hiển Thị QR Code
+                        </button>
+                        <button class="btn btn-primary" onclick="refreshData()">
+                            <i class="fas fa-sync-alt"></i> Làm Mới Dữ Liệu
+                        </button>
+                    </div>
+                    
+                    <div class="qr-section" id="mainQRSection" style="display: none; margin-top: 15px;">
+                        <h4><i class="fas fa-mobile-alt"></i> Scan để cài đặt ứng dụng</h4>
+                        <img id="mainQRCode" src="" alt="QR Code" style="width: 150px; height: 150px; margin: 10px auto; display: none;">
+                        <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                            Mở camera điện thoại và scan QR code để cài đặt ứng dụng
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderErrorScreen(message) {
+            return `
+                <div class="error-message">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Lỗi Kết Nối</h3>
+                    <p>${message}</p>
+                    <div class="button-group" style="margin-top: 15px;">
+                        <button class="btn btn-primary" onclick="connectToESP()">
+                            <i class="fas fa-redo"></i> Thử Lại
+                        </button>
+                        <button class="btn btn-secondary" onclick="enterManualIP()">
+                            <i class="fas fa-edit"></i> Nhập IP Thủ Công
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fas fa-question-circle"></i> Hướng Dẫn Khắc Phục
+                    </div>
+                    <div style="font-size: 14px; line-height: 1.6;">
+                        <p><strong>1. Kiểm tra ESP32:</strong></p>
                         <ul style="margin-left: 20px; margin-bottom: 10px;">
-                            <li>Chọn thời gian (giờ:phút) cho báo thức</li>
-                            <li>Chọn âm thanh báo thức mong muốn</li>
-                            <li>Nhấn "Áp Dụng" để cài đặt, nhấn nút trạng thái để bật/tắt</li>
+                            <li>Đảm bảo ESP32 đã được bật</li>
+                            <li>Kiểm tra đèn báo trên ESP32</li>
+                            <li>Xem Serial Monitor để kiểm tra IP</li>
                         </ul>
                         
-                        <p><strong>• Điều khiển nút vật lý từ xa:</strong></p>
+                        <p><strong>2. Kiểm tra mạng WiFi:</strong></p>
                         <ul style="margin-left: 20px; margin-bottom: 10px;">
-                            <li><strong>Nút 1:</strong> Chọn/Enter trong menu</li>
-                            <li><strong>Nút 2:</strong> Tăng giá trị</li>
-                            <li><strong>Nút 3:</strong> Giảm giá trị</li>
+                            <li>Đảm bảo cùng mạng WiFi với ESP32</li>
+                            <li>Thử reset lại router WiFi</li>
+                            <li>Kiểm tra firewall/antivirus</li>
                         </ul>
                         
-                        <p><strong>• Tính năng đặc biệt:</strong></p>
+                        <p><strong>3. Kiểm tra IP:</strong></p>
                         <ul style="margin-left: 20px;">
-                            <li>Báo thức tự động tắt sau 1 phút</li>
-                            <li>Hệ thống tự động ngủ sau 30 phút không dùng</li>
-                            <li>Có thể điều khiển hoàn toàn từ xa qua web</li>
-                            <li>Cập nhật dữ liệu thời tiết thời gian thực</li>
+                            <li>IP thường có dạng: 192.168.x.x</li>
+                            <li>Kiểm tra trong router admin page</li>
+                            <li>Dùng app network scanner</li>
                         </ul>
                     </div>
                 </div>
-            `
-        };
+            `;
+        }
         
-        // Hàm lấy dữ liệu từ ESP32
-        async function fetchData() {
+        // ========== HÀM XỬ LÝ KẾT NỐI ==========
+        async function connectToESP() {
+            showLoading(true);
+            
             try {
-                const response = await fetch(`http://${ESP_IP}/`);
-                const text = await response.text();
+                // Lấy IP từ localStorage hoặc dùng auto-discovery
+                espIP = localStorage.getItem('esp_ip') || await discoverESP();
                 
-                // Parse HTML để lấy dữ liệu
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(text, 'text/html');
-                
-                // Kiểm tra trạng thái khóa
-                const isLocked = text.includes('Khóa Bảo Mật');
-                
-                if (isLocked && !isUnlocked) {
-                    // Hiển thị form mật khẩu
-                    document.getElementById('mainContent').innerHTML = templates.locked;
-                } else {
-                    // Trích xuất dữ liệu từ HTML
-                    const alarmHour = doc.getElementById('alarmHour')?.value || 12;
-                    const alarmMinute = doc.getElementById('alarmMinute')?.value || 0;
-                    const alarmSound = doc.getElementById('alarmSound')?.value || 0;
-                    const alarmEnabled = text.includes('status on');
-                    
-                    // Tạo đối tượng dữ liệu
-                    espData = {
-                        alarmHour,
-                        alarmMinute,
-                        currentAlarmSound: parseInt(alarmSound),
-                        alarmEnabled,
-                        soundNames: ["Beep", "Melody 1", "Melody 2"],
-                        ipAddress: ESP_IP,
-                        temperature: text.match(/Nhiệt độ.*?(\d+\.?\d*)/)?.[1] || "25.0",
-                        humidity: text.match(/Độ ẩm.*?(\d+\.?\d*)/)?.[1] || "60.0",
-                        currentTime: getCurrentTime(),
-                        sleepStatus: text.includes('Đang ngủ') ? 'Đang ngủ' : 'Đang hoạt động',
-                        uptime: Math.floor(Math.random() * 100) + 10 // Tạm thời random
-                    };
-                    
-                    // Hiển thị giao diện chính
-                    document.getElementById('mainContent').innerHTML = templates.main(espData);
+                if (!espIP) {
+                    throw new Error("Không tìm thấy ESP32 trong mạng");
                 }
                 
+                // Test kết nối
+                const response = await fetch(`http://${espIP}/`, { 
+                    mode: 'no-cors',
+                    cache: 'no-cache'
+                });
+                
+                isConnected = true;
+                connectionRetries = 0;
+                updateConnectionStatus(true);
+                
+                // Lấy dữ liệu ban đầu
+                await fetchInitialData();
+                
+                // Hiển thị giao diện chính
+                showMainInterface();
+                
             } catch (error) {
-                document.getElementById('mainContent').innerHTML = `
-                    <div class="error">
-                        <p>❌ Không thể kết nối đến ESP32</p>
-                        <p>Kiểm tra:</p>
-                        <ul style="margin: 10px 0; text-align: left;">
-                            <li>ESP32 đã bật chưa?</li>
-                            <li>Có cùng mạng WiFi không?</li>
-                            <li>IP đúng không? (Hiện tại: ${ESP_IP})</li>
-                        </ul>
-                        <button class="btn btn-primary" onclick="fetchData()">Thử lại</button>
-                    </div>
-                `;
-                console.error('Lỗi kết nối:', error);
+                console.error("Connection error:", error);
+                connectionRetries++;
+                
+                if (connectionRetries >= maxRetries) {
+                    showError(`Không thể kết nối đến ESP32<br>Địa chỉ thử: ${espIP || 'Không xác định'}`);
+                } else {
+                    // Thử lại sau 2 giây
+                    setTimeout(connectToESP, 2000);
+                }
             }
         }
         
-        // Hàm mở khóa
-        function unlock() {
-            const password = document.getElementById('password').value;
-            if (password === '123456') { // Mật khẩu mặc định
-                isUnlocked = true;
-                fetchData();
-            } else {
-                document.getElementById('passwordError').style.display = 'block';
+        async function discoverESP() {
+            // Thử các IP phổ biến
+            const commonIPs = [
+                "192.168.1.100", "192.168.1.150", "192.168.1.200",
+                "192.168.0.100", "192.168.0.150", "192.168.0.200",
+                "192.168.4.1", "192.168.1.1", "192.168.0.1"
+            ];
+            
+            for (const ip of commonIPs) {
+                try {
+                    const response = await fetch(`http://${ip}/`, { 
+                        mode: 'no-cors',
+                        cache: 'no-cache',
+                        timeout: 1000 
+                    });
+                    
+                    // Nếu có response (không bị CORS error), đây có thể là ESP
+                    showToast(`Tìm thấy ESP32 tại: ${ip}`);
+                    localStorage.setItem('esp_ip', ip);
+                    return ip;
+                } catch (e) {
+                    continue;
+                }
+            }
+            
+            return null;
+        }
+        
+        async function fetchInitialData() {
+            try {
+                // Lấy dữ liệu thông qua các endpoint
+                const endpoints = [
+                    'getAlarmStatus',
+                    'getSensors',
+                    'getSystemInfo'
+                ];
+                
+                for (const endpoint of endpoints) {
+                    try {
+                        await fetch(`http://${espIP}/${endpoint}`);
+                    } catch (e) {
+                        // Bỏ qua lỗi từ các endpoint không tồn tại
+                    }
+                }
+                
+                // Cập nhật thời gian hiện tại
+                updateCurrentTime();
+                
+            } catch (error) {
+                console.error("Error fetching initial data:", error);
             }
         }
         
-        // Hàm đặt báo thức
-        async function setAlarmDirect() {
+        // ========== HÀM GỬI LỆNH ==========
+        async function sendCommand(command, data = {}) {
+            if (!isConnected || !espIP) {
+                showToast("Chưa kết nối đến ESP32!");
+                return false;
+            }
+            
+            try {
+                const params = new URLSearchParams(data);
+                const url = `http://${espIP}/${command}?${params}`;
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'no-cors',
+                    cache: 'no-cache'
+                });
+                
+                showToast("Lệnh đã được gửi thành công!");
+                return true;
+                
+            } catch (error) {
+                console.error("Command error:", error);
+                showToast("Lỗi khi gửi lệnh!");
+                return false;
+            }
+        }
+        
+        function setAlarm(enable) {
             const hour = document.getElementById('alarmHour').value;
             const minute = document.getElementById('alarmMinute').value;
             const sound = document.getElementById('alarmSound').value;
-            const enable = espData.alarmEnabled ? 1 : 0;
             
-            try {
-                const response = await fetch(
-                    `http://${ESP_IP}/setAlarmDirect?hour=${hour}&minute=${minute}&sound=${sound}&enable=${enable}`
-                );
-                
-                if (response.ok) {
-                    showMessage('✅ Đã cập nhật báo thức thành công!');
-                    fetchData(); // Làm mới dữ liệu
-                }
-            } catch (error) {
-                showMessage('❌ Lỗi khi cập nhật báo thức');
-            }
-        }
-        
-        // Hàm bật/tắt báo thức
-        function setAlarm(enable) {
+            espData.alarmHour = hour;
+            espData.alarmMinute = minute;
+            espData.currentAlarmSound = sound;
             espData.alarmEnabled = enable;
-            setAlarmDirect();
-        }
-        
-        // Hàm giả lập nút nhấn
-        async function simulateButton(button) {
-            try {
-                await fetch(`http://${ESP_IP}/button?btn=${button}`);
-                showMessage(`✅ Đã nhấn nút ${button}`);
-                fetchData();
-            } catch (error) {
-                showMessage('❌ Lỗi khi điều khiển nút');
-            }
-        }
-        
-        // Hàm tạm dừng báo thức
-        async function snoozeAlarm() {
-            try {
-                await fetch(`http://${ESP_IP}/snooze`);
-                showMessage('🔇 Đã tạm dừng báo thức');
-                fetchData();
-            } catch (error) {
-                showMessage('❌ Lỗi khi tạm dừng báo thức');
-            }
-        }
-        
-        // Hàm reset hệ thống
-        async function resetSystem() {
-            if (confirm('Bạn có chắc muốn khởi động lại hệ thống?')) {
-                try {
-                    await fetch(`http://${ESP_IP}/reset`);
-                    showMessage('🔄 Hệ thống đang khởi động lại...');
-                    setTimeout(fetchData, 5000);
-                } catch (error) {
-                    showMessage('❌ Lỗi khi reset hệ thống');
-                }
-            }
-        }
-        
-        // Hàm hiển thị thông báo
-        function showMessage(message) {
-            // Tạo thông báo tạm thời
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'success';
-            messageDiv.style.position = 'fixed';
-            messageDiv.style.top = '20px';
-            messageDiv.style.right = '20px';
-            messageDiv.style.zIndex = '1000';
-            messageDiv.style.padding = '15px 20px';
-            messageDiv.style.borderRadius = '8px';
-            messageDiv.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
-            messageDiv.textContent = message;
             
-            document.body.appendChild(messageDiv);
+            // Cập nhật giao diện ngay lập tức
+            updateAlarmStatus();
             
-            // Tự động xóa sau 3 giây
+            // Gửi lệnh đến ESP
+            sendCommand('setAlarmDirect', {
+                hour: hour,
+                minute: minute,
+                sound: sound,
+                enable: enable ? 1 : 0
+            });
+        }
+        
+        function sendButtonCommand(button) {
+            sendCommand('button', { btn: button });
+        }
+        
+        function snoozeAlarm() {
+            sendCommand('snooze', {});
+            showToast("Đã tắt báo thức tạm thời");
+        }
+        
+        function resetSystem() {
+            if (confirm("Bạn có chắc muốn khởi động lại hệ thống?")) {
+                sendCommand('reset', {});
+                showToast("Hệ thống đang khởi động lại...");
+                
+                // Tự động reconnect sau 5 giây
+                setTimeout(() => {
+                    location.reload();
+                }, 5000);
+            }
+        }
+        
+        function resetSleepTimer() {
+            sendCommand('resetSleepTimer', {});
+        }
+        
+        // ========== HÀM HIỂN THỊ ==========
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        function showMainInterface() {
+            document.getElementById('mainContent').innerHTML = renderMainScreen();
+            startDataUpdates();
+        }
+        
+        function showError(message) {
+            document.getElementById('mainContent').innerHTML = renderErrorScreen(message);
+            updateConnectionStatus(false);
+        }
+        
+        function updateConnectionStatus(connected) {
+            const icon = document.getElementById('wifiStatusIcon');
+            const text = document.getElementById('wifiStatusText');
+            
+            if (connected) {
+                icon.className = 'fas fa-wifi connected';
+                text.textContent = 'Đã kết nối';
+                text.className = 'connected';
+            } else {
+                icon.className = 'fas fa-wifi-slash disconnected';
+                text.textContent = 'Mất kết nối';
+                text.className = 'disconnected';
+            }
+        }
+        
+        function updateAlarmStatus() {
+            const statusElement = document.getElementById('alarmStatus');
+            if (statusElement) {
+                statusElement.className = `status-indicator ${espData.alarmEnabled ? 'status-on' : 'status-off'}`;
+                statusElement.innerHTML = `
+                    <i class="fas ${espData.alarmEnabled ? 'fa-bell' : 'fa-bell-slash'}"></i>
+                    ${espData.alarmEnabled ? 'BÁO THỨC ĐANG BẬT' : 'BÁO THỨC ĐANG TẮT'}
+                `;
+            }
+        }
+        
+        function updateCurrentTime() {
+            const timeElement = document.getElementById('currentTime');
+            if (timeElement) {
+                timeElement.textContent = getCurrentTime();
+            }
+        }
+        
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleTimeString('vi-VN');
+        }
+        
+        function showQRCode() {
+            const ip = espData.ipAddress || espIP || window.location.hostname;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://${ip}`;
+            
+            // Hiển thị QR trong cả hai section
+            const qrImg = document.getElementById('qrCodeImg');
+            const mainQR = document.getElementById('mainQRCode');
+            
+            if (qrImg) {
+                qrImg.src = qrUrl;
+                qrImg.style.display = 'block';
+                document.getElementById('qrSection').style.display = 'block';
+            }
+            
+            if (mainQR) {
+                mainQR.src = qrUrl;
+                mainQR.style.display = 'block';
+                document.getElementById('mainQRSection').style.display = 'block';
+            }
+        }
+        
+        function hideQRCode() {
+            const qrSection = document.getElementById('qrSection');
+            if (qrSection) qrSection.style.display = 'none';
+            
+            const mainQRSection = document.getElementById('mainQRSection');
+            if (mainQRSection) mainQRSection.style.display = 'none';
+        }
+        
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <i class="fas fa-check-circle"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Hiển thị toast
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            // Ẩn toast sau 3 giây
             setTimeout(() => {
-                messageDiv.remove();
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        document.body.removeChild(toast);
+                    }
+                }, 400);
             }, 3000);
         }
         
-        // Hàm lấy thời gian hiện tại
-        function getCurrentTime() {
-            const now = new Date();
-            return now.getHours().toString().padStart(2, '0') + ':' + 
-                   now.getMinutes().toString().padStart(2, '0') + ':' + 
-                   now.getSeconds().toString().padStart(2, '0');
-        }
-        
-        // Reset sleep timer
-        async function resetSleepTimer() {
-            try {
-                await fetch(`http://${ESP_IP}/resetSleepTimer`);
-            } catch (error) {
-                // Bỏ qua lỗi
+        function unlockInterface() {
+            const password = document.getElementById('passwordInput').value;
+            
+            if (password === '123456') {
+                // Lưu trạng thái unlocked
+                localStorage.setItem('unlocked', 'true');
+                
+                // Hiển thị giao diện chính
+                showMainInterface();
+                showToast("Mở khóa thành công!");
+            } else {
+                showToast("Mật khẩu không đúng!");
             }
         }
         
-        // Khởi động khi trang tải xong
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchData();
+        function enterManualIP() {
+            const ip = prompt("Nhập địa chỉ IP của ESP32 (ví dụ: 192.168.1.100):");
+            if (ip) {
+                localStorage.setItem('esp_ip', ip);
+                espIP = ip;
+                connectToESP();
+            }
+        }
+        
+        function refreshData() {
+            showToast("Đang làm mới dữ liệu...");
+            fetchInitialData();
+        }
+        
+        // ========== AUTO-UPDATE DATA ==========
+        function startDataUpdates() {
+            // Cập nhật thời gian mỗi giây
+            setInterval(updateCurrentTime, 1000);
             
-            // Tự động làm mới dữ liệu mỗi 10 giây
-            setInterval(fetchData, 10000);
+            // Cập nhật uptime mỗi phút
+            setInterval(() => {
+                const uptimeElement = document.getElementById('uptimeDisplay');
+                if (uptimeElement) {
+                    const currentUptime = uptimeElement.textContent;
+                    const minutes = parseInt(currentUptime) || 0;
+                    uptimeElement.textContent = (minutes + 1) + ' phút';
+                }
+            }, 60000);
             
             // Reset sleep timer khi có tương tác
             document.addEventListener('click', resetSleepTimer);
+            document.addEventListener('touchstart', resetSleepTimer);
             document.addEventListener('keypress', resetSleepTimer);
+        }
+        
+        // ========== PWA INSTALLATION ==========
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBtn').style.display = 'flex';
         });
+        
+        document.getElementById('installBtn').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                
+                if (outcome === 'accepted') {
+                    showToast("Ứng dụng đã được cài đặt!");
+                }
+                
+                deferredPrompt = null;
+                document.getElementById('installBtn').style.display = 'none';
+            }
+        });
+        
+        // ========== KHỞI ĐỘNG ỨNG DỤNG ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // Kiểm tra trạng thái unlocked
+            const isUnlocked = localStorage.getItem('unlocked') === 'true';
+            
+            if (isUnlocked) {
+                // Tự động kết nối
+                connectToESP();
+            } else {
+                // Hiển thị màn hình locked
+                document.getElementById('mainContent').innerHTML = renderLockedScreen();
+                showLoading(false);
+                
+                // Vẫn thử kết nối để lấy IP
+                connectToESP();
+            }
+            
+            // Service Worker cho PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            }
+        });
+        
+        // Handle online/offline events
+        window.addEventListener('online', () => {
+            showToast("Đã kết nối lại internet!");
+            connectToESP();
+        });
+        
+        window.addEventListener('offline', () => {
+            showToast("Mất kết nối internet!");
+            updateConnectionStatus(false);
+        });
+        
+        // Auto-reconnect every 30 seconds if disconnected
+        setInterval(() => {
+            if (!isConnected && navigator.onLine) {
+                connectToESP();
+            }
+        }, 30000);
     </script>
 </body>
 </html>
