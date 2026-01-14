@@ -3,7 +3,8 @@
 Giao diện web điều khiển ESP32 Smart Clock từ xa qua Internet.
 
 ## 🌐 Live Demo
-Truy cập: [https://your-username.github.io/esp32-smart-clock-control](https://your-username.github.io/esp32-smart-clock-control)
+Truy cập:  https://devweb-lab-ai.github.io/esp32-smart-clock-control
+
 
 ## 🚀 Tính năng
 
