@@ -1,49 +1,699 @@
-<!DOCTYPE html>
+<!DOCTYPE HTML>
 <html lang="vi">
 <head>
+    <title>Đồng Hồ Thông Minh</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 Controller - Kết nối</title>
-    <link rel="stylesheet" href="styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e0e0e0;
+        }
+        
+        .card-title {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4CAF50;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-title i {
+            color: #4CAF50;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input, select {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .time-input {
+            width: 70px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .select-wrapper {
+            flex: 1;
+        }
+        
+        select {
+            width: 100%;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);
+        }
+        
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 14px;
+            flex: none;
+            min-width: 80px;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .status-on {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-off {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .info-item strong {
+            display: block;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .info-item span {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .quick-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .alarm-status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .alarm-on {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .alarm-off {
+            background: #9e9e9e;
+            color: white;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .password-form {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .password-input {
+            width: 200px;
+            margin: 10px;
+        }
+        
+        .sleep-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        
+        .refresh-btn:hover {
+            transform: rotate(180deg);
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 15px;
+            }
+            
+            .main-content {
+                padding: 10px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .time-input {
+                width: 100%;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🕒 Điều Khiển ESP32 Smart Clock</h1>
-            <p>Kết nối đến ESP32 của bạn</p>
+            <h1>🕒 Đồng Hồ Thông Minh</h1>
+            <p>Điều khiển từ xa qua Web Interface</p>
         </div>
         
-        <div class="connection-form">
-            <h2>🔌 Nhập Thông Tin ESP32</h2>
-            
-            <div class="form-group">
-                <label for="espIp">Địa chỉ IP của ESP32:</label>
-                <input type="text" id="espIp" placeholder="192.168.1.100" value="">
-            </div>
-            
-            <div class="form-group">
-                <label for="port">Port (mặc định: 80):</label>
-                <input type="number" id="port" value="80" min="1" max="65535">
-            </div>
-            
-            <div class="instructions">
-                <h3>📋 Hướng dẫn lấy IP:</h3>
-                <ul>
-                    <li>1. Kiểm tra Serial Monitor trong Arduino IDE</li>
-                    <li>2. Nhìn màn hình OLED của ESP32</li>
-                    <li>3. IP có dạng: 192.168.x.x</li>
-                </ul>
-            </div>
-            
-            <button onclick="connectToESP()" class="btn-connect">🔗 Kết Nối</button>
-            
-            <div class="saved-devices" id="savedDevices">
-                <h3>📱 Thiết bị đã lưu:</h3>
-                <!-- Danh sách thiết bị sẽ hiển thị ở đây -->
+        <div class="main-content" id="mainContent">
+            <div class="loading" id="loading">
+                <p>Đang kết nối đến ESP32...</p>
             </div>
         </div>
     </div>
     
-    <script src="script.js"></script>
+    <div class="refresh-btn" onclick="fetchData()" title="Làm mới dữ liệu">
+        🔄
+    </div>
+
+    <script>
+        // Biến toàn cục
+        let espData = {};
+        let isUnlocked = false;
+        const ESP_IP = window.location.hostname || "192.168.1.100"; // Thay bằng IP thực của ESP
+        
+        // Templates HTML
+        const templates = {
+            locked: `
+                <div class="card">
+                    <div class="card-title">🔒 Khóa Bảo Mật</div>
+                    <div class="password-form">
+                        <p>Vui lòng nhập mật khẩu để truy cập giao diện điều khiển</p>
+                        <input type="password" id="password" class="password-input" placeholder="Nhập mật khẩu">
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="unlock()">Mở Khóa</button>
+                        </div>
+                        <p id="passwordError" style="color: red; margin-top: 10px; display: none;">Mật khẩu không đúng!</p>
+                    </div>
+                    <div class="sleep-info">
+                        <strong>💡 Lưu ý:</strong> Hệ thống sẽ tự động vào chế độ ngủ sau 30 phút không hoạt động
+                    </div>
+                </div>
+            `,
+            
+            main: (data) => `
+                <div class="card">
+                    <div class="card-title">⏰ Cài Đặt Báo Thức</div>
+                    <div class="form-group">
+                        <label>Thời gian báo thức:</label>
+                        <div class="form-row">
+                            <input type="number" id="alarmHour" class="time-input" min="0" max="23" value="${data.alarmHour}" placeholder="Giờ">
+                            <span style="font-size: 20px; font-weight: bold;">:</span>
+                            <input type="number" id="alarmMinute" class="time-input" min="0" max="59" value="${data.alarmMinute}" placeholder="Phút">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Âm thanh báo thức:</label>
+                        <div class="select-wrapper">
+                            <select id="alarmSound">
+                                ${[0,1,2].map(i => `
+                                    <option value="${i}" ${data.currentAlarmSound == i ? 'selected' : ''}>
+                                        ${data.soundNames[i]}
+                                    </option>
+                                `).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="setAlarm(true)">
+                            <span class="alarm-status ${data.alarmEnabled ? 'alarm-on' : 'alarm-off'}">
+                                ${data.alarmEnabled ? '● BẬT' : '○ TẮT'}
+                            </span>
+                        </button>
+                        <button class="btn btn-secondary" onclick="setAlarmDirect()">Áp Dụng</button>
+                        <button class="btn btn-warning" onclick="snoozeAlarm()">Tạm Dừng</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">🎮 Điều Khiển Nhanh</div>
+                    <div class="quick-controls">
+                        <button class="btn btn-secondary btn-small" onclick="simulateButton(1)">NÚT 1 (Chọn)</button>
+                        <button class="btn btn-secondary btn-small" onclick="simulateButton(2)">NÚT 2 (Tăng)</button>
+                        <button class="btn btn-secondary btn-small" onclick="simulateButton(3)">NÚT 3 (Giảm)</button>
+                        <button class="btn btn-warning btn-small" onclick="snoozeAlarm()">Tắt Chuông</button>
+                        <button class="btn btn-danger btn-small" onclick="resetSystem()">Khởi Động Lại</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">📊 Thông Tin Hệ Thống</div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <strong>Địa chỉ IP:</strong>
+                            <span>${data.ipAddress}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Trạng thái WiFi:</strong>
+                            <span>✅ Đã kết nối</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Nhiệt độ:</strong>
+                            <span>${data.temperature}°C</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Độ ẩm:</strong>
+                            <span>${data.humidity}%</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Thời gian hiện tại:</strong>
+                            <span>${data.currentTime}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Trạng thái Sleep:</strong>
+                            <span>${data.sleepStatus}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Thời gian hoạt động:</strong>
+                            <span>${data.uptime} phút</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Báo thức:</strong>
+                            <span class="alarm-status ${data.alarmEnabled ? 'alarm-on' : 'alarm-off'}">
+                                ${data.alarmEnabled ? 'ĐANG BẬT' : 'ĐANG TẮT'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="sleep-info">
+                        <strong>💤 Chế độ tiết kiệm điện:</strong> Hệ thống tự động vào Light Sleep sau 30 phút không hoạt động. 
+                        Nhấn nút làm mới để reset bộ đếm.
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">📱 Hướng Dẫn Sử Dụng</div>
+                    <div style="font-size: 14px; line-height: 1.6; color: #555;">
+                        <p><strong>• Điều khiển báo thức:</strong></p>
+                        <ul style="margin-left: 20px; margin-bottom: 10px;">
+                            <li>Chọn thời gian (giờ:phút) cho báo thức</li>
+                            <li>Chọn âm thanh báo thức mong muốn</li>
+                            <li>Nhấn "Áp Dụng" để cài đặt, nhấn nút trạng thái để bật/tắt</li>
+                        </ul>
+                        
+                        <p><strong>• Điều khiển nút vật lý từ xa:</strong></p>
+                        <ul style="margin-left: 20px; margin-bottom: 10px;">
+                            <li><strong>Nút 1:</strong> Chọn/Enter trong menu</li>
+                            <li><strong>Nút 2:</strong> Tăng giá trị</li>
+                            <li><strong>Nút 3:</strong> Giảm giá trị</li>
+                        </ul>
+                        
+                        <p><strong>• Tính năng đặc biệt:</strong></p>
+                        <ul style="margin-left: 20px;">
+                            <li>Báo thức tự động tắt sau 1 phút</li>
+                            <li>Hệ thống tự động ngủ sau 30 phút không dùng</li>
+                            <li>Có thể điều khiển hoàn toàn từ xa qua web</li>
+                            <li>Cập nhật dữ liệu thời tiết thời gian thực</li>
+                        </ul>
+                    </div>
+                </div>
+            `
+        };
+        
+        // Hàm lấy dữ liệu từ ESP32
+        async function fetchData() {
+            try {
+                const response = await fetch(`http://${ESP_IP}/`);
+                const text = await response.text();
+                
+                // Parse HTML để lấy dữ liệu
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                
+                // Kiểm tra trạng thái khóa
+                const isLocked = text.includes('Khóa Bảo Mật');
+                
+                if (isLocked && !isUnlocked) {
+                    // Hiển thị form mật khẩu
+                    document.getElementById('mainContent').innerHTML = templates.locked;
+                } else {
+                    // Trích xuất dữ liệu từ HTML
+                    const alarmHour = doc.getElementById('alarmHour')?.value || 12;
+                    const alarmMinute = doc.getElementById('alarmMinute')?.value || 0;
+                    const alarmSound = doc.getElementById('alarmSound')?.value || 0;
+                    const alarmEnabled = text.includes('status on');
+                    
+                    // Tạo đối tượng dữ liệu
+                    espData = {
+                        alarmHour,
+                        alarmMinute,
+                        currentAlarmSound: parseInt(alarmSound),
+                        alarmEnabled,
+                        soundNames: ["Beep", "Melody 1", "Melody 2"],
+                        ipAddress: ESP_IP,
+                        temperature: text.match(/Nhiệt độ.*?(\d+\.?\d*)/)?.[1] || "25.0",
+                        humidity: text.match(/Độ ẩm.*?(\d+\.?\d*)/)?.[1] || "60.0",
+                        currentTime: getCurrentTime(),
+                        sleepStatus: text.includes('Đang ngủ') ? 'Đang ngủ' : 'Đang hoạt động',
+                        uptime: Math.floor(Math.random() * 100) + 10 // Tạm thời random
+                    };
+                    
+                    // Hiển thị giao diện chính
+                    document.getElementById('mainContent').innerHTML = templates.main(espData);
+                }
+                
+            } catch (error) {
+                document.getElementById('mainContent').innerHTML = `
+                    <div class="error">
+                        <p>❌ Không thể kết nối đến ESP32</p>
+                        <p>Kiểm tra:</p>
+                        <ul style="margin: 10px 0; text-align: left;">
+                            <li>ESP32 đã bật chưa?</li>
+                            <li>Có cùng mạng WiFi không?</li>
+                            <li>IP đúng không? (Hiện tại: ${ESP_IP})</li>
+                        </ul>
+                        <button class="btn btn-primary" onclick="fetchData()">Thử lại</button>
+                    </div>
+                `;
+                console.error('Lỗi kết nối:', error);
+            }
+        }
+        
+        // Hàm mở khóa
+        function unlock() {
+            const password = document.getElementById('password').value;
+            if (password === '123456') { // Mật khẩu mặc định
+                isUnlocked = true;
+                fetchData();
+            } else {
+                document.getElementById('passwordError').style.display = 'block';
+            }
+        }
+        
+        // Hàm đặt báo thức
+        async function setAlarmDirect() {
+            const hour = document.getElementById('alarmHour').value;
+            const minute = document.getElementById('alarmMinute').value;
+            const sound = document.getElementById('alarmSound').value;
+            const enable = espData.alarmEnabled ? 1 : 0;
+            
+            try {
+                const response = await fetch(
+                    `http://${ESP_IP}/setAlarmDirect?hour=${hour}&minute=${minute}&sound=${sound}&enable=${enable}`
+                );
+                
+                if (response.ok) {
+                    showMessage('✅ Đã cập nhật báo thức thành công!');
+                    fetchData(); // Làm mới dữ liệu
+                }
+            } catch (error) {
+                showMessage('❌ Lỗi khi cập nhật báo thức');
+            }
+        }
+        
+        // Hàm bật/tắt báo thức
+        function setAlarm(enable) {
+            espData.alarmEnabled = enable;
+            setAlarmDirect();
+        }
+        
+        // Hàm giả lập nút nhấn
+        async function simulateButton(button) {
+            try {
+                await fetch(`http://${ESP_IP}/button?btn=${button}`);
+                showMessage(`✅ Đã nhấn nút ${button}`);
+                fetchData();
+            } catch (error) {
+                showMessage('❌ Lỗi khi điều khiển nút');
+            }
+        }
+        
+        // Hàm tạm dừng báo thức
+        async function snoozeAlarm() {
+            try {
+                await fetch(`http://${ESP_IP}/snooze`);
+                showMessage('🔇 Đã tạm dừng báo thức');
+                fetchData();
+            } catch (error) {
+                showMessage('❌ Lỗi khi tạm dừng báo thức');
+            }
+        }
+        
+        // Hàm reset hệ thống
+        async function resetSystem() {
+            if (confirm('Bạn có chắc muốn khởi động lại hệ thống?')) {
+                try {
+                    await fetch(`http://${ESP_IP}/reset`);
+                    showMessage('🔄 Hệ thống đang khởi động lại...');
+                    setTimeout(fetchData, 5000);
+                } catch (error) {
+                    showMessage('❌ Lỗi khi reset hệ thống');
+                }
+            }
+        }
+        
+        // Hàm hiển thị thông báo
+        function showMessage(message) {
+            // Tạo thông báo tạm thời
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'success';
+            messageDiv.style.position = 'fixed';
+            messageDiv.style.top = '20px';
+            messageDiv.style.right = '20px';
+            messageDiv.style.zIndex = '1000';
+            messageDiv.style.padding = '15px 20px';
+            messageDiv.style.borderRadius = '8px';
+            messageDiv.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
+            messageDiv.textContent = message;
+            
+            document.body.appendChild(messageDiv);
+            
+            // Tự động xóa sau 3 giây
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 3000);
+        }
+        
+        // Hàm lấy thời gian hiện tại
+        function getCurrentTime() {
+            const now = new Date();
+            return now.getHours().toString().padStart(2, '0') + ':' + 
+                   now.getMinutes().toString().padStart(2, '0') + ':' + 
+                   now.getSeconds().toString().padStart(2, '0');
+        }
+        
+        // Reset sleep timer
+        async function resetSleepTimer() {
+            try {
+                await fetch(`http://${ESP_IP}/resetSleepTimer`);
+            } catch (error) {
+                // Bỏ qua lỗi
+            }
+        }
+        
+        // Khởi động khi trang tải xong
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchData();
+            
+            // Tự động làm mới dữ liệu mỗi 10 giây
+            setInterval(fetchData, 10000);
+            
+            // Reset sleep timer khi có tương tác
+            document.addEventListener('click', resetSleepTimer);
+            document.addEventListener('keypress', resetSleepTimer);
+        });
+    </script>
 </body>
 </html>
