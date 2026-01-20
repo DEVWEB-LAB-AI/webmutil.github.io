@@ -1,41 +1,268 @@
-
-## 📁 **File 5: `.github/workflows/deploy.yml`** (Auto Deploy)
-
-```yaml
-name: Deploy to GitHub Pages
+name: Deploy ESP32 Smart Clock to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches: [ main, master ]
+    paths:
+      - '**.html'
+      - '**.js'
+      - '**.css'
+      - '**.json'
+      - '**.md'
+      - '**.png'
+      - '**.ico'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Manual trigger
+  schedule:
+    - cron: '0 2 * * 0'  # Run every Sunday at 2 AM UTC
 
+# Repository permissions
 permissions:
   contents: read
   pages: write
   id-token: write
 
+# Allow only one concurrent deployment
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
+  # Test and validate the website
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Check HTML files
+        run: |
+          echo "Checking HTML files..."
+          find . -name "*.html" -type f | while read file; do
+            echo "Checking $file"
+            if ! grep -q "<!DOCTYPE html>" "$file"; then
+              echo "⚠️  Warning: $file might not have proper DOCTYPE"
+            fi
+            if ! grep -q "<title>" "$file"; then
+              echo "⚠️  Warning: $file might not have title tag"
+            fi
+          done
+          
+      - name: Check required files
+        run: |
+          echo "Checking required files..."
+          required_files=("index.html" "config.js" "mqtt-client.js")
+          for file in "${required_files[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✅ $file found"
+            else
+              echo "❌ $file not found"
+              exit 1
+            fi
+          done
+          
+      - name: Validate JavaScript
+        run: |
+          echo "Checking JavaScript syntax..."
+          # Install jshint if needed
+          npm install -g jshint || true
+          find . -name "*.js" -type f ! -path "./node_modules/*" | while read file; do
+            echo "Checking $file"
+            if command -v jshint &> /dev/null; then
+              jshint "$file" || echo "⚠️  Warning: $file has linting issues"
+            else
+              echo "Skipping lint for $file (jshint not available)"
+            fi
+          done
+          
+      - name: Check file sizes
+        run: |
+          echo "Checking file sizes..."
+          find . -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) ! -path "./node_modules/*" ! -path "./.git/*" | while read file; do
+            size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null)
+            if [ "$size" -gt 1048576 ]; then  # 1MB
+              echo "⚠️  Warning: $file is large ($((size/1024)) KB)"
+            fi
+          done
+
+  # Build and deploy to GitHub Pages
   deploy:
+    needs: test
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-      
+        with:
+          fetch-depth: 0
+          
       - name: Setup Pages
         uses: actions/configure-pages@v3
-      
+        
+      - name: Create CNAME file (if custom domain)
+        if: env.CUSTOM_DOMAIN != ''
+        run: |
+          echo "${{ env.CUSTOM_DOMAIN }}" > CNAME
+        env:
+          CUSTOM_DOMAIN: ${{ secrets.CUSTOM_DOMAIN }}
+          
+      - name: Create nojekyll file
+        run: |
+          touch .nojekyll
+          
+      - name: Generate sitemap
+        run: |
+          echo "Generating sitemap.xml..."
+          cat > sitemap.xml << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            <url>
+              <loc>https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/</loc>
+              <lastmod>$(date -Iseconds)</lastmod>
+              <changefreq>daily</changefreq>
+              <priority>1.0</priority>
+            </url>
+            <url>
+              <loc>https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/CORS-proxy.html</loc>
+              <lastmod>$(date -Iseconds)</lastmod>
+              <changefreq>weekly</changefreq>
+              <priority>0.8</priority>
+            </url>
+          </urlset>
+          EOF
+          
+      - name: Create robots.txt
+        run: |
+          echo "Creating robots.txt..."
+          cat > robots.txt << EOF
+          User-agent: *
+          Allow: /
+          
+          Sitemap: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/sitemap.xml
+          EOF
+          
+      - name: Update README with deployment info
+        run: |
+          echo "Updating deployment info in README..."
+          if [ -f README.md ]; then
+            # Create a backup
+            cp README.md README.md.backup
+            
+            # Check if deployment section exists
+            if ! grep -q "## 🚀 Deployment Status" README.md; then
+              cat >> README.md << 'EOF'
+
+## 🚀 Deployment Status
+
+![GitHub Pages](https://github.com/${{ github.repository }}/workflows/Deploy%20to%20GitHub%20Pages/badge.svg)
+**Live Demo:** [https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/)
+
+**Last Deployed:** $(date +"%Y-%m-%d %H:%M:%S UTC")
+
+### 📱 Access Methods:
+1. **Web Interface:** Open the link above
+2. **MQTT Broker:** `broker.emqx.io:8084`
+3. **ESP32 IP:** Set in web interface
+
+### 🔧 Configuration Files:
+- `index.html` - Main interface
+- `config.js` - Configuration settings
+- `mqtt-client.js` - MQTT communication
+- `CORS-proxy.html` - Connection tester
+
+EOF
+            else
+              # Update timestamp
+              sed -i "s/Last Deployed:.*/Last Deployed: $(date +'%Y-%m-%d %H:%M:%S UTC')/" README.md
+            fi
+          fi
+          
+      - name: Validate HTML structure
+        run: |
+          echo "Validating HTML structure..."
+          if [ -f index.html ]; then
+            # Check for required elements
+            if ! grep -q "mqtt.min.js" index.html; then
+              echo "⚠️  Warning: index.html might not include MQTT library"
+            fi
+            if ! grep -q "CONFIG" index.html && ! grep -q "config.js" index.html; then
+              echo "⚠️  Warning: index.html might not load config.js"
+            fi
+          fi
+          
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
           path: '.'
-      
+          
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
+        
+      - name: Post-deployment cleanup
+        if: always()
+        run: |
+          echo "Cleaning up..."
+          # Restore README if modified
+          if [ -f README.md.backup ]; then
+            mv README.md.backup README.md
+          fi
+          
+  # Send notification after deployment
+  notify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Send Discord notification
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          title: "❌ Deployment Failed - ESP32 Smart Clock"
+          description: "Deployment to GitHub Pages failed. Check the workflow run for details."
+          color: "16711680" # Red
+          url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          
+      - name: Send Discord success notification
+        if: success()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          title: "✅ Deployment Successful - ESP32 Smart Clock"
+          description: "Successfully deployed to GitHub Pages!"
+          color: "65280" # Green
+          url: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+          
+      - name: Create deployment summary
+        if: always()
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ **Status:** Successful" >> $GITHUB_STEP_SUMMARY
+            echo "🌐 **Live URL:** https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Status:** Failed" >> $GITHUB_STEP_SUMMARY
+            echo "🔍 **Details:** Check the workflow logs" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Files Deployed:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          find . -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" -o -name "*.json" \) ! -path "./node_modules/*" ! -path "./.git/*" | head -20 | while read file; do
+            echo "- $file" >> $GITHUB_STEP_SUMMARY
+          done
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
