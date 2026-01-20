@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Clock Control - ESP32</title>
+    <title>Smart Clock Control - ESP32 MQTT</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
         * {
@@ -31,7 +31,7 @@
         
         /* Header */
         .header {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
             color: white;
             padding: 30px;
             text-align: center;
@@ -52,8 +52,8 @@
             font-size: 1.1rem;
         }
         
-        /* Connection Panel */
-        .connection-panel {
+        /* MQTT Connection Panel */
+        .mqtt-panel {
             background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
             color: white;
             padding: 20px;
@@ -64,11 +64,16 @@
             gap: 15px;
         }
         
-        .status-indicator {
+        .mqtt-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .mqtt-indicator {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 1.1rem;
         }
         
         .status-dot {
@@ -76,43 +81,33 @@
             height: 12px;
             border-radius: 50%;
             background: #ff5252;
-            animation: pulse 2s infinite;
         }
         
         .status-dot.connected {
             background: #4CAF50;
-            animation: none;
+            box-shadow: 0 0 10px #4CAF50;
         }
         
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        .mqtt-controls {
+            display: flex;
+            gap: 10px;
         }
         
-        .ip-input {
+        .mqtt-btn {
             padding: 12px 20px;
-            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 25px;
             font-size: 1rem;
-            width: 300px;
-            max-width: 100%;
-        }
-        
-        .connect-btn {
-            padding: 12px 30px;
-            background: white;
-            color: #2196F3;
-            border: none;
-            border-radius: 25px;
-            font-size: 1rem;
-            font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
+            backdrop-filter: blur(10px);
         }
         
-        .connect-btn:hover {
+        .mqtt-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
         
         /* Main Content */
@@ -296,7 +291,7 @@
             background: #f8f9fa;
             padding: 15px;
             border-radius: 10px;
-            border-left: 4px solid #4CAF50;
+            border-left: 4px solid #9C27B0;
         }
         
         .info-label {
@@ -313,6 +308,16 @@
         
         .sensor-value {
             color: #2196F3;
+        }
+        
+        /* MQTT Info Card */
+        .mqtt-info-card {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            border-left: 4px solid #9C27B0;
+        }
+        
+        .mqtt-info-card h2 {
+            border-bottom: 3px solid #9C27B0;
         }
         
         /* Footer */
@@ -371,7 +376,7 @@
             width: 50px;
             height: 50px;
             border: 5px solid #f3f3f3;
-            border-top: 5px solid #4CAF50;
+            border-top: 5px solid #9C27B0;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -406,46 +411,48 @@
                 gap: 10px;
             }
             
-            .connection-panel {
+            .mqtt-panel {
                 flex-direction: column;
                 text-align: center;
             }
-            
-            .ip-input {
-                width: 100%;
-            }
         }
     </style>
+    <!-- Load MQTT.js from CDN -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
 <body>
     <div class="container">
         <!-- Header -->
         <div class="header">
             <h1>
-                <span>🕒</span>
-                Đồng Hồ Thông Minh ESP32
-                <span>🕒</span>
+                <span>🌐</span>
+                ESP32 Smart Clock - MQTT Control
+                <span>🌐</span>
             </h1>
-            <p>Điều khiển từ xa qua Internet - Control Panel</p>
+            <p>Điều khiển từ xa qua Internet sử dụng MQTT - Không cần IP cục bộ</p>
         </div>
         
-        <!-- Connection Panel -->
-        <div class="connection-panel">
-            <div class="status-indicator">
-                <div class="status-dot" id="statusDot"></div>
-                <span id="statusText">Đang chờ kết nối...</span>
+        <!-- MQTT Connection Panel -->
+        <div class="mqtt-panel">
+            <div class="mqtt-status">
+                <div class="mqtt-indicator">
+                    <div class="status-dot" id="mqttStatusDot"></div>
+                    <span id="mqttStatusText">Đang kết nối MQTT...</span>
+                </div>
+                <div id="mqttDetails" style="font-size: 0.9rem; opacity: 0.9;">
+                    Broker: broker.emqx.io
+                </div>
             </div>
             
-            <div class="connection-controls">
-                <input 
-                    type="text" 
-                    class="ip-input" 
-                    id="espIp" 
-                    placeholder="Nhập IP ESP32 (vd: 192.168.1.100)"
-                    value=""
-                >
-                <button class="connect-btn" id="connectBtn">
-                    🔗 Kết nối
+            <div class="mqtt-controls">
+                <button class="mqtt-btn" id="connectBtn" onclick="connectMQTT()">
+                    🔗 Kết nối MQTT
+                </button>
+                <button class="mqtt-btn" onclick="disconnectMQTT()" id="disconnectBtn" style="display: none;">
+                    ✋ Ngắt kết nối
+                </button>
+                <button class="mqtt-btn" onclick="testMQTT()">
+                    📡 Test MQTT
                 </button>
             </div>
         </div>
@@ -483,44 +490,44 @@
                 </select>
                 
                 <div class="button-group">
-                    <button class="btn btn-primary" onclick="setAlarm(true)">
+                    <button class="btn btn-primary" onclick="setAlarmMQTT(true)">
                         ✅ BẬT BÁO THỨC
                     </button>
-                    <button class="btn btn-danger" onclick="setAlarm(false)">
+                    <button class="btn btn-danger" onclick="setAlarmMQTT(false)">
                         ❌ TẮT BÁO THỨC
                     </button>
                 </div>
                 
                 <div class="alarm-status status-off" id="alarmStatus">
-                    Trạng thái: CHƯA KẾT NỐI
+                    Trạng thái: CHƯA CÓ DỮ LIỆU
                 </div>
             </div>
             
             <!-- Virtual Buttons Card -->
             <div class="card">
                 <h2>🎮 Nút Điều Khiển Ảo</h2>
-                <p style="color: #666; margin-bottom: 20px;">Mô phỏng nút vật lý trên ESP32</p>
+                <p style="color: #666; margin-bottom: 20px;">Gửi lệnh qua MQTT đến ESP32</p>
                 
                 <div class="virtual-buttons">
-                    <button class="virtual-btn btn-green" onclick="sendButton(1)">
+                    <button class="virtual-btn btn-green" onclick="sendButtonMQTT(1)">
                         <span style="font-size: 1.5rem;">🟢</span>
                         NÚT 1
                         <small>Chọn / Enter</small>
                     </button>
                     
-                    <button class="virtual-btn btn-blue" onclick="sendButton(2)">
+                    <button class="virtual-btn btn-blue" onclick="sendButtonMQTT(2)">
                         <span style="font-size: 1.5rem;">🔵</span>
                         NÚT 2
                         <small>Tăng giá trị</small>
                     </button>
                     
-                    <button class="virtual-btn btn-red" onclick="sendButton(3)">
+                    <button class="virtual-btn btn-red" onclick="sendButtonMQTT(3)">
                         <span style="font-size: 1.5rem;">🔴</span>
                         NÚT 3
                         <small>Giảm giá trị</small>
                     </button>
                     
-                    <button class="virtual-btn btn-orange" onclick="snoozeAlarm()">
+                    <button class="virtual-btn btn-orange" onclick="snoozeAlarmMQTT()">
                         <span style="font-size: 1.5rem;">⏸️</span>
                         TẮT CHUÔNG BÁO THỨC
                         <small>Snooze / Dừng tạm thời</small>
@@ -528,7 +535,7 @@
                 </div>
                 
                 <div style="margin-top: 20px; text-align: center;">
-                    <button class="btn btn-warning" onclick="resetESP()" style="width: 100%;">
+                    <button class="btn btn-warning" onclick="resetESP32MQTT()" style="width: 100%;">
                         🔄 KHỞI ĐỘNG LẠI ESP32
                     </button>
                 </div>
@@ -540,8 +547,8 @@
                 
                 <div class="info-grid">
                     <div class="info-item">
-                        <div class="info-label">📡 Trạng thái kết nối</div>
-                        <div class="info-value" id="connectionStatus">Chưa kết nối</div>
+                        <div class="info-label">📡 Trạng thái MQTT</div>
+                        <div class="info-value" id="connectionStatus">Đang chờ...</div>
                     </div>
                     
                     <div class="info-item">
@@ -575,24 +582,78 @@
                     </div>
                     
                     <div class="info-item">
-                        <div class="info-label">🔋 Trạng thái pin</div>
-                        <div class="info-value" id="batteryStatus">Không hỗ trợ</div>
+                        <div class="info-label">📍 Địa chỉ IP</div>
+                        <div class="info-value" id="deviceIP">--.--.--.--</div>
                     </div>
                 </div>
                 
                 <div style="margin-top: 20px;">
-                    <button class="btn" onclick="refreshSystemInfo()" style="background: #6c757d; color: white; width: 100%;">
-                        🔄 Cập nhật thông tin
+                    <button class="btn" onclick="requestStatusUpdate()" style="background: #9C27B0; color: white; width: 100%;">
+                        🔄 Yêu cầu cập nhật
                     </button>
+                </div>
+            </div>
+            
+            <!-- MQTT Info Card -->
+            <div class="card mqtt-info-card">
+                <h2>🌐 Thông Tin MQTT</h2>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Broker Server</div>
+                        <div class="info-value">broker.emqx.io</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">WebSocket Port</div>
+                        <div class="info-value">8084 (WSS)</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Topic Command</div>
+                        <div class="info-value">smartclock/command</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Topic Status</div>
+                        <div class="info-value">smartclock/status</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Topic Alarm</div>
+                        <div class="info-value">smartclock/alarm</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Topic Sensors</div>
+                        <div class="info-value">smartclock/sensors</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Client ID</div>
+                        <div class="info-value" id="clientId">web_xxxxxx</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Kết nối từ</div>
+                        <div class="info-value" id="connectionSource">GitHub Pages</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: rgba(156, 39, 176, 0.1); border-radius: 10px;">
+                    <p style="color: #666; font-size: 0.9rem; text-align: center;">
+                        💡 <strong>Lưu ý:</strong> Trang web này sử dụng MQTT qua WebSocket, không cần truy cập IP cục bộ của ESP32. 
+                        Chỉ cần ESP32 và trang web này cùng kết nối đến broker MQTT công cộng.
+                    </p>
                 </div>
             </div>
         </div>
         
         <!-- Footer -->
         <div class="footer">
-            <p>© 2024 ESP32 Smart Clock Control Panel | Thiết kế cho điều khiển từ xa qua Web</p>
+            <p>© 2024 ESP32 Smart Clock - MQTT Control Panel | Điều khiển từ bất kỳ đâu qua Internet</p>
             <p style="font-size: 0.9rem; margin-top: 5px;">
-                Lưu ý: ESP32 và thiết bị này cần cùng mạng LAN hoặc có port forwarding để điều khiển từ xa
+                Sử dụng MQTT broker công cộng | Không cần port forwarding | Hoạt động trên mọi mạng
             </p>
         </div>
     </div>
@@ -606,243 +667,344 @@
     </div>
     
     <script>
-        // Configuration
-        let espBaseUrl = '';
-        let isConnected = false;
-        let refreshInterval = null;
+        // MQTT Configuration
+        const MQTT_CONFIG = {
+            broker: 'wss://broker.emqx.io:8084/mqtt',
+            topics: {
+                command: 'smartclock/command',
+                status: 'smartclock/status',
+                alarm: 'smartclock/alarm',
+                sensors: 'smartclock/sensors'
+            },
+            options: {
+                clean: true,
+                connectTimeout: 4000,
+                reconnectPeriod: 2000
+            }
+        };
+        
+        // Global variables
+        let mqttClient = null;
+        let isMQTTConnected = false;
+        let clientId = '';
         
         // DOM Elements
-        const statusDot = document.getElementById('statusDot');
-        const statusText = document.getElementById('statusText');
+        const mqttStatusDot = document.getElementById('mqttStatusDot');
+        const mqttStatusText = document.getElementById('mqttStatusText');
         const connectionStatus = document.getElementById('connectionStatus');
         const toast = document.getElementById('toast');
         const loading = document.getElementById('loading');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Load saved IP from localStorage
-            const savedIp = localStorage.getItem('esp32_ip');
-            if (savedIp) {
-                document.getElementById('espIp').value = savedIp;
-            }
+            // Generate unique client ID
+            clientId = 'web_' + Math.random().toString(16).substr(2, 8);
+            document.getElementById('clientId').textContent = clientId;
             
             // Start clock
             updateClock();
             setInterval(updateClock, 1000);
             
-            // Check for saved connection
-            if (savedIp && localStorage.getItem('auto_connect') === 'true') {
-                setTimeout(() => connectToESP(), 1000);
-            }
+            // Auto-connect to MQTT
+            setTimeout(connectMQTT, 1000);
             
-            // Setup event listeners
-            document.getElementById('connectBtn').addEventListener('click', connectToESP);
-            document.getElementById('espIp').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') connectToESP();
-            });
+            // Detect connection source
+            const isGithub = window.location.hostname.includes('github.io');
+            document.getElementById('connectionSource').textContent = 
+                isGithub ? 'GitHub Pages' : window.location.hostname;
         });
         
-        // Connect to ESP32
-        async function connectToESP() {
-            const ip = document.getElementById('espIp').value.trim();
-            
-            if (!ip) {
-                showToast('Vui lòng nhập địa chỉ IP của ESP32', 'error');
-                return;
-            }
-            
-            // Validate IP format
-            const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
-            if (!ipPattern.test(ip)) {
-                showToast('Địa chỉ IP không hợp lệ', 'error');
+        // Connect to MQTT Broker
+        function connectMQTT() {
+            if (mqttClient && mqttClient.connected) {
+                showToast('✅ Đã kết nối MQTT rồi!', 'success');
                 return;
             }
             
             showLoading(true);
-            espBaseUrl = `http://${ip}`;
+            updateMQTTStatus('Đang kết nối...', false);
+            
+            // Create client options
+            const options = {
+                ...MQTT_CONFIG.options,
+                clientId: clientId,
+                username: 'emqx',
+                password: 'public'
+            };
             
             try {
-                // Test connection by fetching root
-                const response = await fetch(`${espBaseUrl}/`, {
-                    method: 'GET',
-                    mode: 'no-cors' // Use no-cors to avoid CORS issues
+                // Connect to MQTT broker
+                mqttClient = mqtt.connect(MQTT_CONFIG.broker, options);
+                
+                // Setup event handlers
+                mqttClient.on('connect', () => {
+                    isMQTTConnected = true;
+                    updateMQTTStatus('Đã kết nối', true);
+                    
+                    // Subscribe to topics
+                    subscribeToTopics();
+                    
+                    showToast('✅ Đã kết nối MQTT thành công!', 'success');
+                    
+                    // Show disconnect button
+                    connectBtn.style.display = 'none';
+                    disconnectBtn.style.display = 'block';
+                    
+                    // Request initial status
+                    setTimeout(requestStatusUpdate, 1000);
                 });
                 
-                // If we get here, connection is likely successful
-                isConnected = true;
-                updateConnectionStatus(true);
+                mqttClient.on('message', (topic, message) => {
+                    handleMQTTMessage(topic, message.toString());
+                });
                 
-                // Save to localStorage
-                localStorage.setItem('esp32_ip', ip);
-                localStorage.setItem('auto_connect', 'true');
+                mqttClient.on('error', (error) => {
+                    console.error('MQTT Error:', error);
+                    updateMQTTStatus('Lỗi kết nối', false);
+                    showToast('❌ Lỗi MQTT: ' + error.message, 'error');
+                });
                 
-                showToast('✅ Kết nối thành công đến ESP32!', 'success');
+                mqttClient.on('close', () => {
+                    isMQTTConnected = false;
+                    updateMQTTStatus('Mất kết nối', false);
+                    
+                    // Show connect button
+                    connectBtn.style.display = 'block';
+                    disconnectBtn.style.display = 'none';
+                });
                 
-                // Start periodic updates
-                startPeriodicUpdates();
-                
-                // Get initial system info
-                refreshSystemInfo();
+                mqttClient.on('reconnect', () => {
+                    updateMQTTStatus('Đang kết nối lại...', false);
+                });
                 
             } catch (error) {
-                console.error('Connection error:', error);
-                showToast('❌ Không thể kết nối đến ESP32', 'error');
-                updateConnectionStatus(false);
+                console.error('Failed to connect to MQTT:', error);
+                showToast('❌ Không thể kết nối MQTT', 'error');
+                updateMQTTStatus('Kết nối thất bại', false);
             } finally {
                 showLoading(false);
             }
         }
         
-        // Update connection status display
-        function updateConnectionStatus(connected) {
-            isConnected = connected;
-            
-            if (connected) {
-                statusDot.classList.add('connected');
-                statusText.textContent = 'Đã kết nối';
-                connectionStatus.textContent = 'Đã kết nối';
-                connectionStatus.style.color = '#4CAF50';
-            } else {
-                statusDot.classList.remove('connected');
-                statusText.textContent = 'Mất kết nối';
-                connectionStatus.textContent = 'Mất kết nối';
-                connectionStatus.style.color = '#f44336';
+        // Disconnect from MQTT
+        function disconnectMQTT() {
+            if (mqttClient) {
+                mqttClient.end();
+                mqttClient = null;
+                isMQTTConnected = false;
+                updateMQTTStatus('Đã ngắt kết nối', false);
                 
-                // Stop periodic updates
-                if (refreshInterval) {
-                    clearInterval(refreshInterval);
-                    refreshInterval = null;
-                }
+                connectBtn.style.display = 'block';
+                disconnectBtn.style.display = 'none';
+                
+                showToast('✋ Đã ngắt kết nối MQTT', 'info');
             }
         }
         
-        // Send command to ESP32
-        async function sendCommand(command, params = {}) {
-            if (!isConnected) {
-                showToast('Chưa kết nối đến ESP32', 'error');
-                return false;
-            }
+        // Subscribe to MQTT topics
+        function subscribeToTopics() {
+            if (!mqttClient || !isMQTTConnected) return;
             
-            // Reset auto-sleep timer on any command
-            try {
-                await fetch(`${espBaseUrl}/resetSleepTimer`);
-            } catch (e) {
-                // Ignore errors for this endpoint
-            }
-            
-            const urlParams = new URLSearchParams(params).toString();
-            const url = `${espBaseUrl}/${command}${urlParams ? '?' + urlParams : ''}`;
-            
-            try {
-                showLoading(true);
-                
-                // Use no-cors mode to avoid CORS issues
-                const response = await fetch(url, {
-                    method: 'GET',
-                    mode: 'no-cors',
-                    headers: {
-                        'Accept': 'text/html,application/xhtml+xml,application/xml',
-                        'Cache-Control': 'no-cache'
+            Object.values(MQTT_CONFIG.topics).forEach(topic => {
+                mqttClient.subscribe(topic, (err) => {
+                    if (!err) {
+                        console.log(`✅ Subscribed to ${topic}`);
+                    } else {
+                        console.error(`❌ Failed to subscribe to ${topic}:`, err);
                     }
                 });
+            });
+        }
+        
+        // Handle incoming MQTT messages
+        function handleMQTTMessage(topic, message) {
+            console.log(`📨 MQTT Message [${topic}]:`, message);
+            
+            try {
+                const data = JSON.parse(message);
                 
-                showToast('✅ Lệnh đã được gửi thành công!', 'success');
-                
-                // Refresh system info after command
-                setTimeout(refreshSystemInfo, 1000);
-                
-                return true;
+                switch(topic) {
+                    case MQTT_CONFIG.topics.status:
+                        updateSystemInfo(data);
+                        break;
+                        
+                    case MQTT_CONFIG.topics.alarm:
+                        updateAlarmInfo(data);
+                        break;
+                        
+                    case MQTT_CONFIG.topics.sensors:
+                        updateSensorInfo(data);
+                        break;
+                }
                 
             } catch (error) {
-                console.error('Command error:', error);
-                showToast('❌ Lỗi khi gửi lệnh', 'error');
-                return false;
-            } finally {
-                showLoading(false);
+                console.error('Error parsing MQTT message:', error);
             }
         }
         
-        // Set alarm function
-        async function setAlarm(enable) {
-            const hour = document.getElementById('alarmHour').value;
-            const minute = document.getElementById('alarmMinute').value;
-            const sound = document.getElementById('alarmSound').value;
+        // Send MQTT command
+        function sendMQTTCommand(command, data = {}) {
+            if (!mqttClient || !isMQTTConnected) {
+                showToast('❌ Chưa kết nối MQTT! Vui lòng kết nối trước.', 'error');
+                return false;
+            }
             
-            // Validate inputs
+            const message = {
+                command: command,
+                data: data,
+                timestamp: Date.now(),
+                source: 'web_mqtt_control'
+            };
+            
+            try {
+                mqttClient.publish(MQTT_CONFIG.topics.command, JSON.stringify(message));
+                console.log(`📤 Sent MQTT command: ${command}`, data);
+                return true;
+            } catch (error) {
+                console.error('Error sending MQTT command:', error);
+                showToast('❌ Lỗi khi gửi lệnh MQTT', 'error');
+                return false;
+            }
+        }
+        
+        // Update MQTT status display
+        function updateMQTTStatus(text, connected) {
+            mqttStatusText.textContent = text;
+            connectionStatus.textContent = text;
+            
+            if (connected) {
+                mqttStatusDot.classList.add('connected');
+                connectionStatus.style.color = '#4CAF50';
+            } else {
+                mqttStatusDot.classList.remove('connected');
+                connectionStatus.style.color = '#f44336';
+            }
+        }
+        
+        // Update system information from MQTT
+        function updateSystemInfo(data) {
+            if (data.ipAddress) {
+                document.getElementById('deviceIP').textContent = data.ipAddress;
+            }
+            if (data.uptime !== undefined) {
+                document.getElementById('uptime').textContent = Math.floor(data.uptime / 60) + ' phút';
+            }
+            if (data.freeHeap !== undefined) {
+                document.getElementById('freeHeap').textContent = Math.floor(data.freeHeap / 1024) + ' KB';
+            }
+            if (data.rssi !== undefined) {
+                document.getElementById('wifiRSSI').textContent = data.rssi + ' dBm';
+            }
+            if (data.ssid) {
+                // Optional: Update WiFi SSID if needed
+            }
+        }
+        
+        // Update alarm information from MQTT
+        function updateAlarmInfo(data) {
+            if (data.hour !== undefined) {
+                document.getElementById('alarmHour').value = data.hour;
+            }
+            if (data.minute !== undefined) {
+                document.getElementById('alarmMinute').value = data.minute;
+            }
+            if (data.sound !== undefined) {
+                document.getElementById('alarmSound').value = data.sound;
+            }
+            if (data.enabled !== undefined) {
+                const statusDiv = document.getElementById('alarmStatus');
+                statusDiv.textContent = `Trạng thái: ${data.enabled ? 'ĐANG BẬT' : 'ĐANG TẮT'}`;
+                statusDiv.className = `alarm-status ${data.enabled ? 'status-on' : 'status-off'}`;
+            }
+            if (data.triggered) {
+                showToast('🚨 Báo thức đang kêu!', 'warning');
+            }
+        }
+        
+        // Update sensor information from MQTT
+        function updateSensorInfo(data) {
+            if (data.temperature !== undefined) {
+                document.getElementById('temperature').textContent = data.temperature.toFixed(1) + ' °C';
+            }
+            if (data.humidity !== undefined) {
+                document.getElementById('humidity').textContent = data.humidity.toFixed(1) + ' %';
+            }
+        }
+        
+        // Command functions
+        function setAlarmMQTT(enable) {
+            const hour = parseInt(document.getElementById('alarmHour').value);
+            const minute = parseInt(document.getElementById('alarmMinute').value);
+            const sound = parseInt(document.getElementById('alarmSound').value);
+            
             if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
                 showToast('Thời gian không hợp lệ', 'error');
                 return;
             }
             
-            await sendCommand('setAlarmDirect', {
+            const success = sendMQTTCommand('setAlarm', {
                 hour: hour,
                 minute: minute,
                 sound: sound,
                 enable: enable ? 1 : 0
             });
             
-            // Update alarm status display
-            const statusDiv = document.getElementById('alarmStatus');
-            statusDiv.textContent = `Trạng thái: ${enable ? 'ĐANG BẬT' : 'ĐANG TẮT'}`;
-            statusDiv.className = `alarm-status ${enable ? 'status-on' : 'status-off'}`;
-        }
-        
-        // Send virtual button press
-        async function sendButton(buttonNumber) {
-            await sendCommand('button', { btn: buttonNumber });
-        }
-        
-        // Snooze alarm
-        async function snoozeAlarm() {
-            await sendCommand('snooze', {});
-            showToast('⏸️ Đã tạm dừng báo thức', 'info');
-        }
-        
-        // Reset ESP32
-        async function resetESP() {
-            if (confirm('Bạn có chắc muốn khởi động lại ESP32? Thiết bị sẽ mất kết nối trong vài giây.')) {
-                await sendCommand('reset', {});
-                showToast('🔄 ESP32 đang khởi động lại...', 'info');
-                updateConnectionStatus(false);
+            if (success) {
+                showToast(enable ? '✅ Đã bật báo thức!' : '❌ Đã tắt báo thức!', 'success');
             }
         }
         
-        // Refresh system information
-        async function refreshSystemInfo() {
-            if (!isConnected) return;
+        function sendButtonMQTT(buttonNumber) {
+            const success = sendMQTTCommand('button', { btn: buttonNumber });
+            if (success) {
+                showToast(`🎮 Đã nhấn nút ${buttonNumber}`, 'success');
+            }
+        }
+        
+        function snoozeAlarmMQTT() {
+            const success = sendMQTTCommand('snooze', {});
+            if (success) {
+                showToast('⏸️ Đã tạm dừng báo thức', 'info');
+            }
+        }
+        
+        function resetESP32MQTT() {
+            if (confirm('Bạn có chắc muốn khởi động lại ESP32? Thiết bị sẽ mất kết nối trong vài giây.')) {
+                const success = sendMQTTCommand('reset', {});
+                if (success) {
+                    showToast('🔄 Đang khởi động lại ESP32...', 'info');
+                }
+            }
+        }
+        
+        function requestStatusUpdate() {
+            const success = sendMQTTCommand('get_status', {});
+            if (success) {
+                showToast('📊 Đang yêu cầu cập nhật trạng thái...', 'info');
+            }
+        }
+        
+        function testMQTT() {
+            if (!isMQTTConnected) {
+                showToast('Vui lòng kết nối MQTT trước!', 'error');
+                return;
+            }
+            
+            const testMessage = {
+                test: true,
+                message: 'Test từ trang web GitHub',
+                timestamp: Date.now(),
+                clientId: clientId
+            };
             
             try {
-                // Since we can't directly fetch due to CORS, we'll simulate data
-                // In a real implementation with CORS enabled, you could fetch actual data
-                
-                // Simulate temperature and humidity (in real app, fetch from ESP32)
-                const temp = (20 + Math.random() * 10).toFixed(1);
-                const hum = (40 + Math.random() * 30).toFixed(1);
-                
-                document.getElementById('temperature').textContent = `${temp} °C`;
-                document.getElementById('humidity').textContent = `${hum} %`;
-                
-                // Update other system info
-                document.getElementById('wifiRSSI').textContent = `-${Math.floor(50 + Math.random() * 30)} dBm`;
-                document.getElementById('freeHeap').textContent = `${Math.floor(100 + Math.random() * 50)} KB`;
-                document.getElementById('uptime').textContent = `${Math.floor(10 + Math.random() * 100)} phút`;
-                
+                mqttClient.publish('smartclock/test', JSON.stringify(testMessage));
+                showToast('📡 Đã gửi tin nhắn test MQTT!', 'success');
             } catch (error) {
-                console.error('Error refreshing system info:', error);
+                showToast('❌ Lỗi test MQTT', 'error');
             }
-        }
-        
-        // Start periodic updates
-        function startPeriodicUpdates() {
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
-            }
-            
-            refreshInterval = setInterval(() => {
-                if (isConnected) {
-                    refreshSystemInfo();
-                }
-            }, 10000); // Update every 10 seconds
         }
         
         // Update clock
@@ -857,16 +1019,14 @@
             toast.textContent = message;
             
             // Set color based on type
-            if (type === 'error') {
-                toast.style.background = 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)';
-            } else if (type === 'success') {
-                toast.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
-            } else if (type === 'info') {
-                toast.style.background = 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)';
-            } else if (type === 'warning') {
-                toast.style.background = 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)';
-            }
+            const colors = {
+                error: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
+                success: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
+                info: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
+                warning: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)'
+            };
             
+            toast.style.background = colors[type] || colors.info;
             toast.classList.add('show');
             
             setTimeout(() => {
@@ -885,13 +1045,15 @@
             }
         }
         
-        // Export functions to global scope for HTML onclick handlers
-        window.setAlarm = setAlarm;
-        window.sendButton = sendButton;
-        window.snoozeAlarm = snoozeAlarm;
-        window.resetESP = resetESP;
-        window.refreshSystemInfo = refreshSystemInfo;
-        window.connectToESP = connectToESP;
+        // Export functions to global scope
+        window.connectMQTT = connectMQTT;
+        window.disconnectMQTT = disconnectMQTT;
+        window.testMQTT = testMQTT;
+        window.setAlarmMQTT = setAlarmMQTT;
+        window.sendButtonMQTT = sendButtonMQTT;
+        window.snoozeAlarmMQTT = snoozeAlarmMQTT;
+        window.resetESP32MQTT = resetESP32MQTT;
+        window.requestStatusUpdate = requestStatusUpdate;
     </script>
 </body>
 </html>
