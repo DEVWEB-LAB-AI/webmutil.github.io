@@ -3,22 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32-CAM Remote Viewer</title>
+    <title>ESP32-CAM Modern Viewer</title>
+    
+    <!-- Dùng chung CSS từ các file khác nếu có -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* CSS riêng cho modern interface */
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2196F3;
+            --danger-color: #f44336;
+            --warning-color: #ff9800;
+            --dark-color: #1a2980;
+            --light-color: #26d0ce;
         }
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a2980, #26d0ce);
+            background: linear-gradient(135deg, var(--dark-color), var(--light-color));
             min-height: 100vh;
+            margin: 0;
             color: #333;
         }
         
-        /* Navigation Bar */
+        /* Navigation - giống các file khác để đồng bộ */
         .nav-bar {
             background: rgba(0, 0, 0, 0.2);
             padding: 15px 30px;
@@ -47,75 +56,34 @@
             gap: 8px;
         }
         
-        .nav-link:hover {
+        .nav-link:hover, .nav-link.active {
             background: rgba(255, 255, 255, 0.3);
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
         
-        .nav-link i {
-            font-size: 1.1rem;
-        }
-        
-        .nav-logo h3 {
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
         }
         
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            color: white;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-        }
-        
-        header h1 {
-            margin-bottom: 10px;
-            font-size: 2.5em;
-        }
-        
-        .main-content {
+        /* Grid layout hiện đại */
+        .main-grid {
             display: grid;
-            grid-template-columns: 1fr 350px;
+            grid-template-columns: 1fr 400px;
             gap: 20px;
+            margin-top: 20px;
         }
         
-        @media (max-width: 768px) {
-            .main-content {
+        @media (max-width: 1024px) {
+            .main-grid {
                 grid-template-columns: 1fr;
             }
-            
-            .nav-bar {
-                flex-direction: column;
-                gap: 15px;
-                padding: 15px;
-            }
-            
-            .nav-links {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
         }
         
-        .video-section {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
-        .control-panel {
+        /* Video panel */
+        .video-panel {
             background: white;
             border-radius: 15px;
             padding: 20px;
@@ -128,617 +96,458 @@
             background: #000;
             border-radius: 10px;
             overflow: hidden;
-            margin-bottom: 20px;
+            aspect-ratio: 16/9;
         }
         
         #videoStream {
             width: 100%;
-            height: auto;
-            display: block;
+            height: 100%;
+            object-fit: contain;
         }
         
-        .video-controls {
+        .video-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
             display: flex;
             gap: 10px;
+        }
+        
+        .control-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
             margin-top: 20px;
-            flex-wrap: wrap;
         }
         
         .btn {
-            padding: 12px 24px;
+            padding: 12px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
         }
         
-        .btn-primary {
-            background: #4CAF50;
-            color: white;
-        }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-secondary { background: var(--secondary-color); color: white; }
+        .btn-danger { background: var(--danger-color); color: white; }
+        .btn-warning { background: var(--warning-color); color: white; }
         
-        .btn-primary:hover {
-            background: #45a049;
-            transform: translateY(-2px);
-        }
-        
-        .btn-secondary {
-            background: #2196F3;
-            color: white;
-        }
-        
-        .btn-secondary:hover {
-            background: #0b7dda;
-            transform: translateY(-2px);
-        }
-        
-        .btn-danger {
-            background: #f44336;
-            color: white;
-        }
-        
-        .btn-danger:hover {
-            background: #d32f2f;
-            transform: translateY(-2px);
-        }
-        
-        .btn-warning {
-            background: #ff9800;
-            color: white;
-        }
-        
-        .btn-warning:hover {
-            background: #f57c00;
-            transform: translateY(-2px);
-        }
-        
-        .connection-form {
-            margin-bottom: 25px;
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #555;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
-        
-        .form-group input:focus {
-            outline: none;
-            border-color: #2196F3;
-        }
-        
-        .status-panel {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-        
-        .status-item {
+        /* Right panel */
+        .right-panel {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #eee;
+            flex-direction: column;
+            gap: 20px;
         }
         
-        .status-label {
-            font-weight: 600;
-            color: #666;
-        }
-        
-        .status-value {
-            color: #333;
-        }
-        
-        .connected {
-            color: #4CAF50;
-            font-weight: 600;
-        }
-        
-        .disconnected {
-            color: #f44336;
-            font-weight: 600;
-        }
-        
-        .settings-section {
-            margin-top: 25px;
-        }
-        
-        .settings-section h3 {
-            margin-bottom: 15px;
-            color: #555;
-        }
-        
-        .slider-container {
-            margin-bottom: 15px;
-        }
-        
-        .slider-container label {
-            display: block;
-            margin-bottom: 5px;
-            color: #666;
-        }
-        
-        .slider-container input {
-            width: 100%;
-        }
-        
-        .login-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .login-box {
+        .panel-card {
             background: white;
-            padding: 40px;
             border-radius: 15px;
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-        }
-        
-        .login-box h2 {
-            margin-bottom: 25px;
-            color: #333;
-        }
-        
-        .login-box input {
-            width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        
-        .login-box button {
-            width: 100%;
-            padding: 15px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        
-        .login-box button:hover {
-            background: #45a049;
-        }
-        
-        .error-message {
-            color: #f44336;
-            margin-top: 10px;
-            display: none;
-        }
-        
-        .quality-controls {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .btn-small {
-            padding: 8px 16px;
-            font-size: 14px;
-        }
-        
-        .active {
-            background: #2196F3 !important;
-        }
-        
-        .screenshot-container {
-            margin-top: 20px;
-            text-align: center;
-        }
-        
-        #screenshot {
-            max-width: 100%;
-            border-radius: 8px;
-            margin-top: 10px;
-            display: none;
-        }
-        
-        footer {
-            text-align: center;
-            margin-top: 40px;
-            color: white;
             padding: 20px;
-            opacity: 0.8;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         
-        /* Saved cameras styling */
-        .saved-camera {
-            background: #f8f9fa;
-            padding: 12px;
-            margin-bottom: 10px;
-            border-radius: 8px;
+        /* Camera list */
+        .camera-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 8px;
             border: 1px solid #ddd;
         }
         
-        .saved-camera button {
-            padding: 6px 12px;
-            margin-left: 5px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+        .camera-item.active {
+            border-color: var(--primary-color);
+            background: #e8f5e8;
+        }
+        
+        /* Settings */
+        .slider-group {
+            margin: 15px 0;
+        }
+        
+        .slider-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
             font-size: 12px;
+            color: #666;
+            margin-top: 5px;
         }
         
-        .saved-camera button:first-of-type {
-            background: #4CAF50;
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(0,0,0,0.9);
             color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            max-width: 300px;
         }
         
-        .saved-camera button:last-of-type {
-            background: #f44336;
-            color: white;
-        }
-        
-        .quick-nav {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 15px;
-        }
-        
-        .quick-nav a {
-            color: white;
-            text-decoration: none;
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            transition: all 0.3s;
-        }
-        
-        .quick-nav a:hover {
-            background: rgba(255, 255, 255, 0.2);
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <!-- Navigation Bar -->
+    <!-- Navigation -->
     <div class="nav-bar">
         <div class="nav-logo">
-            <h3>
-                <i class="fas fa-microchip"></i>
-                ESP32 Control Hub
-            </h3>
+            <h3><i class="fas fa-microchip"></i> ESP32 Control Hub</h3>
         </div>
         <div class="nav-links">
-            <a href="index.html" class="nav-link">
-                <i class="fas fa-home"></i>
-                Trang chủ
-            </a>
-            <a href="espcam.html" class="nav-link">
-                <i class="fas fa-camera"></i>
-                Camera View
-            </a>
-            <a href="camera-dashboard.html" class="nav-link">
-                <i class="fas fa-tv"></i>
-                Dashboard Camera
-            </a>
+            <a href="index.html" class="nav-link"><i class="fas fa-home"></i> Home</a>
+            <a href="esp32cam.html" class="nav-link"><i class="fas fa-camera"></i> Basic View</a>
+            <a href="camera-dashboard.html" class="nav-link"><i class="fas fa-tv"></i> Dashboard</a>
+            <a href="modern-camera.html" class="nav-link active"><i class="fas fa-star"></i> Modern View</a>
+            <a href="CORS-proxy.html" class="nav-link"><i class="fas fa-link"></i> CORS Proxy</a>
         </div>
     </div>
     
     <div class="container">
-        <header>
-            <h1><i class="fas fa-camera"></i> ESP32-CAM Remote Viewer</h1>
-            <p>Xem camera ESP32 từ xa với bảo mật cao</p>
+        <header style="text-align: center; color: white; margin-bottom: 30px;">
+            <h1><i class="fas fa-video"></i> ESP32-CAM Modern Viewer</h1>
+            <p>Giao diện hiện đại với đa kết nối và điều khiển nâng cao</p>
         </header>
         
-        <div class="main-content">
-            <div class="video-section">
+        <div class="main-grid">
+            <!-- Left: Video stream -->
+            <div class="video-panel">
                 <div class="video-container">
                     <img id="videoStream" src="" alt="Live Stream">
+                    <div class="video-overlay">
+                        <span id="fpsBadge" style="background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 20px;">0 FPS</span>
+                        <span id="resolutionBadge" style="background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 20px;">-</span>
+                    </div>
                 </div>
                 
-                <div class="video-controls">
+                <div class="control-buttons">
                     <button class="btn btn-primary" onclick="startStream()">
-                        <i class="fas fa-play"></i> Bắt đầu stream
+                        <i class="fas fa-play"></i> Start Stream
                     </button>
-                    <button class="btn btn-secondary" onclick="stopStream()">
-                        <i class="fas fa-stop"></i> Dừng stream
+                    <button class="btn btn-danger" onclick="stopStream()">
+                        <i class="fas fa-stop"></i> Stop Stream
+                    </button>
+                    <button class="btn btn-secondary" onclick="captureImage()">
+                        <i class="fas fa-camera"></i> Capture
+                    </button>
+                    <button class="btn btn-warning" onclick="toggleFlash()">
+                        <i class="fas fa-lightbulb"></i> Flash
                     </button>
                     <button class="btn btn-secondary" onclick="takeSnapshot()">
-                        <i class="fas fa-camera"></i> Chụp ảnh
+                        <i class="fas fa-download"></i> Snapshot
                     </button>
-                    <button class="btn btn-warning" onclick="openFullscreen()">
-                        <i class="fas fa-expand"></i> Toàn màn hình
-                    </button>
-                    <button class="btn btn-danger" onclick="toggleLogin()">
-                        <i class="fas fa-lock"></i> Đăng nhập
+                    <button class="btn btn-primary" onclick="fullscreen()">
+                        <i class="fas fa-expand"></i> Fullscreen
                     </button>
                 </div>
                 
-                <div class="quality-controls">
-                    <button class="btn btn-small" onclick="setQuality('low')">Chất lượng thấp</button>
-                    <button class="btn btn-small active" onclick="setQuality('medium')">Chất lượng trung bình</button>
-                    <button class="btn btn-small" onclick="setQuality('high')">Chất lượng cao</button>
-                    <button class="btn btn-small" onclick="toggleFaceDetection()">
-                        <i class="fas fa-user"></i> Phát hiện khuôn mặt
+                <div style="margin-top: 20px; display: flex; gap: 10px; align-items: center;">
+                    <input type="text" id="cameraIp" placeholder="ESP32 IP Address" style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px;">
+                    <button class="btn btn-primary" onclick="connectToCamera()">
+                        <i class="fas fa-plug"></i> Connect
                     </button>
-                </div>
-                
-                <div class="screenshot-container">
-                    <h3>Ảnh vừa chụp:</h3>
-                    <img id="screenshot" alt="Screenshot">
+                    <button class="btn btn-secondary" onclick="scanForCameras()">
+                        <i class="fas fa-search"></i> Scan
+                    </button>
                 </div>
             </div>
             
-            <div class="control-panel">
-                <div class="connection-form">
-                    <h3><i class="fas fa-wifi"></i> Kết nối ESP32</h3>
-                    <div class="form-group">
-                        <label for="espIp">Địa chỉ IP ESP32:</label>
-                        <input type="text" id="espIp" placeholder="Ví dụ: 192.168.1.100">
+            <!-- Right: Control panels -->
+            <div class="right-panel">
+                <!-- Camera List -->
+                <div class="panel-card">
+                    <h3><i class="fas fa-list"></i> Saved Cameras</h3>
+                    <div id="cameraList">
+                        <!-- Dynamic content -->
                     </div>
-                    <div class="form-group">
-                        <label for="port">Cổng:</label>
-                        <input type="text" id="port" value="80" readonly>
-                    </div>
-                    <button class="btn btn-primary" onclick="saveConnection()">
-                        <i class="fas fa-save"></i> Lưu cấu hình
+                    <button class="btn btn-primary" onclick="addCurrentCamera()" style="width: 100%; margin-top: 10px;">
+                        <i class="fas fa-plus"></i> Add Current Camera
                     </button>
                 </div>
                 
-                <div class="status-panel">
-                    <h3><i class="fas fa-info-circle"></i> Trạng thái</h3>
-                    <div class="status-item">
-                        <span class="status-label">Kết nối:</span>
-                        <span id="connectionStatus" class="status-value disconnected">Chưa kết nối</span>
+                <!-- Settings -->
+                <div class="panel-card">
+                    <h3><i class="fas fa-cog"></i> Camera Settings</h3>
+                    
+                    <div class="slider-group">
+                        <label>Quality: <span id="qualityValue">Medium</span></label>
+                        <input type="range" id="qualitySlider" min="1" max="63" value="10" onchange="updateQuality()">
                     </div>
-                    <div class="status-item">
-                        <span class="status-label">ESP32 IP:</span>
-                        <span id="currentIp" class="status-value">-</span>
+                    
+                    <div class="slider-group">
+                        <label>Brightness: <span id="brightnessValue">50</span></label>
+                        <input type="range" id="brightnessSlider" min="0" max="100" value="50" onchange="updateBrightness()">
                     </div>
-                    <div class="status-item">
-                        <span class="status-label">FPS:</span>
-                        <span id="fpsCounter" class="status-value">0</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Độ trễ:</span>
-                        <span id="latency" class="status-value">- ms</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Bộ nhớ:</span>
-                        <span id="memoryUsage" class="status-value">-</span>
-                    </div>
-                </div>
-                
-                <div class="settings-section">
-                    <h3><i class="fas fa-cog"></i> Cài đặt</h3>
-                    <div class="slider-container">
-                        <label for="brightness">Độ sáng:</label>
-                        <input type="range" id="brightness" min="0" max="100" value="50">
-                    </div>
-                    <div class="slider-container">
-                        <label for="contrast">Độ tương phản:</label>
-                        <input type="range" id="contrast" min="0" max="100" value="50">
-                    </div>
-                    <div class="slider-container">
-                        <label for="rotation">Xoay camera:</label>
-                        <select id="rotation" class="form-group" style="width:100%; padding:12px; border:2px solid #ddd; border-radius:8px;">
-                            <option value="0">0° - Bình thường</option>
-                            <option value="90">90° - Phải</option>
-                            <option value="180">180° - Lật ngược</option>
-                            <option value="270">270° - Trái</option>
+                    
+                    <div class="slider-group">
+                        <label>Frame Size:</label>
+                        <select id="frameSizeSelect" class="btn" style="width: 100%; padding: 10px;">
+                            <option value="7">QVGA (320x240)</option>
+                            <option value="8">CIF (400x296)</option>
+                            <option value="9">VGA (640x480)</option>
+                            <option value="10" selected>SVGA (800x600)</option>
+                            <option value="11">XGA (1024x768)</option>
+                            <option value="12">SXGA (1280x1024)</option>
                         </select>
                     </div>
-                    <button class="btn btn-secondary" onclick="applySettings()">
-                        <i class="fas fa-check"></i> Áp dụng cài đặt
+                    
+                    <button class="btn btn-primary" onclick="applySettings()" style="width: 100%;">
+                        <i class="fas fa-check"></i> Apply Settings
                     </button>
                 </div>
                 
-                <div class="settings-section">
-                    <h3><i class="fas fa-history"></i> Camera đã lưu</h3>
-                    <div id="savedCameras">
-                        <!-- Danh sách camera sẽ được thêm vào đây -->
+                <!-- Statistics -->
+                <div class="panel-card">
+                    <h3><i class="fas fa-chart-bar"></i> Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="statFPS">0</div>
+                            <div class="stat-label">FPS</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statLatency">-</div>
+                            <div class="stat-label">Latency (ms)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statUptime">0</div>
+                            <div class="stat-label">Uptime (s)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statHeap">-</div>
+                            <div class="stat-label">Free Heap</div>
+                        </div>
                     </div>
-                    <button class="btn btn-small" onclick="clearAllCameras()" style="width:100%; margin-top:10px; background:#f44336;">
-                        <i class="fas fa-trash"></i> Xóa tất cả
-                    </button>
                 </div>
                 
-                <div class="settings-section">
-                    <h3><i class="fas fa-bolt"></i> Hành động nhanh</h3>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button class="btn btn-small" onclick="flashOn()" style="background:#ff9800;">
-                            <i class="fas fa-lightbulb"></i> Bật đèn
+                <!-- Quick Actions -->
+                <div class="panel-card">
+                    <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                        <button class="btn btn-warning" onclick="rebootCamera()">
+                            <i class="fas fa-redo"></i> Reboot
                         </button>
-                        <button class="btn btn-small" onclick="flashOff()" style="background:#2196F3;">
-                            <i class="fas fa-lightbulb"></i> Tắt đèn
+                        <button class="btn btn-danger" onclick="resetSettings()">
+                            <i class="fas fa-undo"></i> Reset
                         </button>
-                        <button class="btn btn-small" onclick="rebootCamera()" style="background:#9C27B0;">
-                            <i class="fas fa-redo"></i> Khởi động lại
+                        <button class="btn btn-secondary" onclick="showQR()">
+                            <i class="fas fa-qrcode"></i> Show QR
+                        </button>
+                        <button class="btn btn-primary" onclick="shareCamera()">
+                            <i class="fas fa-share"></i> Share
                         </button>
                     </div>
                 </div>
             </div>
         </div>
         
-        <footer>
-            <p>© 2024 ESP32-CAM Remote Viewer | Bảo mật cao | Multi-WiFi Support</p>
-            <p>Kết nối an toàn với mật khẩu được mã hóa</p>
-            <div class="quick-nav">
-                <a href="index.html"><i class="fas fa-home"></i> Trang chủ</a>
-                <a href="camera-dashboard.html"><i class="fas fa-tv"></i> Dashboard</a>
-                <a href="espcam.html"><i class="fas fa-camera"></i> Single View</a>
+        <!-- Screenshot preview -->
+        <div id="screenshotModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center;">
+            <div style="background: white; padding: 20px; border-radius: 10px; max-width: 90%; max-height: 90%;">
+                <h3>Captured Image</h3>
+                <img id="screenshotPreview" style="max-width: 100%; max-height: 70vh;">
+                <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
+                    <button class="btn btn-primary" onclick="downloadScreenshot()">Download</button>
+                    <button class="btn btn-danger" onclick="closeScreenshot()">Close</button>
+                </div>
             </div>
-        </footer>
-    </div>
-    
-    <!-- Modal đăng nhập -->
-    <div id="loginModal" class="login-modal">
-        <div class="login-box">
-            <h2><i class="fas fa-lock"></i> Đăng nhập bảo mật</h2>
-            <p>Vui lòng nhập thông tin đăng nhập ESP32</p>
-            <input type="text" id="loginUsername" placeholder="Tên đăng nhập" value="admin">
-            <input type="password" id="loginPassword" placeholder="Mật khẩu" value="admin">
-            <button onclick="authenticate()">Đăng nhập</button>
-            <div id="loginError" class="error-message">Sai thông tin đăng nhập!</div>
-            <p style="margin-top: 15px; font-size: 12px; color: #666;">
-                <i class="fas fa-info-circle"></i> Mặc định: admin/admin
-            </p>
         </div>
     </div>
     
     <script>
-        // Biến toàn cục
-        let streamInterval;
-        let isStreaming = false;
-        let currentQuality = 'medium';
-        let espIp = '';
-        let authCookie = '';
-        let fpsCount = 0;
-        let fpsTimer = null;
-        let faceDetection = false;
+        // Import config từ file chung nếu có
+        // <script src="common-config.js"></script>
         
-        // Khởi tạo - Load IP từ URL hoặc localStorage
+        // Biến ứng dụng
+        let currentCameraIP = '';
+        let isStreaming = false;
+        let streamInterval;
+        let fpsCounter = 0;
+        let fpsTimer;
+        let cameraList = [];
+        
+        // Khởi tạo
         document.addEventListener('DOMContentLoaded', function() {
-            // Kiểm tra xem có IP từ URL không (khi mở từ dashboard)
-            const urlParams = new URLSearchParams(window.location.search);
-            const ipFromUrl = urlParams.get('ip');
-            const nameFromUrl = urlParams.get('name');
-            
-            if (ipFromUrl) {
-                document.getElementById('espIp').value = ipFromUrl;
-                espIp = ipFromUrl;
-                if (nameFromUrl) {
-                    document.querySelector('header h1').innerHTML = 
-                        `<i class="fas fa-camera"></i> ${decodeURIComponent(nameFromUrl)}`;
-                }
-                // Tự động bắt đầu stream sau 1 giây
-                setTimeout(() => startStream(), 1000);
-            } else {
-                // Load từ localStorage nếu không có từ URL
-                const savedIp = localStorage.getItem('esp32cam_ip');
-                if(savedIp) {
-                    document.getElementById('espIp').value = savedIp;
-                    espIp = savedIp;
-                    updateStatus('Đã lưu IP', 'connected');
-                    document.getElementById('currentIp').textContent = savedIp;
-                }
-            }
-            
+            // Load saved cameras
             loadSavedCameras();
             
-            // Cập nhật FPS mỗi giây
+            // Load last connected camera
+            const lastCamera = localStorage.getItem('lastConnectedCamera');
+            if (lastCamera) {
+                document.getElementById('cameraIp').value = lastCamera;
+                currentCameraIP = lastCamera;
+                setTimeout(() => startStream(), 1000);
+            }
+            
+            // Start FPS counter
             setInterval(() => {
-                document.getElementById('fpsCounter').textContent = fpsCount;
-                fpsCount = 0;
+                document.getElementById('statFPS').textContent = fpsCounter;
+                document.getElementById('fpsBadge').textContent = `${fpsCounter} FPS`;
+                fpsCounter = 0;
             }, 1000);
             
-            // Cập nhật độ trễ mỗi 5 giây
-            setInterval(updateLatency, 5000);
-            
-            // Tự động kết nối nếu có IP
-            if (espIp && ipFromUrl) {
-                setTimeout(() => startStream(), 1500);
-            }
+            // Update uptime
+            setInterval(() => {
+                const uptime = parseInt(document.getElementById('statUptime').textContent) + 1;
+                document.getElementById('statUptime').textContent = uptime;
+            }, 1000);
         });
         
-        // Bắt đầu stream
-        function startStream() {
-            const ip = document.getElementById('espIp').value;
-            if(!ip) {
-                alert('Vui lòng nhập địa chỉ IP ESP32');
+        // Kết nối đến camera
+        function connectToCamera() {
+            const ip = document.getElementById('cameraIp').value.trim();
+            if (!ip) {
+                showToast('Please enter camera IP address', 'warning');
                 return;
             }
             
-            espIp = ip;
-            stopStream(); // Dừng stream cũ nếu có
+            currentCameraIP = ip;
+            localStorage.setItem('lastConnectedCamera', ip);
             
-            const streamUrl = `http://${espIp}/stream`;
+            // Kiểm tra kết nối
+            checkCameraConnection(ip).then(connected => {
+                if (connected) {
+                    showToast(`Connected to ${ip}`, 'success');
+                    updateCameraList(ip);
+                    startStream();
+                } else {
+                    showToast(`Cannot connect to ${ip}`, 'error');
+                }
+            });
+        }
+        
+        // Kiểm tra kết nối camera
+        async function checkCameraConnection(ip) {
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 3000);
+                
+                const response = await fetch(`http://${ip}/status`, {
+                    signal: controller.signal,
+                    mode: 'no-cors'
+                });
+                
+                clearTimeout(timeout);
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+        
+        // Bắt đầu stream
+        function startStream() {
+            if (!currentCameraIP) {
+                showToast('No camera connected', 'error');
+                return;
+            }
+            
+            if (isStreaming) {
+                stopStream();
+            }
+            
             const videoElement = document.getElementById('videoStream');
+            const streamUrl = `http://${currentCameraIP}/stream?t=${Date.now()}`;
+            
             videoElement.src = streamUrl;
+            videoElement.onload = () => {
+                isStreaming = true;
+                showToast('Stream started', 'success');
+                
+                // Start FPS counting
+                fpsTimer = setInterval(() => {
+                    fpsCounter++;
+                }, 100);
+                
+                // Update status
+                updateCameraStatus();
+            };
+            
             videoElement.onerror = () => {
-                updateStatus('Lỗi kết nối', 'disconnected');
-                alert('Không thể kết nối đến ESP32. Vui lòng kiểm tra IP và mạng.');
+                showToast('Stream error. Check connection.', 'error');
                 stopStream();
             };
-            
-            videoElement.onload = () => {
-                updateStatus('Đang stream', 'connected');
-            };
-            
-            isStreaming = true;
-            
-            // Lưu IP vào localStorage
-            localStorage.setItem('esp32cam_ip', ip);
-            document.getElementById('currentIp').textContent = ip;
-            
-            // Cập nhật FPS
-            streamInterval = setInterval(() => {
-                fpsCount++;
-            }, 100);
-            
-            // Cập nhật camera đã lưu
-            saveCameraToHistory(ip);
-            
-            // Cập nhật thông tin bộ nhớ (giả lập)
-            updateMemoryInfo();
         }
         
         // Dừng stream
         function stopStream() {
-            document.getElementById('videoStream').src = '';
+            const videoElement = document.getElementById('videoStream');
+            videoElement.src = '';
             isStreaming = false;
-            updateStatus('Đã dừng', 'disconnected');
-            if(streamInterval) {
-                clearInterval(streamInterval);
+            
+            if (fpsTimer) {
+                clearInterval(fpsTimer);
             }
+            
+            showToast('Stream stopped', 'info');
         }
         
         // Chụp ảnh
+        function captureImage() {
+            if (!currentCameraIP) return;
+            
+            const timestamp = Date.now();
+            const captureUrl = `http://${currentCameraIP}/capture?_=${timestamp}`;
+            
+            const preview = document.getElementById('screenshotPreview');
+            preview.src = captureUrl;
+            
+            const modal = document.getElementById('screenshotModal');
+            modal.style.display = 'flex';
+            
+            showToast('Image captured', 'success');
+        }
+        
+        // Tải ảnh
         function takeSnapshot() {
-            if(!espIp) {
-                alert('Vui lòng kết nối đến ESP32 trước');
-                return;
-            }
+            if (!currentCameraIP) return;
             
-            const timestamp = new Date().getTime();
-            const captureUrl = `http://${espIp}/capture?_cb=${timestamp}`;
+            const timestamp = Date.now();
+            const captureUrl = `http://${currentCameraIP}/capture?_=${timestamp}`;
             
-            // Hiển thị ảnh chụp
-            const screenshot = document.getElementById('screenshot');
-            screenshot.src = captureUrl;
-            screenshot.style.display = 'block';
-            
-            // Tải ảnh về
             const link = document.createElement('a');
             link.href = captureUrl;
             link.download = `esp32-capture-${timestamp}.jpg`;
@@ -746,294 +555,270 @@
             link.click();
             document.body.removeChild(link);
             
-            showNotification('📸 Đã chụp và tải ảnh về');
+            showToast('Image downloaded', 'success');
         }
         
-        // Đặt chất lượng
-        function setQuality(quality) {
-            currentQuality = quality;
+        // Điều khiển flash
+        function toggleFlash() {
+            if (!currentCameraIP) return;
             
-            // Cập nhật nút bấm
-            document.querySelectorAll('.quality-controls .btn-small').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            if(isStreaming && espIp) {
-                // Gửi yêu cầu thay đổi chất lượng đến ESP32
-                fetch(`http://${espIp}/control?quality=${quality}`, {
-                    credentials: 'include'
-                }).then(() => {
-                    showNotification(`✅ Đã đặt chất lượng: ${quality}`);
-                }).catch(err => {
-                    console.log('Không thể thay đổi chất lượng:', err);
-                });
-            }
+            fetch(`http://${currentCameraIP}/control?flash=1`)
+                .then(() => showToast('Flash toggled', 'success'))
+                .catch(err => showToast('Flash control failed', 'error'));
         }
         
-        // Lưu kết nối
-        function saveConnection() {
-            const ip = document.getElementById('espIp').value;
-            if(ip) {
-                localStorage.setItem('esp32cam_ip', ip);
-                showNotification('💾 Đã lưu cấu hình kết nối!');
-                saveCameraToHistory(ip);
-            }
-        }
-        
-        // Cập nhật trạng thái
-        function updateStatus(message, className) {
-            const statusElement = document.getElementById('connectionStatus');
-            statusElement.textContent = message;
-            statusElement.className = `status-value ${className}`;
-        }
-        
-        // Hiển thị/ẩn modal đăng nhập
-        function toggleLogin() {
-            const modal = document.getElementById('loginModal');
-            modal.style.display = 'flex';
-        }
-        
-        // Xác thực
-        function authenticate() {
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            if(!espIp) {
-                document.getElementById('loginError').textContent = 'Vui lòng nhập địa chỉ IP ESP32 trước';
-                document.getElementById('loginError').style.display = 'block';
-                return;
-            }
-            
-            // Gửi yêu cầu đăng nhập đến ESP32
-            const formData = new FormData();
-            formData.append('USERNAME', username);
-            formData.append('PASSWORD', password);
-            
-            fetch(`http://${espIp}/login`, {
-                method: 'POST',
-                body: formData,
-                credentials: 'include'
-            })
-            .then(response => {
-                if(response.redirected) {
-                    // Đăng nhập thành công
-                    document.getElementById('loginModal').style.display = 'none';
-                    showNotification('🔓 Đăng nhập thành công!');
-                    startStream(); // Bắt đầu stream sau khi đăng nhập
-                } else {
-                    // Đăng nhập thất bại
-                    document.getElementById('loginError').style.display = 'block';
-                }
-            })
-            .catch(error => {
-                console.error('Lỗi đăng nhập:', error);
-                document.getElementById('loginError').textContent = 'Không thể kết nối đến ESP32';
-                document.getElementById('loginError').style.display = 'block';
-            });
-        }
-        
-        // Áp dụng cài đặt
-        function applySettings() {
-            const brightness = document.getElementById('brightness').value;
-            const contrast = document.getElementById('contrast').value;
-            const rotation = document.getElementById('rotation').value;
-            
-            if(espIp) {
-                fetch(`http://${espIp}/settings?brightness=${brightness}&contrast=${contrast}&rotation=${rotation}`, {
-                    credentials: 'include'
-                }).then(() => {
-                    showNotification('⚙️ Đã áp dụng cài đặt!');
-                }).catch(err => {
-                    showNotification('❌ Không thể áp dụng cài đặt');
-                });
-            }
-        }
-        
-        // Lưu camera vào lịch sử
-        function saveCameraToHistory(ip) {
-            let cameras = JSON.parse(localStorage.getItem('esp32cam_history') || '[]');
-            
-            if(!cameras.includes(ip)) {
-                cameras.unshift(ip);
-                if(cameras.length > 10) cameras = cameras.slice(0, 10);
-                localStorage.setItem('esp32cam_history', JSON.stringify(cameras));
-                loadSavedCameras();
+        // Fullscreen
+        function fullscreen() {
+            const videoContainer = document.querySelector('.video-container');
+            if (videoContainer.requestFullscreen) {
+                videoContainer.requestFullscreen();
             }
         }
         
         // Tải danh sách camera đã lưu
         function loadSavedCameras() {
-            const cameras = JSON.parse(localStorage.getItem('esp32cam_history') || '[]');
-            const container = document.getElementById('savedCameras');
+            const saved = JSON.parse(localStorage.getItem('esp32cam_saved') || '[]');
+            cameraList = saved;
+            renderCameraList();
+        }
+        
+        // Render danh sách camera
+        function renderCameraList() {
+            const container = document.getElementById('cameraList');
             container.innerHTML = '';
             
-            if(cameras.length === 0) {
-                container.innerHTML = '<p style="color:#666; text-align:center;">Chưa có camera nào</p>';
+            if (cameraList.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center;">No saved cameras</p>';
                 return;
             }
             
-            cameras.forEach(ip => {
+            cameraList.forEach((camera, index) => {
                 const div = document.createElement('div');
-                div.className = 'saved-camera';
+                div.className = `camera-item ${camera.ip === currentCameraIP ? 'active' : ''}`;
                 div.innerHTML = `
-                    <span><i class="fas fa-video"></i> ${ip}</span>
                     <div>
-                        <button onclick="connectToCamera('${ip}')">Kết nối</button>
-                        <button onclick="removeCamera('${ip}')">Xóa</button>
+                        <strong>${camera.name || 'Camera'}</strong>
+                        <div style="font-size: 12px; color: #666;">${camera.ip}</div>
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <button onclick="connectToSavedCamera('${camera.ip}')" style="background: #4CAF50; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                            <i class="fas fa-plug"></i>
+                        </button>
+                        <button onclick="removeCamera(${index})" style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
                 `;
                 container.appendChild(div);
             });
         }
         
+        // Thêm camera hiện tại vào danh sách
+        function addCurrentCamera() {
+            if (!currentCameraIP) {
+                showToast('No camera to add', 'warning');
+                return;
+            }
+            
+            const name = prompt('Enter camera name:', `Camera ${cameraList.length + 1}`);
+            if (!name) return;
+            
+            // Kiểm tra trùng
+            const exists = cameraList.find(cam => cam.ip === currentCameraIP);
+            if (exists) {
+                exists.name = name;
+            } else {
+                cameraList.push({
+                    ip: currentCameraIP,
+                    name: name,
+                    added: Date.now()
+                });
+            }
+            
+            localStorage.setItem('esp32cam_saved', JSON.stringify(cameraList));
+            renderCameraList();
+            showToast('Camera saved', 'success');
+        }
+        
+        // Xóa camera
+        function removeCamera(index) {
+            if (confirm('Remove this camera?')) {
+                cameraList.splice(index, 1);
+                localStorage.setItem('esp32cam_saved', JSON.stringify(cameraList));
+                renderCameraList();
+                showToast('Camera removed', 'info');
+            }
+        }
+        
         // Kết nối đến camera đã lưu
-        function connectToCamera(ip) {
-            document.getElementById('espIp').value = ip;
-            espIp = ip;
-            startStream();
+        function connectToSavedCamera(ip) {
+            document.getElementById('cameraIp').value = ip;
+            connectToCamera();
         }
         
-        // Xóa camera khỏi danh sách
-        function removeCamera(ip) {
-            let cameras = JSON.parse(localStorage.getItem('esp32cam_history') || '[]');
-            cameras = cameras.filter(camIp => camIp !== ip);
-            localStorage.setItem('esp32cam_history', JSON.stringify(cameras));
-            loadSavedCameras();
-            showNotification('🗑️ Đã xóa camera khỏi danh sách');
+        // Quét mạng tìm camera
+        function scanForCameras() {
+            showToast('Scanning network...', 'info');
+            // Implementation would go here
         }
         
-        // Xóa tất cả camera
-        function clearAllCameras() {
-            if(confirm('Bạn có chắc muốn xóa tất cả camera đã lưu?')) {
-                localStorage.removeItem('esp32cam_history');
-                loadSavedCameras();
-                showNotification('🗑️ Đã xóa tất cả camera');
-            }
-        }
-        
-        // Mở toàn màn hình
-        function openFullscreen() {
-            const videoContainer = document.querySelector('.video-container');
-            if (videoContainer.requestFullscreen) {
-                videoContainer.requestFullscreen();
-            } else if (videoContainer.webkitRequestFullscreen) {
-                videoContainer.webkitRequestFullscreen();
-            } else if (videoContainer.msRequestFullscreen) {
-                videoContainer.msRequestFullscreen();
-            }
-        }
-        
-        // Bật/tắt phát hiện khuôn mặt
-        function toggleFaceDetection() {
-            faceDetection = !faceDetection;
-            const btn = event.target.closest('button');
-            if(btn) {
-                btn.innerHTML = `<i class="fas fa-user"></i> Phát hiện khuôn mặt ${faceDetection ? '✅' : '❌'}`;
-            }
+        // Cập nhật chất lượng
+        function updateQuality() {
+            const value = document.getElementById('qualitySlider').value;
+            let qualityText = 'Low';
+            if (value > 40) qualityText = 'High';
+            else if (value > 20) qualityText = 'Medium';
             
-            if(espIp && isStreaming) {
-                fetch(`http://${espIp}/control?face=${faceDetection ? 1 : 0}`)
-                    .then(() => showNotification(`👤 ${faceDetection ? 'Bật' : 'Tắt'} phát hiện khuôn mặt`))
-                    .catch(err => console.log('Lỗi điều khiển face detection:', err));
-            }
+            document.getElementById('qualityValue').textContent = qualityText;
         }
         
-        // Cập nhật độ trễ
-        function updateLatency() {
-            if(!isStreaming || !espIp) return;
+        // Cập nhật độ sáng
+        function updateBrightness() {
+            const value = document.getElementById('brightnessSlider').value;
+            document.getElementById('brightnessValue').textContent = value;
+        }
+        
+        // Áp dụng cài đặt
+        function applySettings() {
+            if (!currentCameraIP) return;
             
-            const startTime = Date.now();
-            fetch(`http://${espIp}/status?_=${startTime}`)
-                .then(() => {
-                    const latency = Date.now() - startTime;
-                    document.getElementById('latency').textContent = `${latency} ms`;
+            const quality = document.getElementById('qualitySlider').value;
+            const framesize = document.getElementById('frameSizeSelect').value;
+            
+            fetch(`http://${currentCameraIP}/control?quality=${quality}&framesize=${framesize}`)
+                .then(() => showToast('Settings applied', 'success'))
+                .catch(err => showToast('Failed to apply settings', 'error'));
+        }
+        
+        // Cập nhật trạng thái camera
+        function updateCameraStatus() {
+            if (!currentCameraIP) return;
+            
+            fetch(`http://${currentCameraIP}/status`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('statHeap').textContent = data.free_heap || '-';
+                    document.getElementById('resolutionBadge').textContent = getResolutionText(data.framesize);
                 })
                 .catch(() => {
-                    document.getElementById('latency').textContent = 'Timeout';
+                    // Silent fail
                 });
         }
         
-        // Cập nhật thông tin bộ nhớ
-        function updateMemoryInfo() {
-            // Giả lập thông tin bộ nhớ
-            const memory = Math.floor(Math.random() * 20) + 80;
-            document.getElementById('memoryUsage').textContent = `${memory}%`;
-        }
-        
-        // Bật đèn flash
-        function flashOn() {
-            if(espIp) {
-                fetch(`http://${espIp}/control?flash=1`)
-                    .then(() => showNotification('💡 Bật đèn flash'))
-                    .catch(err => console.log('Lỗi bật đèn:', err));
-            }
-        }
-        
-        // Tắt đèn flash
-        function flashOff() {
-            if(espIp) {
-                fetch(`http://${espIp}/control?flash=0`)
-                    .then(() => showNotification('💡 Tắt đèn flash'))
-                    .catch(err => console.log('Lỗi tắt đèn:', err));
-            }
+        // Helper: Chuyển framesize thành text
+        function getResolutionText(framesize) {
+            const resolutions = {
+                5: 'FRAMESIZE_QQVGA',
+                6: 'FRAMESIZE_QCIF',
+                7: 'FRAMESIZE_QVGA',
+                8: 'FRAMESIZE_CIF',
+                9: 'FRAMESIZE_VGA',
+                10: 'FRAMESIZE_SVGA',
+                11: 'FRAMESIZE_XGA',
+                12: 'FRAMESIZE_SXGA'
+            };
+            return resolutions[framesize] || 'Unknown';
         }
         
         // Khởi động lại camera
         function rebootCamera() {
-            if(espIp && confirm('Khởi động lại ESP32-CAM? Camera sẽ mất kết nối trong 10-15 giây.')) {
-                fetch(`http://${espIp}/reboot`)
-                    .then(() => showNotification('🔄 Đang khởi động lại...'))
-                    .catch(err => console.log('Lỗi reboot:', err));
+            if (!currentCameraIP) return;
+            
+            if (confirm('Reboot ESP32-CAM?')) {
+                fetch(`http://${currentCameraIP}/reboot`)
+                    .then(() => {
+                        showToast('Camera rebooting...', 'warning');
+                        setTimeout(() => {
+                            startStream();
+                        }, 10000);
+                    })
+                    .catch(err => showToast('Reboot failed', 'error'));
             }
         }
         
-        // Hiển thị thông báo
-        function showNotification(message) {
-            // Tạo toast notification đơn giản
+        // Reset settings
+        function resetSettings() {
+            if (confirm('Reset all settings?')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+        
+        // Hiển thị QR code
+        function showQR() {
+            if (!currentCameraIP) return;
+            
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://${currentCameraIP}`;
+            const qrWindow = window.open(qrUrl, 'QR Code', 'width=300,height=300');
+        }
+        
+        // Chia sẻ camera
+        function shareCamera() {
+            if (!currentCameraIP) return;
+            
+            const shareUrl = `${window.location.origin}?camera=${currentCameraIP}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'ESP32-CAM Stream',
+                    text: 'Check out my ESP32-CAM live stream',
+                    url: shareUrl
+                });
+            } else {
+                navigator.clipboard.writeText(shareUrl);
+                showToast('Link copied to clipboard', 'success');
+            }
+        }
+        
+        // Tải screenshot
+        function downloadScreenshot() {
+            const img = document.getElementById('screenshotPreview');
+            const link = document.createElement('a');
+            link.href = img.src;
+            link.download = `esp32-screenshot-${Date.now()}.jpg`;
+            link.click();
+        }
+        
+        // Đóng screenshot modal
+        function closeScreenshot() {
+            document.getElementById('screenshotModal').style.display = 'none';
+        }
+        
+        // Hiển thị toast notification
+        function showToast(message, type = 'info') {
             const toast = document.createElement('div');
-            toast.style.cssText = `
-                position: fixed;
-                bottom: 30px;
-                right: 30px;
-                background: rgba(0,0,0,0.8);
-                color: white;
-                padding: 12px 20px;
-                border-radius: 8px;
-                z-index: 1000;
-                animation: slideIn 0.3s ease;
-            `;
+            toast.className = 'toast';
             toast.textContent = message;
+            toast.style.background = type === 'error' ? '#f44336' : 
+                                   type === 'success' ? '#4CAF50' : 
+                                   type === 'warning' ? '#ff9800' : '#2196F3';
+            
             document.body.appendChild(toast);
             
             setTimeout(() => {
-                toast.remove();
+                toast.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
         
-        // Đóng modal khi click bên ngoài
-        window.onclick = function(event) {
-            const modal = document.getElementById('loginModal');
-            if(event.target == modal) {
-                modal.style.display = 'none';
+        // Cập nhật danh sách camera
+        function updateCameraList(ip) {
+            const exists = cameraList.find(cam => cam.ip === ip);
+            if (!exists) {
+                cameraList.unshift({
+                    ip: ip,
+                    name: `Camera ${cameraList.length + 1}`,
+                    added: Date.now()
+                });
+                
+                if (cameraList.length > 10) {
+                    cameraList.pop();
+                }
+                
+                localStorage.setItem('esp32cam_saved', JSON.stringify(cameraList));
+                renderCameraList();
             }
         }
-        
-        // Thêm CSS animation cho toast
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-        `;
-        document.head.appendChild(style);
     </script>
 </body>
 </html>
