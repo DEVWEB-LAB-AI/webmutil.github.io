@@ -29,6 +29,44 @@
             overflow: hidden;
         }
         
+        /* Navigation Bar */
+        .nav-bar {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .nav-link {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .nav-link i {
+            font-size: 1.1rem;
+        }
+        
         /* Header */
         .header {
             background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
@@ -415,13 +453,50 @@
                 flex-direction: column;
                 text-align: center;
             }
+            
+            .nav-bar {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px;
+            }
+            
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
         }
     </style>
     <!-- Load MQTT.js from CDN -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <!-- Load Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
+        <!-- Navigation Bar -->
+        <div class="nav-bar">
+            <div class="nav-logo">
+                <h3 style="color: white; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-microchip"></i>
+                    ESP32 Control Hub
+                </h3>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    Trang chủ
+                </a>
+                <a href="espcam.html" class="nav-link">
+                    <i class="fas fa-camera"></i>
+                    Camera View
+                </a>
+                <a href="camera-dashboard.html" class="nav-link">
+                    <i class="fas fa-tv"></i>
+                    Dashboard Camera
+                </a>
+            </div>
+        </div>
+        
         <!-- Header -->
         <div class="header">
             <h1>
@@ -655,6 +730,17 @@
             <p style="font-size: 0.9rem; margin-top: 5px;">
                 Sử dụng MQTT broker công cộng | Không cần port forwarding | Hoạt động trên mọi mạng
             </p>
+            <div style="margin-top: 15px; display: flex; justify-content: center; gap: 20px;">
+                <a href="index.html" style="color: #9C27B0; text-decoration: none;">
+                    <i class="fas fa-home"></i> Trang chủ
+                </a>
+                <a href="espcam.html" style="color: #2196F3; text-decoration: none;">
+                    <i class="fas fa-camera"></i> Camera View
+                </a>
+                <a href="camera-dashboard.html" style="color: #4CAF50; text-decoration: none;">
+                    <i class="fas fa-tv"></i> Dashboard Camera
+                </a>
+            </div>
         </div>
     </div>
     
