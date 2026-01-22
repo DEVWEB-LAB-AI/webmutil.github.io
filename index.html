@@ -3,115 +3,279 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Clock Control - ESP32 MQTT</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <title>ESP32-CAM Viewer - Trang Chủ</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- MQTT.js cho Smart Clock -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    
     <style>
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #166088;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+            --border: #dee2e6;
+            --mqtt-color: #9C27B0;
+            --clock-color: #FF9800;
+        }
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         body {
+            font-family: 'Poppins', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
-            color: #333;
+            color: var(--dark);
+            line-height: 1.6;
         }
         
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+        /* ================= HEADER & NAVIGATION ================= */
+        .header {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
         
-        /* Navigation Bar */
-        .nav-bar {
-            background: rgba(0, 0, 0, 0.1);
-            padding: 15px 30px;
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            backdrop-filter: blur(10px);
+            height: 70px;
         }
         
-        .nav-links {
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            color: var(--primary);
+            font-size: 28px;
+        }
+        
+        .logo-text {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-menu {
             display: flex;
             gap: 15px;
         }
         
         .nav-link {
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
             text-decoration: none;
-            border-radius: 25px;
-            font-weight: 600;
-            transition: all 0.3s;
+            color: var(--gray);
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 8px;
         }
         
-        .nav-link:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+            background: rgba(74, 111, 165, 0.1);
         }
         
-        .nav-link i {
-            font-size: 1.1rem;
+        /* ================= MAIN LAYOUT ================= */
+        .main-layout {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 25px;
         }
         
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            position: relative;
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
         }
         
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
+        /* ================= VIDEO PANEL (ESP32-CAM) ================= */
+        .video-panel {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
         }
         
-        .header p {
-            opacity: 0.9;
-            font-size: 1.1rem;
-        }
-        
-        /* MQTT Connection Panel */
-        .mqtt-panel {
-            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        .video-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
             padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
         }
         
+        .video-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .video-container {
+            position: relative;
+            background: #000;
+            min-height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #videoStream {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .stream-placeholder {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+        
+        .stream-placeholder i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: var(--gray);
+        }
+        
+        .video-controls {
+            padding: 20px;
+            background: var(--light);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+        }
+        
+        /* ================= CONTROL PANEL ================= */
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .panel-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .panel-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .panel-content {
+            padding: 25px;
+        }
+        
+        /* ================= SMART CLOCK PANEL ================= */
+        .clock-panel {
+            border-left: 5px solid var(--clock-color);
+        }
+        
+        .clock-panel .panel-header {
+            background: linear-gradient(135deg, var(--clock-color) 0%, #f57c00 100%);
+        }
+        
+        .mqtt-panel {
+            border-left: 5px solid var(--mqtt-color);
+        }
+        
+        .mqtt-panel .panel-header {
+            background: linear-gradient(135deg, var(--mqtt-color) 0%, #7b1fa2 100%);
+        }
+        
+        /* ================= SMART CLOCK CONTROLS ================= */
+        .clock-display {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--clock-color);
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .alarm-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .time-input {
+            width: 70px;
+            padding: 12px;
+            font-size: 1.3rem;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        
+        .time-separator {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--clock-color);
+        }
+        
+        .clock-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        /* ================= MQTT CONNECTION ================= */
         .mqtt-status {
             display: flex;
             align-items: center;
             gap: 15px;
-        }
-        
-        .mqtt-indicator {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
         }
         
         .status-dot {
@@ -126,803 +290,929 @@
             box-shadow: 0 0 10px #4CAF50;
         }
         
-        .mqtt-controls {
+        .mqtt-control-buttons {
             display: flex;
             gap: 10px;
+            margin-top: 15px;
         }
         
-        .mqtt-btn {
-            padding: 12px 20px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 25px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            backdrop-filter: blur(10px);
-        }
-        
-        .mqtt-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-        
-        /* Main Content */
-        .content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 20px;
-            padding: 30px;
-        }
-        
-        .card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .card h2 {
-            color: #2c3e50;
+        /* ================= CONNECTION SECTION ================= */
+        .connection-section {
             margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 3px solid #4CAF50;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--dark);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
         
-        /* Alarm Controls */
-        .time-inputs {
-            display: flex;
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--gray);
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.2);
+        }
+        
+        /* ================= BUTTONS ================= */
+        .btn {
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        
-        .time-input {
-            width: 80px;
-            padding: 15px;
-            font-size: 1.5rem;
-            text-align: center;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-weight: bold;
-        }
-        
-        .time-separator {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #666;
-        }
-        
-        .alarm-sound {
-            width: 100%;
-            padding: 15px;
-            margin: 15px 0;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 1rem;
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        
-        .btn {
-            flex: 1;
-            padding: 15px;
+            gap: 8px;
+            padding: 12px 24px;
             border: none;
             border-radius: 10px;
-            font-size: 1rem;
-            font-weight: bold;
+            font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 111, 165, 0.3);
+        }
+        
+        .btn-success {
+            background: var(--success);
             color: white;
         }
         
         .btn-danger {
-            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            background: var(--danger);
             color: white;
         }
         
         .btn-warning {
-            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            background: var(--warning);
+            color: var(--dark);
+        }
+        
+        .btn-info {
+            background: var(--info);
             color: white;
         }
         
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        
-        /* Alarm Status */
-        .alarm-status {
-            text-align: center;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        
-        .status-on {
-            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-            color: #155724;
-            border: 2px solid #b1dfbb;
-        }
-        
-        .status-off {
-            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-            color: #721c24;
-            border: 2px solid #f1b0b7;
-        }
-        
-        /* Virtual Buttons */
-        .virtual-buttons {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .virtual-btn {
-            padding: 20px 10px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.3s;
-        }
-        
-        .virtual-btn:hover {
-            transform: scale(1.05);
-        }
-        
-        .btn-green {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        .btn-clock {
+            background: var(--clock-color);
             color: white;
         }
         
-        .btn-blue {
-            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        .btn-mqtt {
+            background: var(--mqtt-color);
             color: white;
         }
         
-        .btn-red {
-            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background: var(--primary);
             color: white;
         }
         
-        .btn-orange {
-            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-            color: white;
-            grid-column: span 3;
+        .btn-block {
+            width: 100%;
         }
         
-        /* System Info */
-        .info-grid {
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+        
+        /* ================= STATS ================= */
+        .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 15px;
         }
         
-        .info-item {
-            background: #f8f9fa;
+        .stat-card {
+            background: var(--light);
             padding: 15px;
-            border-radius: 10px;
-            border-left: 4px solid #9C27B0;
+            border-radius: 12px;
+            text-align: center;
         }
         
-        .info-label {
-            font-size: 0.9rem;
-            color: #666;
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
             margin-bottom: 5px;
         }
         
-        .info-value {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #333;
+        .stat-label {
+            font-size: 12px;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
-        .sensor-value {
-            color: #2196F3;
+        /* ================= CAMERA LIST ================= */
+        .camera-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 15px;
         }
         
-        /* MQTT Info Card */
-        .mqtt-info-card {
-            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
-            border-left: 4px solid #9C27B0;
+        .camera-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            background: var(--light);
+            border-radius: 8px;
+            border-left: 3px solid var(--primary);
+            transition: all 0.3s ease;
         }
         
-        .mqtt-info-card h2 {
-            border-bottom: 3px solid #9C27B0;
+        .camera-item:hover {
+            background: #e9ecef;
         }
         
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 20px;
-            background: #f8f9fa;
-            color: #666;
-            border-top: 1px solid #ddd;
-        }
-        
-        /* Toast Notification */
-        .toast {
+        /* ================= TOAST ================= */
+        .toast-container {
             position: fixed;
             bottom: 30px;
             right: 30px;
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 15px 25px;
+            z-index: 9999;
+        }
+        
+        .toast {
+            background: white;
+            padding: 15px 20px;
             border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-            z-index: 1000;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.3s;
-        }
-        
-        .toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        /* Loading Overlay */
-        .loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            margin-bottom: 10px;
             display: flex;
-            justify-content: center;
             align-items: center;
-            z-index: 1001;
+            gap: 12px;
+            transform: translateX(100%);
             opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s;
+            animation: slideIn 0.3s ease forwards;
         }
         
-        .loading.active {
-            opacity: 1;
-            visibility: visible;
+        @keyframes slideIn {
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
         
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #9C27B0;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Responsive */
+        /* ================= RESPONSIVE ================= */
         @media (max-width: 768px) {
-            .content {
-                grid-template-columns: 1fr;
+            .nav-container {
+                flex-direction: column;
+                height: auto;
                 padding: 15px;
             }
             
-            .virtual-buttons {
-                grid-template-columns: 1fr;
-            }
-            
-            .btn-orange {
-                grid-column: span 1;
-            }
-            
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .header h1 {
-                font-size: 2rem;
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .mqtt-panel {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .nav-bar {
-                flex-direction: column;
-                gap: 15px;
-                padding: 15px;
-            }
-            
-            .nav-links {
+            .nav-menu {
+                margin-top: 15px;
                 flex-wrap: wrap;
                 justify-content: center;
             }
+            
+            .video-controls {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .clock-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* ================= QUICK LINKS ================= */
+        .quick-links {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .quick-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: var(--dark);
+        }
+        
+        .quick-link:hover {
+            border-color: var(--primary);
+            background: rgba(74, 111, 165, 0.05);
+            transform: translateY(-3px);
+        }
+        
+        .quick-icon {
+            font-size: 20px;
+            color: var(--primary);
+        }
+        
+        .quick-text {
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
         }
     </style>
-    <!-- Load MQTT.js from CDN -->
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-    <!-- Load Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Navigation Bar -->
-        <div class="nav-bar">
-            <div class="nav-logo">
-                <h3 style="color: white; display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-microchip"></i>
-                    ESP32 Control Hub
-                </h3>
+    <!-- Header & Navigation -->
+    <header class="header">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-video logo-icon"></i>
+                <span class="logo-text">ESP32 Control Center</span>
             </div>
-            <div class="nav-links">
-                <a href="index.html" class="nav-link">
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link active">
                     <i class="fas fa-home"></i>
-                    Trang chủ
-                </a>
-                <a href="espcam.html" class="nav-link">
-                    <i class="fas fa-camera"></i>
-                    Camera View
+                    <span>Trang chủ</span>
                 </a>
                 <a href="camera-dashboard.html" class="nav-link">
                     <i class="fas fa-tv"></i>
-                    Dashboard Camera
+                    <span>Dashboard</span>
                 </a>
-            </div>
+                <a href="mqtt-clock.html" class="nav-link">
+                    <i class="fas fa-clock"></i>
+                    <span>Smart Clock</span>
+                </a>
+                <a href="CORS-proxy.html" class="nav-link">
+                    <i class="fas fa-link"></i>
+                    <span>CORS Proxy</span>
+                </a>
+            </nav>
         </div>
-        
-        <!-- Header -->
-        <div class="header">
-            <h1>
-                <span>🌐</span>
-                ESP32 Smart Clock - MQTT Control
-                <span>🌐</span>
-            </h1>
-            <p>Điều khiển từ xa qua Internet sử dụng MQTT - Không cần IP cục bộ</p>
-        </div>
-        
-        <!-- MQTT Connection Panel -->
-        <div class="mqtt-panel">
-            <div class="mqtt-status">
-                <div class="mqtt-indicator">
-                    <div class="status-dot" id="mqttStatusDot"></div>
-                    <span id="mqttStatusText">Đang kết nối MQTT...</span>
+    </header>
+    
+    <!-- Main Layout -->
+    <div class="main-layout">
+        <!-- Left Column: ESP32-CAM Video -->
+        <div class="video-panel">
+            <div class="video-header">
+                <div class="video-title">
+                    <i class="fas fa-camera"></i>
+                    <h2>ESP32-CAM Live Stream</h2>
                 </div>
-                <div id="mqttDetails" style="font-size: 0.9rem; opacity: 0.9;">
-                    Broker: broker.emqx.io
+                <div class="status-indicator" id="connectionStatus">
+                    <span class="status-dot"></span>
+                    <span>Chưa kết nối</span>
                 </div>
             </div>
             
-            <div class="mqtt-controls">
-                <button class="mqtt-btn" id="connectBtn" onclick="connectMQTT()">
-                    🔗 Kết nối MQTT
+            <div class="video-container" id="videoContainer">
+                <img id="videoStream" alt="Live Stream" style="display: none;">
+                <div class="stream-placeholder" id="streamPlaceholder">
+                    <i class="fas fa-video-slash"></i>
+                    <h3>Chưa có stream</h3>
+                    <p>Kết nối đến ESP32-CAM để bắt đầu xem</p>
+                </div>
+            </div>
+            
+            <div class="video-controls">
+                <button class="btn btn-primary" onclick="startStream()">
+                    <i class="fas fa-play"></i>
+                    Bắt đầu stream
                 </button>
-                <button class="mqtt-btn" onclick="disconnectMQTT()" id="disconnectBtn" style="display: none;">
-                    ✋ Ngắt kết nối
+                <button class="btn btn-danger" onclick="stopStream()">
+                    <i class="fas fa-stop"></i>
+                    Dừng stream
                 </button>
-                <button class="mqtt-btn" onclick="testMQTT()">
-                    📡 Test MQTT
+                <button class="btn btn-success" onclick="captureImage()">
+                    <i class="fas fa-camera"></i>
+                    Chụp ảnh
+                </button>
+                <button class="btn btn-warning" onclick="toggleFlash()">
+                    <i class="fas fa-lightbulb"></i>
+                    Flash
+                </button>
+                <button class="btn btn-info" onclick="takeSnapshot()">
+                    <i class="fas fa-download"></i>
+                    Tải ảnh
+                </button>
+                <button class="btn btn-outline" onclick="fullscreen()">
+                    <i class="fas fa-expand"></i>
+                    Toàn màn hình
                 </button>
             </div>
         </div>
         
-        <!-- Main Content -->
-        <div class="content">
-            <!-- Alarm Control Card -->
-            <div class="card">
-                <h2>⏰ Điều Khiển Báo Thức</h2>
-                
-                <div class="time-inputs">
-                    <input 
-                        type="number" 
-                        class="time-input" 
-                        id="alarmHour" 
-                        min="0" 
-                        max="23" 
-                        value="7"
-                    >
-                    <span class="time-separator">:</span>
-                    <input 
-                        type="number" 
-                        class="time-input" 
-                        id="alarmMinute" 
-                        min="0" 
-                        max="59" 
-                        value="30"
-                    >
+        <!-- Right Column: Control Panels -->
+        <div class="control-panel">
+            <!-- Smart Clock Panel -->
+            <div class="panel-card clock-panel">
+                <div class="panel-header">
+                    <i class="fas fa-clock"></i>
+                    Smart Clock Control
                 </div>
-                
-                <select class="alarm-sound" id="alarmSound">
-                    <option value="0">🔔 Beep (Tiếng bip)</option>
-                    <option value="1">🎵 Melody 1 (Giai điệu 1)</option>
-                    <option value="2">🎶 Melody 2 (Giai điệu 2)</option>
-                </select>
-                
-                <div class="button-group">
-                    <button class="btn btn-primary" onclick="setAlarmMQTT(true)">
-                        ✅ BẬT BÁO THỨC
-                    </button>
-                    <button class="btn btn-danger" onclick="setAlarmMQTT(false)">
-                        ❌ TẮT BÁO THỨC
-                    </button>
-                </div>
-                
-                <div class="alarm-status status-off" id="alarmStatus">
-                    Trạng thái: CHƯA CÓ DỮ LIỆU
-                </div>
-            </div>
-            
-            <!-- Virtual Buttons Card -->
-            <div class="card">
-                <h2>🎮 Nút Điều Khiển Ảo</h2>
-                <p style="color: #666; margin-bottom: 20px;">Gửi lệnh qua MQTT đến ESP32</p>
-                
-                <div class="virtual-buttons">
-                    <button class="virtual-btn btn-green" onclick="sendButtonMQTT(1)">
-                        <span style="font-size: 1.5rem;">🟢</span>
-                        NÚT 1
-                        <small>Chọn / Enter</small>
-                    </button>
+                <div class="panel-content">
+                    <div class="clock-display" id="currentTimeClock">
+                        00:00:00
+                    </div>
                     
-                    <button class="virtual-btn btn-blue" onclick="sendButtonMQTT(2)">
-                        <span style="font-size: 1.5rem;">🔵</span>
-                        NÚT 2
-                        <small>Tăng giá trị</small>
-                    </button>
+                    <div class="alarm-controls">
+                        <input type="number" class="time-input" id="alarmHour" min="0" max="23" value="7">
+                        <span class="time-separator">:</span>
+                        <input type="number" class="time-input" id="alarmMinute" min="0" max="59" value="30">
+                    </div>
                     
-                    <button class="virtual-btn btn-red" onclick="sendButtonMQTT(3)">
-                        <span style="font-size: 1.5rem;">🔴</span>
-                        NÚT 3
-                        <small>Giảm giá trị</small>
-                    </button>
+                    <select class="input-field" id="alarmSound" style="margin-bottom: 15px;">
+                        <option value="0">🔔 Beep</option>
+                        <option value="1">🎵 Melody 1</option>
+                        <option value="2">🎶 Melody 2</option>
+                    </select>
                     
-                    <button class="virtual-btn btn-orange" onclick="snoozeAlarmMQTT()">
-                        <span style="font-size: 1.5rem;">⏸️</span>
-                        TẮT CHUÔNG BÁO THỨC
-                        <small>Snooze / Dừng tạm thời</small>
-                    </button>
-                </div>
-                
-                <div style="margin-top: 20px; text-align: center;">
-                    <button class="btn btn-warning" onclick="resetESP32MQTT()" style="width: 100%;">
-                        🔄 KHỞI ĐỘNG LẠI ESP32
-                    </button>
+                    <div class="clock-buttons">
+                        <button class="btn btn-success" onclick="setAlarmMQTT(true)">
+                            <i class="fas fa-bell"></i>
+                            Bật báo thức
+                        </button>
+                        <button class="btn btn-danger" onclick="setAlarmMQTT(false)">
+                            <i class="fas fa-bell-slash"></i>
+                            Tắt báo thức
+                        </button>
+                        <button class="btn btn-clock" onclick="snoozeAlarmMQTT()">
+                            <i class="fas fa-pause"></i>
+                            Tạm dừng
+                        </button>
+                        <button class="btn btn-warning" onclick="resetESP32MQTT()">
+                            <i class="fas fa-redo"></i>
+                            Khởi động lại
+                        </button>
+                    </div>
+                    
+                    <div id="alarmStatus" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; text-align: center; font-weight: bold; color: #666;">
+                        Trạng thái báo thức: Chưa kết nối
+                    </div>
                 </div>
             </div>
             
-            <!-- System Info Card -->
-            <div class="card">
-                <h2>📊 Thông Tin Hệ Thống</h2>
-                
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">📡 Trạng thái MQTT</div>
-                        <div class="info-value" id="connectionStatus">Đang chờ...</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">🕐 Thời gian hiện tại</div>
-                        <div class="info-value" id="currentTime">--:--:--</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">🌡️ Nhiệt độ</div>
-                        <div class="info-value sensor-value" id="temperature">-- °C</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">💧 Độ ẩm</div>
-                        <div class="info-value sensor-value" id="humidity">-- %</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">📶 Cường độ WiFi</div>
-                        <div class="info-value" id="wifiRSSI">-- dBm</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">💾 Bộ nhớ trống</div>
-                        <div class="info-value" id="freeHeap">-- KB</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">⏱️ Uptime</div>
-                        <div class="info-value" id="uptime">-- phút</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">📍 Địa chỉ IP</div>
-                        <div class="info-value" id="deviceIP">--.--.--.--</div>
-                    </div>
+            <!-- MQTT Connection Panel -->
+            <div class="panel-card mqtt-panel">
+                <div class="panel-header">
+                    <i class="fas fa-wifi"></i>
+                    MQTT Connection
                 </div>
-                
-                <div style="margin-top: 20px;">
-                    <button class="btn" onclick="requestStatusUpdate()" style="background: #9C27B0; color: white; width: 100%;">
-                        🔄 Yêu cầu cập nhật
-                    </button>
+                <div class="panel-content">
+                    <div class="mqtt-status">
+                        <div class="status-dot" id="mqttStatusDot"></div>
+                        <span id="mqttStatusText">Chưa kết nối MQTT</span>
+                    </div>
+                    
+                    <div class="mqtt-control-buttons">
+                        <button class="btn btn-mqtt btn-small" onclick="connectMQTT()" id="connectBtn">
+                            <i class="fas fa-plug"></i>
+                            Kết nối MQTT
+                        </button>
+                        <button class="btn btn-outline btn-small" onclick="disconnectMQTT()" id="disconnectBtn" style="display: none;">
+                            <i class="fas fa-unplug"></i>
+                            Ngắt kết nối
+                        </button>
+                        <button class="btn btn-info btn-small" onclick="testMQTT()">
+                            <i class="fas fa-broadcast-tower"></i>
+                            Test
+                        </button>
+                    </div>
+                    
+                    <div style="margin-top: 15px; font-size: 12px; color: #666;">
+                        <p><strong>Broker:</strong> broker.emqx.io</p>
+                        <p><strong>Client ID:</strong> <span id="clientId">web_xxxx</span></p>
+                    </div>
                 </div>
             </div>
             
-            <!-- MQTT Info Card -->
-            <div class="card mqtt-info-card">
-                <h2>🌐 Thông Tin MQTT</h2>
-                
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">Broker Server</div>
-                        <div class="info-value">broker.emqx.io</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">WebSocket Port</div>
-                        <div class="info-value">8084 (WSS)</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Topic Command</div>
-                        <div class="info-value">smartclock/command</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Topic Status</div>
-                        <div class="info-value">smartclock/status</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Topic Alarm</div>
-                        <div class="info-value">smartclock/alarm</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Topic Sensors</div>
-                        <div class="info-value">smartclock/sensors</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Client ID</div>
-                        <div class="info-value" id="clientId">web_xxxxxx</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Kết nối từ</div>
-                        <div class="info-value" id="connectionSource">GitHub Pages</div>
-                    </div>
+            <!-- Camera Connection Panel -->
+            <div class="panel-card">
+                <div class="panel-header">
+                    <i class="fas fa-camera"></i>
+                    Camera Connection
                 </div>
-                
-                <div style="margin-top: 20px; padding: 15px; background: rgba(156, 39, 176, 0.1); border-radius: 10px;">
-                    <p style="color: #666; font-size: 0.9rem; text-align: center;">
-                        💡 <strong>Lưu ý:</strong> Trang web này sử dụng MQTT qua WebSocket, không cần truy cập IP cục bộ của ESP32. 
-                        Chỉ cần ESP32 và trang web này cùng kết nối đến broker MQTT công cộng.
-                    </p>
+                <div class="panel-content">
+                    <div class="connection-section">
+                        <div class="input-group">
+                            <label class="input-label">Địa chỉ IP ESP32-CAM:</label>
+                            <input type="text" id="cameraIp" class="input-field" 
+                                   placeholder="192.168.1.100 hoặc esp32-cam.local" 
+                                   value="192.168.1.100">
+                        </div>
+                        
+                        <button class="btn btn-primary btn-block" onclick="connectCamera()">
+                            <i class="fas fa-plug"></i>
+                            Kết nối đến Camera
+                        </button>
+                        
+                        <button class="btn btn-outline btn-block" onclick="scanNetwork()" style="margin-top: 10px;">
+                            <i class="fas fa-search"></i>
+                            Quét mạng tìm Camera
+                        </button>
+                    </div>
+                    
+                    <div class="connection-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-history"></i>
+                            Camera đã lưu
+                        </h3>
+                        <div class="camera-list" id="cameraList">
+                            <!-- Dynamic content -->
+                        </div>
+                        <button class="btn btn-outline btn-block" onclick="clearSavedCameras()">
+                            <i class="fas fa-trash"></i>
+                            Xóa tất cả
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Footer -->
-        <div class="footer">
-            <p>© 2024 ESP32 Smart Clock - MQTT Control Panel | Điều khiển từ bất kỳ đâu qua Internet</p>
-            <p style="font-size: 0.9rem; margin-top: 5px;">
-                Sử dụng MQTT broker công cộng | Không cần port forwarding | Hoạt động trên mọi mạng
-            </p>
-            <div style="margin-top: 15px; display: flex; justify-content: center; gap: 20px;">
-                <a href="index.html" style="color: #9C27B0; text-decoration: none;">
-                    <i class="fas fa-home"></i> Trang chủ
-                </a>
-                <a href="espcam.html" style="color: #2196F3; text-decoration: none;">
-                    <i class="fas fa-camera"></i> Camera View
-                </a>
-                <a href="camera-dashboard.html" style="color: #4CAF50; text-decoration: none;">
-                    <i class="fas fa-tv"></i> Dashboard Camera
-                </a>
+            
+            <!-- System Stats Panel -->
+            <div class="panel-card">
+                <div class="panel-header">
+                    <i class="fas fa-chart-bar"></i>
+                    System Statistics
+                </div>
+                <div class="panel-content">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="statFps">0</div>
+                            <div class="stat-label">FPS</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statLatency">-</div>
+                            <div class="stat-label">Độ trễ</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statHeap">-</div>
+                            <div class="stat-label">Bộ nhớ trống</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statUptime">0</div>
+                            <div class="stat-label">Uptime (s)</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-info btn-block" onclick="requestStatusUpdate()">
+                            <i class="fas fa-sync-alt"></i>
+                            Cập nhật trạng thái
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Links Panel -->
+            <div class="panel-card">
+                <div class="panel-header">
+                    <i class="fas fa-bolt"></i>
+                    Quick Links
+                </div>
+                <div class="panel-content">
+                    <div class="quick-links">
+                        <a href="camera-dashboard.html" class="quick-link">
+                            <i class="fas fa-tv quick-icon"></i>
+                            <span class="quick-text">Multi-Camera Dashboard</span>
+                        </a>
+                        <a href="mqtt-clock.html" class="quick-link">
+                            <i class="fas fa-clock quick-icon"></i>
+                            <span class="quick-text">Full Smart Clock</span>
+                        </a>
+                        <a href="CORS-proxy.html" class="quick-link">
+                            <i class="fas fa-link quick-icon"></i>
+                            <span class="quick-text">CORS Proxy</span>
+                        </a>
+                        <a href="#" class="quick-link" onclick="showQRCode()">
+                            <i class="fas fa-qrcode quick-icon"></i>
+                            <span class="quick-text">QR Code</span>
+                        </a>
+                        <a href="#" class="quick-link" onclick="sharePage()">
+                            <i class="fas fa-share-alt quick-icon"></i>
+                            <span class="quick-text">Chia sẻ</span>
+                        </a>
+                        <a href="#" class="quick-link" onclick="fullscreen()">
+                            <i class="fas fa-expand quick-icon"></i>
+                            <span class="quick-text">Fullscreen</span>
+                        </a>
+                    </div>
+                    
+                    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                        <p style="font-size: 12px; color: #666; margin: 0; text-align: center;">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Tip:</strong> Kết nối MQTT để điều khiển Smart Clock từ xa!
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     
-    <!-- Toast Notification -->
-    <div class="toast" id="toast"></div>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
     
-    <!-- Loading Overlay -->
-    <div class="loading" id="loading">
-        <div class="spinner"></div>
-    </div>
-    
+    <!-- JavaScript -->
     <script>
-        // MQTT Configuration
-        const MQTT_CONFIG = {
-            broker: 'wss://broker.emqx.io:8084/mqtt',
-            topics: {
-                command: 'smartclock/command',
-                status: 'smartclock/status',
-                alarm: 'smartclock/alarm',
-                sensors: 'smartclock/sensors'
+        // ================= CONFIGURATION =================
+        const APP_CONFIG = {
+            version: '3.0.0',
+            localStorageKeys: {
+                cameraHistory: 'esp32cam_history',
+                settings: 'esp32cam_settings',
+                lastCamera: 'esp32cam_last_camera',
+                mqttConfig: 'mqtt_config'
             },
-            options: {
-                clean: true,
-                connectTimeout: 4000,
-                reconnectPeriod: 2000
+            defaultSettings: {
+                quality: 10,
+                brightness: 0,
+                framesize: 10,
+                autoConnect: true
+            },
+            mqttConfig: {
+                broker: 'wss://broker.emqx.io:8084/mqtt',
+                topics: {
+                    command: 'smartclock/command',
+                    status: 'smartclock/status',
+                    alarm: 'smartclock/alarm',
+                    sensors: 'smartclock/sensors'
+                },
+                options: {
+                    clean: true,
+                    connectTimeout: 4000,
+                    reconnectPeriod: 2000
+                }
             }
         };
         
-        // Global variables
-        let mqttClient = null;
-        let isMQTTConnected = false;
-        let clientId = '';
-        
-        // DOM Elements
-        const mqttStatusDot = document.getElementById('mqttStatusDot');
-        const mqttStatusText = document.getElementById('mqttStatusText');
-        const connectionStatus = document.getElementById('connectionStatus');
-        const toast = document.getElementById('toast');
-        const loading = document.getElementById('loading');
-        const connectBtn = document.getElementById('connectBtn');
-        const disconnectBtn = document.getElementById('disconnectBtn');
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            // Generate unique client ID
-            clientId = 'web_' + Math.random().toString(16).substr(2, 8);
-            document.getElementById('clientId').textContent = clientId;
+        // ================= STATE MANAGEMENT =================
+        let state = {
+            // ESP32-CAM State
+            currentCamera: null,
+            isCameraConnected: false,
+            isStreaming: false,
+            cameraList: [],
+            settings: {},
             
-            // Start clock
+            // MQTT State
+            mqttClient: null,
+            isMQTTConnected: false,
+            clientId: '',
+            
+            // Statistics
+            fps: 0,
+            latency: 0,
+            statsInterval: null,
+            fpsInterval: null
+        };
+        
+        // ================= INITIALIZATION =================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('ESP32 Control Center v' + APP_CONFIG.version + ' loaded');
+            
+            // Generate client ID
+            state.clientId = 'web_' + Math.random().toString(16).substr(2, 8);
+            document.getElementById('clientId').textContent = state.clientId;
+            
+            // Load settings
+            loadSettings();
+            
+            // Load camera history
+            loadCameraHistory();
+            
+            // Update clock
             updateClock();
             setInterval(updateClock, 1000);
             
-            // Auto-connect to MQTT
-            setTimeout(connectMQTT, 1000);
+            // Start stats update
+            startStatsUpdate();
             
-            // Detect connection source
-            const isGithub = window.location.hostname.includes('github.io');
-            document.getElementById('connectionSource').textContent = 
-                isGithub ? 'GitHub Pages' : window.location.hostname;
+            // Auto-connect to last camera
+            const lastCamera = localStorage.getItem(APP_CONFIG.localStorageKeys.lastCamera);
+            if (lastCamera && state.settings.autoConnect) {
+                try {
+                    const camera = JSON.parse(lastCamera);
+                    document.getElementById('cameraIp').value = camera.ip || '192.168.1.100';
+                    setTimeout(() => {
+                        connectCamera();
+                    }, 2000);
+                } catch (e) {
+                    console.log('No valid last camera found');
+                }
+            }
+            
+            // Auto-connect to MQTT
+            setTimeout(connectMQTT, 3000);
         });
         
-        // Connect to MQTT Broker
+        // ================= ESP32-CAM FUNCTIONS =================
+        function connectCamera() {
+            const ip = document.getElementById('cameraIp').value.trim();
+            if (!ip) {
+                showToast('Vui lòng nhập địa chỉ IP ESP32-CAM', 'warning');
+                return;
+            }
+            
+            const cameraUrl = `http://${ip}`;
+            connectToCamera(cameraUrl);
+        }
+        
+        async function connectToCamera(cameraUrl) {
+            showToast('Đang kết nối đến camera...', 'info');
+            updateConnectionStatus(false);
+            
+            try {
+                // Test connection
+                const testUrl = `${cameraUrl}/status`;
+                const response = await fetchWithTimeout(testUrl, { timeout: 5000 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Save to history
+                saveCameraToHistory(cameraUrl, data.camera_name || 'ESP32-CAM');
+                
+                // Update state
+                state.currentCamera = cameraUrl;
+                state.isCameraConnected = true;
+                
+                // Update UI
+                updateCameraInfo(data);
+                updateConnectionStatus(true);
+                
+                // Start stream automatically
+                setTimeout(startStream, 1000);
+                
+                showToast(`Đã kết nối đến ${data.camera_name || 'ESP32-CAM'}`, 'success');
+                
+            } catch (error) {
+                console.error('Connection failed:', error);
+                showToast(`Kết nối thất bại: ${error.message}`, 'error');
+                updateConnectionStatus(false);
+            }
+        }
+        
+        function startStream() {
+            if (!state.currentCamera || state.isStreaming) return;
+            
+            stopStream(); // Stop existing stream
+            
+            const streamUrl = `${state.currentCamera}/stream?t=${Date.now()}`;
+            const videoElement = document.getElementById('videoStream');
+            const placeholder = document.getElementById('streamPlaceholder');
+            
+            videoElement.style.display = 'block';
+            placeholder.style.display = 'none';
+            videoElement.src = streamUrl;
+            
+            state.isStreaming = true;
+            
+            // Start FPS counter
+            startFPSCounter();
+            
+            showToast('Đã bắt đầu stream', 'success');
+        }
+        
+        function stopStream() {
+            const videoElement = document.getElementById('videoStream');
+            const placeholder = document.getElementById('streamPlaceholder');
+            
+            videoElement.src = '';
+            videoElement.style.display = 'none';
+            placeholder.style.display = 'flex';
+            
+            state.isStreaming = false;
+            
+            if (state.fpsInterval) {
+                clearInterval(state.fpsInterval);
+                state.fpsInterval = null;
+            }
+            
+            showToast('Đã dừng stream', 'info');
+        }
+        
+        async function captureImage() {
+            if (!state.currentCamera) {
+                showToast('Chưa kết nối camera', 'warning');
+                return;
+            }
+            
+            try {
+                const captureUrl = `${state.currentCamera}/capture?_=${Date.now()}`;
+                const response = await fetch(captureUrl);
+                const blob = await response.blob();
+                const imageUrl = URL.createObjectURL(blob);
+                
+                // Create download link
+                const link = document.createElement('a');
+                link.href = imageUrl;
+                link.download = `esp32-capture-${new Date().toISOString().replace(/[:.]/g, '-')}.jpg`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showToast('Đã tải ảnh xuống', 'success');
+            } catch (error) {
+                showToast('Lỗi khi chụp ảnh', 'error');
+            }
+        }
+        
+        function takeSnapshot() {
+            if (!state.currentCamera) return;
+            
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                
+                const link = document.createElement('a');
+                link.download = `snapshot-${Date.now()}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg');
+                link.click();
+                
+                showToast('Đã chụp snapshot', 'success');
+            };
+            img.src = `${state.currentCamera}/capture?_=${Date.now()}`;
+        }
+        
+        function toggleFlash() {
+            if (!state.currentCamera) return;
+            
+            fetch(`${state.currentCamera}/control?flash=1`)
+                .then(response => response.json())
+                .then(data => {
+                    showToast(data.flash === 1 ? 'Flash ON' : 'Flash OFF', 'info');
+                })
+                .catch(() => {
+                    showToast('Lỗi điều khiển flash', 'error');
+                });
+        }
+        
+        function fullscreen() {
+            const videoContainer = document.getElementById('videoContainer');
+            if (!document.fullscreenElement) {
+                if (videoContainer.requestFullscreen) {
+                    videoContainer.requestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+        
+        // ================= MQTT FUNCTIONS =================
         function connectMQTT() {
-            if (mqttClient && mqttClient.connected) {
+            if (state.mqttClient && state.isMQTTConnected) {
                 showToast('✅ Đã kết nối MQTT rồi!', 'success');
                 return;
             }
             
-            showLoading(true);
             updateMQTTStatus('Đang kết nối...', false);
             
-            // Create client options
             const options = {
-                ...MQTT_CONFIG.options,
-                clientId: clientId,
+                ...APP_CONFIG.mqttConfig.options,
+                clientId: state.clientId,
                 username: 'emqx',
                 password: 'public'
             };
             
             try {
-                // Connect to MQTT broker
-                mqttClient = mqtt.connect(MQTT_CONFIG.broker, options);
+                state.mqttClient = mqtt.connect(APP_CONFIG.mqttConfig.broker, options);
                 
-                // Setup event handlers
-                mqttClient.on('connect', () => {
-                    isMQTTConnected = true;
+                state.mqttClient.on('connect', () => {
+                    state.isMQTTConnected = true;
                     updateMQTTStatus('Đã kết nối', true);
                     
                     // Subscribe to topics
                     subscribeToTopics();
                     
+                    // Update UI
+                    document.getElementById('connectBtn').style.display = 'none';
+                    document.getElementById('disconnectBtn').style.display = 'block';
+                    
                     showToast('✅ Đã kết nối MQTT thành công!', 'success');
-                    
-                    // Show disconnect button
-                    connectBtn.style.display = 'none';
-                    disconnectBtn.style.display = 'block';
-                    
-                    // Request initial status
-                    setTimeout(requestStatusUpdate, 1000);
                 });
                 
-                mqttClient.on('message', (topic, message) => {
+                state.mqttClient.on('message', (topic, message) => {
                     handleMQTTMessage(topic, message.toString());
                 });
                 
-                mqttClient.on('error', (error) => {
+                state.mqttClient.on('error', (error) => {
                     console.error('MQTT Error:', error);
                     updateMQTTStatus('Lỗi kết nối', false);
                     showToast('❌ Lỗi MQTT: ' + error.message, 'error');
                 });
                 
-                mqttClient.on('close', () => {
-                    isMQTTConnected = false;
+                state.mqttClient.on('close', () => {
+                    state.isMQTTConnected = false;
                     updateMQTTStatus('Mất kết nối', false);
-                    
-                    // Show connect button
-                    connectBtn.style.display = 'block';
-                    disconnectBtn.style.display = 'none';
-                });
-                
-                mqttClient.on('reconnect', () => {
-                    updateMQTTStatus('Đang kết nối lại...', false);
+                    document.getElementById('connectBtn').style.display = 'block';
+                    document.getElementById('disconnectBtn').style.display = 'none';
                 });
                 
             } catch (error) {
-                console.error('Failed to connect to MQTT:', error);
                 showToast('❌ Không thể kết nối MQTT', 'error');
                 updateMQTTStatus('Kết nối thất bại', false);
-            } finally {
-                showLoading(false);
             }
         }
         
-        // Disconnect from MQTT
         function disconnectMQTT() {
-            if (mqttClient) {
-                mqttClient.end();
-                mqttClient = null;
-                isMQTTConnected = false;
+            if (state.mqttClient) {
+                state.mqttClient.end();
+                state.mqttClient = null;
+                state.isMQTTConnected = false;
                 updateMQTTStatus('Đã ngắt kết nối', false);
                 
-                connectBtn.style.display = 'block';
-                disconnectBtn.style.display = 'none';
+                document.getElementById('connectBtn').style.display = 'block';
+                document.getElementById('disconnectBtn').style.display = 'none';
                 
                 showToast('✋ Đã ngắt kết nối MQTT', 'info');
             }
         }
         
-        // Subscribe to MQTT topics
         function subscribeToTopics() {
-            if (!mqttClient || !isMQTTConnected) return;
+            if (!state.mqttClient || !state.isMQTTConnected) return;
             
-            Object.values(MQTT_CONFIG.topics).forEach(topic => {
-                mqttClient.subscribe(topic, (err) => {
+            Object.values(APP_CONFIG.mqttConfig.topics).forEach(topic => {
+                state.mqttClient.subscribe(topic, (err) => {
                     if (!err) {
                         console.log(`✅ Subscribed to ${topic}`);
-                    } else {
-                        console.error(`❌ Failed to subscribe to ${topic}:`, err);
                     }
                 });
             });
         }
         
-        // Handle incoming MQTT messages
         function handleMQTTMessage(topic, message) {
-            console.log(`📨 MQTT Message [${topic}]:`, message);
-            
             try {
                 const data = JSON.parse(message);
                 
-                switch(topic) {
-                    case MQTT_CONFIG.topics.status:
-                        updateSystemInfo(data);
-                        break;
-                        
-                    case MQTT_CONFIG.topics.alarm:
-                        updateAlarmInfo(data);
-                        break;
-                        
-                    case MQTT_CONFIG.topics.sensors:
-                        updateSensorInfo(data);
-                        break;
+                if (topic === APP_CONFIG.mqttConfig.topics.alarm) {
+                    // Update alarm status
+                    const statusDiv = document.getElementById('alarmStatus');
+                    if (data.enabled) {
+                        statusDiv.innerHTML = `🔔 Báo thức: <span style="color: #4CAF50;">ĐANG BẬT</span> ${data.hour}:${data.minute}`;
+                        statusDiv.style.background = '#d4edda';
+                    } else {
+                        statusDiv.innerHTML = `🔕 Báo thức: <span style="color: #666;">ĐANG TẮT</span>`;
+                        statusDiv.style.background = '#f8f9fa';
+                    }
+                    
+                    // Update time inputs
+                    if (data.hour !== undefined) {
+                        document.getElementById('alarmHour').value = data.hour;
+                    }
+                    if (data.minute !== undefined) {
+                        document.getElementById('alarmMinute').value = data.minute;
+                    }
                 }
                 
             } catch (error) {
@@ -930,10 +1220,9 @@
             }
         }
         
-        // Send MQTT command
         function sendMQTTCommand(command, data = {}) {
-            if (!mqttClient || !isMQTTConnected) {
-                showToast('❌ Chưa kết nối MQTT! Vui lòng kết nối trước.', 'error');
+            if (!state.mqttClient || !state.isMQTTConnected) {
+                showToast('❌ Chưa kết nối MQTT!', 'error');
                 return false;
             }
             
@@ -941,85 +1230,20 @@
                 command: command,
                 data: data,
                 timestamp: Date.now(),
-                source: 'web_mqtt_control'
+                source: 'web_control'
             };
             
             try {
-                mqttClient.publish(MQTT_CONFIG.topics.command, JSON.stringify(message));
+                state.mqttClient.publish(APP_CONFIG.mqttConfig.topics.command, JSON.stringify(message));
                 console.log(`📤 Sent MQTT command: ${command}`, data);
                 return true;
             } catch (error) {
-                console.error('Error sending MQTT command:', error);
                 showToast('❌ Lỗi khi gửi lệnh MQTT', 'error');
                 return false;
             }
         }
         
-        // Update MQTT status display
-        function updateMQTTStatus(text, connected) {
-            mqttStatusText.textContent = text;
-            connectionStatus.textContent = text;
-            
-            if (connected) {
-                mqttStatusDot.classList.add('connected');
-                connectionStatus.style.color = '#4CAF50';
-            } else {
-                mqttStatusDot.classList.remove('connected');
-                connectionStatus.style.color = '#f44336';
-            }
-        }
-        
-        // Update system information from MQTT
-        function updateSystemInfo(data) {
-            if (data.ipAddress) {
-                document.getElementById('deviceIP').textContent = data.ipAddress;
-            }
-            if (data.uptime !== undefined) {
-                document.getElementById('uptime').textContent = Math.floor(data.uptime / 60) + ' phút';
-            }
-            if (data.freeHeap !== undefined) {
-                document.getElementById('freeHeap').textContent = Math.floor(data.freeHeap / 1024) + ' KB';
-            }
-            if (data.rssi !== undefined) {
-                document.getElementById('wifiRSSI').textContent = data.rssi + ' dBm';
-            }
-            if (data.ssid) {
-                // Optional: Update WiFi SSID if needed
-            }
-        }
-        
-        // Update alarm information from MQTT
-        function updateAlarmInfo(data) {
-            if (data.hour !== undefined) {
-                document.getElementById('alarmHour').value = data.hour;
-            }
-            if (data.minute !== undefined) {
-                document.getElementById('alarmMinute').value = data.minute;
-            }
-            if (data.sound !== undefined) {
-                document.getElementById('alarmSound').value = data.sound;
-            }
-            if (data.enabled !== undefined) {
-                const statusDiv = document.getElementById('alarmStatus');
-                statusDiv.textContent = `Trạng thái: ${data.enabled ? 'ĐANG BẬT' : 'ĐANG TẮT'}`;
-                statusDiv.className = `alarm-status ${data.enabled ? 'status-on' : 'status-off'}`;
-            }
-            if (data.triggered) {
-                showToast('🚨 Báo thức đang kêu!', 'warning');
-            }
-        }
-        
-        // Update sensor information from MQTT
-        function updateSensorInfo(data) {
-            if (data.temperature !== undefined) {
-                document.getElementById('temperature').textContent = data.temperature.toFixed(1) + ' °C';
-            }
-            if (data.humidity !== undefined) {
-                document.getElementById('humidity').textContent = data.humidity.toFixed(1) + ' %';
-            }
-        }
-        
-        // Command functions
+        // Smart Clock Commands
         function setAlarmMQTT(enable) {
             const hour = parseInt(document.getElementById('alarmHour').value);
             const minute = parseInt(document.getElementById('alarmMinute').value);
@@ -1042,13 +1266,6 @@
             }
         }
         
-        function sendButtonMQTT(buttonNumber) {
-            const success = sendMQTTCommand('button', { btn: buttonNumber });
-            if (success) {
-                showToast(`🎮 Đã nhấn nút ${buttonNumber}`, 'success');
-            }
-        }
-        
         function snoozeAlarmMQTT() {
             const success = sendMQTTCommand('snooze', {});
             if (success) {
@@ -1057,7 +1274,7 @@
         }
         
         function resetESP32MQTT() {
-            if (confirm('Bạn có chắc muốn khởi động lại ESP32? Thiết bị sẽ mất kết nối trong vài giây.')) {
+            if (confirm('Khởi động lại ESP32? Thiết bị sẽ mất kết nối vài giây.')) {
                 const success = sendMQTTCommand('reset', {});
                 if (success) {
                     showToast('🔄 Đang khởi động lại ESP32...', 'info');
@@ -1065,81 +1282,321 @@
             }
         }
         
-        function requestStatusUpdate() {
-            const success = sendMQTTCommand('get_status', {});
-            if (success) {
-                showToast('📊 Đang yêu cầu cập nhật trạng thái...', 'info');
-            }
-        }
-        
         function testMQTT() {
-            if (!isMQTTConnected) {
+            if (!state.isMQTTConnected) {
                 showToast('Vui lòng kết nối MQTT trước!', 'error');
                 return;
             }
             
             const testMessage = {
                 test: true,
-                message: 'Test từ trang web GitHub',
-                timestamp: Date.now(),
-                clientId: clientId
+                message: 'Test từ ESP32 Control Center',
+                timestamp: Date.now()
             };
             
             try {
-                mqttClient.publish('smartclock/test', JSON.stringify(testMessage));
-                showToast('📡 Đã gửi tin nhắn test MQTT!', 'success');
+                state.mqttClient.publish('smartclock/test', JSON.stringify(testMessage));
+                showToast('📡 Đã gửi test MQTT!', 'success');
             } catch (error) {
                 showToast('❌ Lỗi test MQTT', 'error');
             }
         }
         
-        // Update clock
+        // ================= UTILITY FUNCTIONS =================
         function updateClock() {
             const now = new Date();
             const timeStr = now.toLocaleTimeString('vi-VN');
-            document.getElementById('currentTime').textContent = timeStr;
+            document.getElementById('currentTimeClock').textContent = timeStr;
         }
         
-        // Show toast notification
-        function showToast(message, type = 'info') {
-            toast.textContent = message;
-            
-            // Set color based on type
-            const colors = {
-                error: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
-                success: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
-                info: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
-                warning: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)'
-            };
-            
-            toast.style.background = colors[type] || colors.info;
-            toast.classList.add('show');
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-        
-        // Show/hide loading overlay
-        function showLoading(show) {
-            if (show) {
-                loading.classList.add('active');
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('connectionStatus');
+            if (connected) {
+                indicator.innerHTML = '<span class="status-dot" style="background: #4CAF50;"></span><span>Đã kết nối</span>';
+                indicator.style.color = '#4CAF50';
             } else {
-                setTimeout(() => {
-                    loading.classList.remove('active');
-                }, 500);
+                indicator.innerHTML = '<span class="status-dot"></span><span>Chưa kết nối</span>';
+                indicator.style.color = '#f44336';
             }
         }
         
-        // Export functions to global scope
+        function updateMQTTStatus(text, connected) {
+            document.getElementById('mqttStatusText').textContent = text;
+            const dot = document.getElementById('mqttStatusDot');
+            if (connected) {
+                dot.classList.add('connected');
+            } else {
+                dot.classList.remove('connected');
+            }
+        }
+        
+        function updateCameraInfo(data) {
+            if (data.free_heap) {
+                document.getElementById('statHeap').textContent = Math.round(data.free_heap / 1024) + ' KB';
+            }
+            if (data.uptime) {
+                document.getElementById('statUptime').textContent = data.uptime;
+            }
+        }
+        
+        function startFPSCounter() {
+            let frameCount = 0;
+            
+            if (state.fpsInterval) {
+                clearInterval(state.fpsInterval);
+            }
+            
+            state.fpsInterval = setInterval(() => {
+                state.fps = frameCount;
+                document.getElementById('statFps').textContent = frameCount;
+                frameCount = 0;
+            }, 1000);
+            
+            const video = document.getElementById('videoStream');
+            const observer = new MutationObserver(() => {
+                frameCount++;
+            });
+            observer.observe(video, { attributes: true, attributeFilter: ['src'] });
+        }
+        
+        function startStatsUpdate() {
+            if (state.statsInterval) {
+                clearInterval(state.statsInterval);
+            }
+            
+            state.statsInterval = setInterval(async () => {
+                if (state.currentCamera && state.isCameraConnected) {
+                    try {
+                        const startTime = Date.now();
+                        const response = await fetchWithTimeout(`${state.currentCamera}/status`, { timeout: 3000 });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            state.latency = Date.now() - startTime;
+                            document.getElementById('statLatency').textContent = state.latency + ' ms';
+                            updateCameraInfo(data);
+                        }
+                    } catch (error) {
+                        // Silent fail
+                    }
+                }
+            }, 5000);
+        }
+        
+        function requestStatusUpdate() {
+            if (state.currentCamera) {
+                fetch(`${state.currentCamera}/status`)
+                    .then(response => response.json())
+                    .then(data => {
+                        updateCameraInfo(data);
+                        showToast('✅ Đã cập nhật trạng thái', 'success');
+                    })
+                    .catch(() => {
+                        showToast('❌ Lỗi cập nhật trạng thái', 'error');
+                    });
+            }
+        }
+        
+        // ================= CAMERA HISTORY =================
+        function saveCameraToHistory(url, name) {
+            const camera = {
+                url: url,
+                name: name,
+                ip: url.replace('http://', ''),
+                timestamp: Date.now()
+            };
+            
+            state.cameraList = state.cameraList.filter(cam => cam.url !== url);
+            state.cameraList.unshift(camera);
+            
+            if (state.cameraList.length > 5) {
+                state.cameraList = state.cameraList.slice(0, 5);
+            }
+            
+            localStorage.setItem(
+                APP_CONFIG.localStorageKeys.cameraHistory,
+                JSON.stringify(state.cameraList)
+            );
+            
+            localStorage.setItem(
+                APP_CONFIG.localStorageKeys.lastCamera,
+                JSON.stringify({ ip: camera.ip, name: camera.name })
+            );
+            
+            renderCameraList();
+        }
+        
+        function loadCameraHistory() {
+            try {
+                const saved = localStorage.getItem(APP_CONFIG.localStorageKeys.cameraHistory);
+                if (saved) {
+                    state.cameraList = JSON.parse(saved);
+                    renderCameraList();
+                }
+            } catch (error) {
+                console.error('Error loading camera history:', error);
+            }
+        }
+        
+        function renderCameraList() {
+            const container = document.getElementById('cameraList');
+            
+            if (state.cameraList.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:#666;padding:10px;">Chưa có camera</p>';
+                return;
+            }
+            
+            container.innerHTML = state.cameraList.map((camera, index) => `
+                <div class="camera-item">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; font-size: 13px;">${camera.name}</div>
+                        <div style="font-size: 11px; color: #666;">${camera.ip}</div>
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <button onclick="connectToCamera('${camera.url}')" 
+                                style="background:#4a6fa5;color:white;border:none;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:12px;">
+                            <i class="fas fa-plug"></i>
+                        </button>
+                        <button onclick="removeCamera(${index})" 
+                                style="background:#dc3545;color:white;border:none;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:12px;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function removeCamera(index) {
+            if (confirm('Xóa camera này khỏi lịch sử?')) {
+                state.cameraList.splice(index, 1);
+                localStorage.setItem(
+                    APP_CONFIG.localStorageKeys.cameraHistory,
+                    JSON.stringify(state.cameraList)
+                );
+                renderCameraList();
+                showToast('Đã xóa camera', 'info');
+            }
+        }
+        
+        function clearSavedCameras() {
+            if (confirm('Xóa tất cả camera đã lưu?')) {
+                state.cameraList = [];
+                localStorage.removeItem(APP_CONFIG.localStorageKeys.cameraHistory);
+                localStorage.removeItem(APP_CONFIG.localStorageKeys.lastCamera);
+                renderCameraList();
+                showToast('Đã xóa tất cả camera', 'info');
+            }
+        }
+        
+        function scanNetwork() {
+            showToast('Chức năng quét mạng sẽ có trong phiên bản tới', 'info');
+        }
+        
+        // ================= SETTINGS =================
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem(APP_CONFIG.localStorageKeys.settings);
+                state.settings = saved ? JSON.parse(saved) : { ...APP_CONFIG.defaultSettings };
+            } catch (error) {
+                state.settings = { ...APP_CONFIG.defaultSettings };
+            }
+        }
+        
+        function saveSettings() {
+            localStorage.setItem(
+                APP_CONFIG.localStorageKeys.settings,
+                JSON.stringify(state.settings)
+            );
+        }
+        
+        // ================= HELPER FUNCTIONS =================
+        function fetchWithTimeout(url, options = {}) {
+            const { timeout = 5000, ...fetchOptions } = options;
+            
+            return Promise.race([
+                fetch(url, fetchOptions),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Request timeout')), timeout)
+                )
+            ]);
+        }
+        
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                success: '#4CAF50',
+                error: '#f44336',
+                warning: '#ff9800',
+                info: '#2196F3'
+            };
+            
+            const icons = {
+                success: 'check-circle',
+                error: 'exclamation-circle',
+                warning: 'exclamation-triangle',
+                info: 'info-circle'
+            };
+            
+            toast.className = 'toast';
+            toast.style.borderLeft = `4px solid ${colors[type] || colors.info}`;
+            toast.innerHTML = `
+                <i class="fas fa-${icons[type] || icons.info}" style="color: ${colors[type] || colors.info};"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        function showQRCode() {
+            const url = window.location.href;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+            window.open(qrUrl, '_blank', 'width=300,height=300');
+        }
+        
+        function sharePage() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'ESP32 Control Center',
+                    text: 'Điều khiển ESP32-CAM và Smart Clock từ xa',
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                showToast('Đã copy link vào clipboard', 'success');
+            }
+        }
+        
+        // ================= EXPORT FUNCTIONS =================
+        window.startStream = startStream;
+        window.stopStream = stopStream;
+        window.captureImage = captureImage;
+        window.takeSnapshot = takeSnapshot;
+        window.toggleFlash = toggleFlash;
+        window.fullscreen = fullscreen;
+        window.connectCamera = connectCamera;
+        window.scanNetwork = scanNetwork;
+        window.connectToCamera = connectToCamera;
+        window.removeCamera = removeCamera;
+        window.clearSavedCameras = clearSavedCameras;
         window.connectMQTT = connectMQTT;
         window.disconnectMQTT = disconnectMQTT;
         window.testMQTT = testMQTT;
         window.setAlarmMQTT = setAlarmMQTT;
-        window.sendButtonMQTT = sendButtonMQTT;
         window.snoozeAlarmMQTT = snoozeAlarmMQTT;
         window.resetESP32MQTT = resetESP32MQTT;
         window.requestStatusUpdate = requestStatusUpdate;
+        window.showQRCode = showQRCode;
+        window.sharePage = sharePage;
+        
+        console.log('ESP32 Control Center initialized successfully!');
     </script>
 </body>
 </html>
