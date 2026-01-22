@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32-CAM Web Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            max-width: 1000px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 480px;
+            background-color: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+        
+        #stream {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .control-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+        
+        h2 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 8px;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .status {
+            background: #e7f5ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #339af0;
+        }
+        
+        .status h3 {
+            color: #1864ab;
+            margin-bottom: 10px;
+        }
+        
+        #statusText {
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .video-container {
+                height: 360px;
+            }
+            
+            button {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎥 ESP32-CAM Web Control</h1>
+        
+        <div class="video-container">
+            <img id="stream" src="" alt="Video Stream">
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <h2>📡 Stream Control</h2>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="startStream()">▶️ Start Stream</button>
+                    <button class="btn-secondary" onclick="stopStream()">⏸️ Stop Stream</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h2>🖼️ Capture</h2>
+                <div class="button-group">
+                    <button class="btn-success" onclick="capturePhoto()">📸 Capture Photo</button>
+                    <button class="btn-primary" onclick="toggleRecording()">🎥 Start Recording</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h2>⚙️ Settings</h2>
+                <div class="button-group">
+                    <button class="btn-secondary" onclick="changeResolution()">📐 Resolution</button>
+                    <button class="btn-secondary" onclick="changeQuality()">⭐ Quality</button>
+                    <button class="btn-danger" onclick="restartCamera()">🔄 Restart</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status">
+            <h3>📊 Status</h3>
+            <p id="statusText">Ready to connect to ESP32-CAM</p>
+        </div>
+    </div>
+
+    <script>
+        // Cấu hình ESP32-CAM
+        const ESP32_CAM_IP = "192.168.1.100"; // Thay đổi IP của ESP32-CAM tại đây
+        const STREAM_PORT = "81";
+        let isStreaming = false;
+        let isRecording = false;
+        
+        // Cập nhật status
+        function updateStatus(message) {
+            document.getElementById('statusText').textContent = message;
+            console.log("Status:", message);
+        }
+        
+        // Bật stream video
+        function startStream() {
+            const streamUrl = `http://${ESP32_CAM_IP}:${STREAM_PORT}/stream`;
+            document.getElementById('stream').src = streamUrl;
+            isStreaming = true;
+            updateStatus("Streaming started from ESP32-CAM");
+        }
+        
+        // Tắt stream
+        function stopStream() {
+            document.getElementById('stream').src = "";
+            isStreaming = false;
+            updateStatus("Streaming stopped");
+        }
+        
+        // Chụp ảnh
+        function capturePhoto() {
+            if (!isStreaming) {
+                updateStatus("Please start stream first!");
+                return;
+            }
+            
+            const captureUrl = `http://${ESP32_CAM_IP}/capture`;
+            const link = document.createElement('a');
+            link.href = captureUrl;
+            link.download = `esp32cam_${new Date().getTime()}.jpg`;
+            link.click();
+            updateStatus("Photo captured and downloaded");
+        }
+        
+        // Bật/tắt ghi video
+        function toggleRecording() {
+            if (!isStreaming) {
+                updateStatus("Please start stream first!");
+                return;
+            }
+            
+            isRecording = !isRecording;
+            const recordBtn = document.querySelector('button[onclick="toggleRecording()"]');
+            
+            if (isRecording) {
+                recordBtn.innerHTML = "⏹️ Stop Recording";
+                recordBtn.classList.remove('btn-primary');
+                recordBtn.classList.add('btn-danger');
+                updateStatus("Recording started...");
+            } else {
+                recordBtn.innerHTML = "🎥 Start Recording";
+                recordBtn.classList.remove('btn-danger');
+                recordBtn.classList.add('btn-primary');
+                updateStatus("Recording stopped. Video saved.");
+            }
+        }
+        
+        // Thay đổi độ phân giải
+        function changeResolution() {
+            if (!isStreaming) {
+                updateStatus("Please start stream first!");
+                return;
+            }
+            
+            const resolutions = [
+                {name: "QVGA (320x240)", value: "5"},
+                {name: "VGA (640x480)", value: "10"},
+                {name: "SVGA (800x600)", value: "11"},
+                {name: "XGA (1024x768)", value: "12"}
+            ];
+            
+            const selected = prompt("Select resolution:\n" + 
+                resolutions.map((r, i) => `${i+1}. ${r.name}`).join('\n'));
+            
+            if (selected) {
+                const index = parseInt(selected) - 1;
+                if (index >= 0 && index < resolutions.length) {
+                    updateStatus(`Changing resolution to ${resolutions[index].name}...`);
+                    // Gửi command đến ESP32-CAM
+                    fetch(`http://${ESP32_CAM_IP}/control?var=framesize&val=${resolutions[index].value}`)
+                        .then(() => updateStatus(`Resolution changed to ${resolutions[index].name}`));
+                }
+            }
+        }
+        
+        // Thay đổi chất lượng
+        function changeQuality() {
+            if (!isStreaming) {
+                updateStatus("Please start stream first!");
+                return;
+            }
+            
+            const qualities = [
+                {name: "Low (10)", value: "10"},
+                {name: "Medium (15)", value: "15"},
+                {name: "High (20)", value: "20"},
+                {name: "Best (25)", value: "25"}
+            ];
+            
+            const selected = prompt("Select quality:\n" + 
+                qualities.map((q, i) => `${i+1}. ${q.name}`).join('\n'));
+            
+            if (selected) {
+                const index = parseInt(selected) - 1;
+                if (index >= 0 && index < qualities.length) {
+                    updateStatus(`Changing quality to ${qualities[index].name}...`);
+                    fetch(`http://${ESP32_CAM_IP}/control?var=quality&val=${qualities[index].value}`)
+                        .then(() => updateStatus(`Quality changed to ${qualities[index].name}`));
+                }
+            }
+        }
+        
+        // Khởi động lại camera
+        function restartCamera() {
+            updateStatus("Restarting ESP32-CAM...");
+            fetch(`http://${ESP32_CAM_IP}/restart`)
+                .then(() => {
+                    updateStatus("ESP32-CAM is restarting. Please wait 30 seconds.");
+                    setTimeout(() => updateStatus("ESP32-CAM should be ready now."), 30000);
+                })
+                .catch(() => updateStatus("Restart command sent."));
+        }
+        
+        // Hướng dẫn kết nối
+        updateStatus(`Connect ESP32-CAM to: ${ESP32_CAM_IP}:${STREAM_PORT}`);
+    </script>
+</body>
+</html>
