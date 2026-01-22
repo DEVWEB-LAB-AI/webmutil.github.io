@@ -14,6 +14,9 @@
     <!-- MQTT.js cho Smart Clock -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     
+    <!-- QR Code Generator -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
     <style>
         :root {
             --primary: #4a6fa5;
@@ -157,7 +160,7 @@
             width: 100%;
             max-width: 100%;
             height: auto;
-            display: block;
+            display: none;
         }
         
         .stream-placeholder {
@@ -265,6 +268,48 @@
             grid-template-columns: repeat(2, 1fr);
             gap: 10px;
             margin-top: 15px;
+        }
+        
+        /* ================= CAMERA SETTINGS ================= */
+        .camera-settings {
+            margin: 15px 0;
+        }
+        
+        .slider-group {
+            margin-bottom: 15px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .slider-value {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
         
         /* ================= MQTT CONNECTION ================= */
@@ -466,6 +511,42 @@
             background: #e9ecef;
         }
         
+        /* ================= MODAL ================= */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 30px;
+            text-align: center;
+        }
+        
         /* ================= TOAST ================= */
         .toast-container {
             position: fixed;
@@ -561,6 +642,21 @@
             font-weight: 600;
             text-align: center;
         }
+        
+        /* ================= LOADING SPINNER ================= */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -580,9 +676,9 @@
                     <i class="fas fa-tv"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="mqtt-clock.html" class="nav-link">
-                    <i class="fas fa-clock"></i>
-                    <span>Smart Clock</span>
+                <a href="espcam.html" class="nav-link">
+                    <i class="fas fa-camera"></i>
+                    <span>Camera View</span>
                 </a>
                 <a href="CORS-proxy.html" class="nav-link">
                     <i class="fas fa-link"></i>
@@ -614,6 +710,7 @@
                     <h3>Chưa có stream</h3>
                     <p>Kết nối đến ESP32-CAM để bắt đầu xem</p>
                 </div>
+                <div class="spinner" id="streamLoading" style="display: none;"></div>
             </div>
             
             <div class="video-controls">
@@ -629,7 +726,7 @@
                     <i class="fas fa-camera"></i>
                     Chụp ảnh
                 </button>
-                <button class="btn btn-warning" onclick="toggleFlash()">
+                <button class="btn btn-warning" id="flashToggle" onclick="toggleFlash()">
                     <i class="fas fa-lightbulb"></i>
                     Flash
                 </button>
@@ -646,6 +743,106 @@
         
         <!-- Right Column: Control Panels -->
         <div class="control-panel">
+            <!-- Camera Connection Panel -->
+            <div class="panel-card">
+                <div class="panel-header">
+                    <i class="fas fa-camera"></i>
+                    Camera Connection
+                </div>
+                <div class="panel-content">
+                    <div class="connection-section">
+                        <div class="input-group">
+                            <label class="input-label">Địa chỉ IP ESP32-CAM:</label>
+                            <input type="text" id="cameraIp" class="input-field" 
+                                   placeholder="192.168.1.100 hoặc esp32-cam.local" 
+                                   value="192.168.1.100">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label">Port (mặc định: 80):</label>
+                            <input type="text" id="cameraPort" class="input-field" 
+                                   placeholder="80" value="80">
+                        </div>
+                        
+                        <button class="btn btn-primary btn-block" onclick="connectCamera()">
+                            <i class="fas fa-plug"></i>
+                            Kết nối đến Camera
+                        </button>
+                        
+                        <button class="btn btn-outline btn-block" onclick="testCamera()" style="margin-top: 10px;">
+                            <i class="fas fa-search"></i>
+                            Kiểm tra kết nối
+                        </button>
+                    </div>
+                    
+                    <div class="connection-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-history"></i>
+                            Camera đã lưu
+                        </h3>
+                        <div class="camera-list" id="cameraList">
+                            <!-- Dynamic content -->
+                        </div>
+                        <button class="btn btn-outline btn-block" onclick="clearSavedCameras()">
+                            <i class="fas fa-trash"></i>
+                            Xóa tất cả
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Camera Settings Panel -->
+            <div class="panel-card">
+                <div class="panel-header">
+                    <i class="fas fa-sliders-h"></i>
+                    Camera Settings
+                </div>
+                <div class="panel-content">
+                    <div class="camera-settings">
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Chất lượng (Quality)</span>
+                                <span class="slider-value" id="qualityValue">10</span>
+                            </div>
+                            <input type="range" class="slider" id="qualitySlider" 
+                                   min="1" max="63" value="10" oninput="updateQuality()">
+                        </div>
+                        
+                        <div class="slider-group">
+                            <div class="slider-label">
+                                <span>Độ sáng (Brightness)</span>
+                                <span class="slider-value" id="brightnessValue">0</span>
+                            </div>
+                            <input type="range" class="slider" id="brightnessSlider" 
+                                   min="-2" max="2" value="0" oninput="updateBrightness()">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label class="input-label">Độ phân giải:</label>
+                            <select id="resolutionSelect" class="input-field">
+                                <option value="7">QVGA (320x240)</option>
+                                <option value="8">CIF (400x296)</option>
+                                <option value="9">VGA (640x480)</option>
+                                <option value="10" selected>SVGA (800x600)</option>
+                                <option value="11">XGA (1024x768)</option>
+                                <option value="12">SXGA (1280x1024)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-success btn-block" onclick="applySettings()">
+                            <i class="fas fa-check"></i>
+                            Áp dụng cài đặt
+                        </button>
+                        <button class="btn btn-danger" onclick="rebootCamera()">
+                            <i class="fas fa-redo"></i>
+                            Reboot
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Smart Clock Panel -->
             <div class="panel-card clock-panel">
                 <div class="panel-header">
@@ -706,6 +903,12 @@
                         <span id="mqttStatusText">Chưa kết nối MQTT</span>
                     </div>
                     
+                    <div class="input-group">
+                        <label class="input-label">MQTT Broker:</label>
+                        <input type="text" id="mqttBroker" class="input-field" 
+                               value="wss://broker.emqx.io:8084/mqtt">
+                    </div>
+                    
                     <div class="mqtt-control-buttons">
                         <button class="btn btn-mqtt btn-small" onclick="connectMQTT()" id="connectBtn">
                             <i class="fas fa-plug"></i>
@@ -722,50 +925,8 @@
                     </div>
                     
                     <div style="margin-top: 15px; font-size: 12px; color: #666;">
-                        <p><strong>Broker:</strong> broker.emqx.io</p>
                         <p><strong>Client ID:</strong> <span id="clientId">web_xxxx</span></p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Camera Connection Panel -->
-            <div class="panel-card">
-                <div class="panel-header">
-                    <i class="fas fa-camera"></i>
-                    Camera Connection
-                </div>
-                <div class="panel-content">
-                    <div class="connection-section">
-                        <div class="input-group">
-                            <label class="input-label">Địa chỉ IP ESP32-CAM:</label>
-                            <input type="text" id="cameraIp" class="input-field" 
-                                   placeholder="192.168.1.100 hoặc esp32-cam.local" 
-                                   value="192.168.1.100">
-                        </div>
-                        
-                        <button class="btn btn-primary btn-block" onclick="connectCamera()">
-                            <i class="fas fa-plug"></i>
-                            Kết nối đến Camera
-                        </button>
-                        
-                        <button class="btn btn-outline btn-block" onclick="scanNetwork()" style="margin-top: 10px;">
-                            <i class="fas fa-search"></i>
-                            Quét mạng tìm Camera
-                        </button>
-                    </div>
-                    
-                    <div class="connection-section">
-                        <h3 class="section-title">
-                            <i class="fas fa-history"></i>
-                            Camera đã lưu
-                        </h3>
-                        <div class="camera-list" id="cameraList">
-                            <!-- Dynamic content -->
-                        </div>
-                        <button class="btn btn-outline btn-block" onclick="clearSavedCameras()">
-                            <i class="fas fa-trash"></i>
-                            Xóa tất cả
-                        </button>
+                        <p><i class="fas fa-info-circle"></i> Broker mặc định: EMQX Public MQTT</p>
                     </div>
                 </div>
             </div>
@@ -813,9 +974,9 @@
                 </div>
                 <div class="panel-content">
                     <div class="quick-links">
-                        <a href="camera-dashboard.html" class="quick-link">
-                            <i class="fas fa-tv quick-icon"></i>
-                            <span class="quick-text">Multi-Camera Dashboard</span>
+                        <a href="espcam.html" class="quick-link">
+                            <i class="fas fa-camera quick-icon"></i>
+                            <span class="quick-text">Full Camera View</span>
                         </a>
                         <a href="mqtt-clock.html" class="quick-link">
                             <i class="fas fa-clock quick-icon"></i>
@@ -838,14 +999,23 @@
                             <span class="quick-text">Fullscreen</span>
                         </a>
                     </div>
-                    
-                    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                        <p style="font-size: 12px; color: #666; margin: 0; text-align: center;">
-                            <i class="fas fa-info-circle"></i>
-                            <strong>Tip:</strong> Kết nối MQTT để điều khiển Smart Clock từ xa!
-                        </p>
-                    </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- QR Code Modal -->
+    <div class="modal" id="qrModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-qrcode"></i> QR Code</h3>
+                <button onclick="closeModal('qrModal')" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <canvas id="qrCanvas" width="300" height="300"></canvas>
+                <p style="margin-top: 20px;">Quét QR code để kết nối</p>
             </div>
         </div>
     </div>
@@ -857,12 +1027,11 @@
     <script>
         // ================= CONFIGURATION =================
         const APP_CONFIG = {
-            version: '3.0.0',
+            version: '3.1.0',
             localStorageKeys: {
                 cameraHistory: 'esp32cam_history',
                 settings: 'esp32cam_settings',
-                lastCamera: 'esp32cam_last_camera',
-                mqttConfig: 'mqtt_config'
+                lastCamera: 'esp32cam_last_camera'
             },
             defaultSettings: {
                 quality: 10,
@@ -870,19 +1039,13 @@
                 framesize: 10,
                 autoConnect: true
             },
-            mqttConfig: {
-                broker: 'wss://broker.emqx.io:8084/mqtt',
-                topics: {
-                    command: 'smartclock/command',
-                    status: 'smartclock/status',
-                    alarm: 'smartclock/alarm',
-                    sensors: 'smartclock/sensors'
-                },
-                options: {
-                    clean: true,
-                    connectTimeout: 4000,
-                    reconnectPeriod: 2000
-                }
+            // API endpoints theo chuẩn ESP32-CAM
+            apiEndpoints: {
+                stream: '/stream',
+                capture: '/capture',
+                status: '/status',
+                control: '/control',
+                reboot: '/reboot'
             }
         };
         
@@ -894,6 +1057,7 @@
             isStreaming: false,
             cameraList: [],
             settings: {},
+            isFlashOn: false,
             
             // MQTT State
             mqttClient: null,
@@ -903,8 +1067,9 @@
             // Statistics
             fps: 0,
             latency: 0,
-            statsInterval: null,
-            fpsInterval: null
+            frameCount: 0,
+            lastFpsUpdate: 0,
+            statsInterval: null
         };
         
         // ================= INITIALIZATION =================
@@ -925,47 +1090,72 @@
             updateClock();
             setInterval(updateClock, 1000);
             
-            // Start stats update
-            startStatsUpdate();
+            // Check for URL parameters
+            checkUrlParams();
             
-            // Auto-connect to last camera
-            const lastCamera = localStorage.getItem(APP_CONFIG.localStorageKeys.lastCamera);
-            if (lastCamera && state.settings.autoConnect) {
-                try {
-                    const camera = JSON.parse(lastCamera);
-                    document.getElementById('cameraIp').value = camera.ip || '192.168.1.100';
-                    setTimeout(() => {
-                        connectCamera();
-                    }, 2000);
-                } catch (e) {
-                    console.log('No valid last camera found');
-                }
+            // Setup video event listeners
+            const videoElement = document.getElementById('videoStream');
+            videoElement.onload = () => {
+                document.getElementById('streamLoading').style.display = 'none';
+                updateFPS();
+            };
+            
+            videoElement.onerror = () => {
+                document.getElementById('streamLoading').style.display = 'none';
+                showToast('Lỗi khi tải stream', 'error');
+            };
+        });
+        
+        // ================= URL PARAMETER HANDLING =================
+        function checkUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const cameraIp = urlParams.get('camera');
+            
+            if (cameraIp) {
+                document.getElementById('cameraIp').value = cameraIp;
+                setTimeout(() => {
+                    connectCamera();
+                }, 1000);
             }
             
-            // Auto-connect to MQTT
-            setTimeout(connectMQTT, 3000);
-        });
+            const autoConnect = urlParams.get('autoconnect');
+            if (autoConnect === 'true' || autoConnect === '1') {
+                setTimeout(() => {
+                    connectCamera();
+                }, 2000);
+            }
+        }
         
         // ================= ESP32-CAM FUNCTIONS =================
         function connectCamera() {
             const ip = document.getElementById('cameraIp').value.trim();
+            const port = document.getElementById('cameraPort').value.trim() || '80';
+            
             if (!ip) {
                 showToast('Vui lòng nhập địa chỉ IP ESP32-CAM', 'warning');
                 return;
             }
             
-            const cameraUrl = `http://${ip}`;
+            // Determine camera URL
+            let cameraUrl;
+            if (ip.includes('.local')) {
+                cameraUrl = `http://${ip}`;
+            } else {
+                cameraUrl = `http://${ip}:${port}`;
+            }
+            
             connectToCamera(cameraUrl);
         }
         
         async function connectToCamera(cameraUrl) {
             showToast('Đang kết nối đến camera...', 'info');
             updateConnectionStatus(false);
+            document.getElementById('streamLoading').style.display = 'block';
             
             try {
-                // Test connection
-                const testUrl = `${cameraUrl}/status`;
-                const response = await fetchWithTimeout(testUrl, { timeout: 5000 });
+                // Test connection to status endpoint
+                const testUrl = `${cameraUrl}${APP_CONFIG.apiEndpoints.status}`;
+                const response = await fetchWithTimeout(testUrl, { timeout: 8000 });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
@@ -983,16 +1173,81 @@
                 // Update UI
                 updateCameraInfo(data);
                 updateConnectionStatus(true);
+                document.getElementById('streamLoading').style.display = 'none';
                 
                 // Start stream automatically
-                setTimeout(startStream, 1000);
+                setTimeout(() => {
+                    if (state.isCameraConnected) {
+                        startStream();
+                    }
+                }, 500);
                 
-                showToast(`Đã kết nối đến ${data.camera_name || 'ESP32-CAM'}`, 'success');
+                showToast(`✅ Đã kết nối đến ${data.camera_name || 'ESP32-CAM'}`, 'success');
                 
             } catch (error) {
                 console.error('Connection failed:', error);
-                showToast(`Kết nối thất bại: ${error.message}`, 'error');
+                document.getElementById('streamLoading').style.display = 'none';
+                
+                // Try stream directly if status fails
+                showToast('Đang thử kết nối stream trực tiếp...', 'warning');
+                setTimeout(() => {
+                    testStreamConnection(cameraUrl);
+                }, 1000);
+            }
+        }
+        
+        function testStreamConnection(cameraUrl) {
+            const streamUrl = `${cameraUrl}${APP_CONFIG.apiEndpoints.stream}?t=${Date.now()}`;
+            const testImg = new Image();
+            
+            testImg.onload = function() {
+                // Stream works, save camera
+                saveCameraToHistory(cameraUrl, 'ESP32-CAM (Stream Only)');
+                state.currentCamera = cameraUrl;
+                state.isCameraConnected = true;
+                updateConnectionStatus(true);
+                document.getElementById('streamLoading').style.display = 'none';
+                showToast('✅ Kết nối stream thành công', 'success');
+                
+                // Start stream
+                setTimeout(startStream, 500);
+            };
+            
+            testImg.onerror = function() {
                 updateConnectionStatus(false);
+                document.getElementById('streamLoading').style.display = 'none';
+                showToast('❌ Không thể kết nối đến camera', 'error');
+            };
+            
+            testImg.src = streamUrl;
+        }
+        
+        async function testCamera() {
+            const ip = document.getElementById('cameraIp').value.trim();
+            const port = document.getElementById('cameraPort').value.trim() || '80';
+            
+            if (!ip) {
+                showToast('Vui lòng nhập địa chỉ IP', 'warning');
+                return;
+            }
+            
+            const cameraUrl = ip.includes('.local') ? `http://${ip}` : `http://${ip}:${port}`;
+            showToast('Đang kiểm tra kết nối...', 'info');
+            
+            try {
+                const testUrl = `${cameraUrl}${APP_CONFIG.apiEndpoints.status}`;
+                const response = await fetchWithTimeout(testUrl, { timeout: 5000 });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showToast(`✅ Camera hoạt động: ${data.camera_name || 'ESP32-CAM'}`, 'success');
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                showToast(`❌ Không thể kết nối: ${error.message}`, 'error');
+                return false;
             }
         }
         
@@ -1001,7 +1256,7 @@
             
             stopStream(); // Stop existing stream
             
-            const streamUrl = `${state.currentCamera}/stream?t=${Date.now()}`;
+            const streamUrl = `${state.currentCamera}${APP_CONFIG.apiEndpoints.stream}?t=${Date.now()}`;
             const videoElement = document.getElementById('videoStream');
             const placeholder = document.getElementById('streamPlaceholder');
             
@@ -1010,11 +1265,12 @@
             videoElement.src = streamUrl;
             
             state.isStreaming = true;
+            state.lastFpsUpdate = Date.now();
             
             // Start FPS counter
             startFPSCounter();
             
-            showToast('Đã bắt đầu stream', 'success');
+            showToast('▶️ Đã bắt đầu stream', 'success');
         }
         
         function stopStream() {
@@ -1026,13 +1282,9 @@
             placeholder.style.display = 'flex';
             
             state.isStreaming = false;
+            state.frameCount = 0;
             
-            if (state.fpsInterval) {
-                clearInterval(state.fpsInterval);
-                state.fpsInterval = null;
-            }
-            
-            showToast('Đã dừng stream', 'info');
+            showToast('⏹️ Đã dừng stream', 'info');
         }
         
         async function captureImage() {
@@ -1042,8 +1294,14 @@
             }
             
             try {
-                const captureUrl = `${state.currentCamera}/capture?_=${Date.now()}`;
+                showToast('Đang chụp ảnh...', 'info');
+                const captureUrl = `${state.currentCamera}${APP_CONFIG.apiEndpoints.capture}?_=${Date.now()}`;
                 const response = await fetch(captureUrl);
+                
+                if (!response.ok) {
+                    throw new Error('Capture failed');
+                }
+                
                 const blob = await response.blob();
                 const imageUrl = URL.createObjectURL(blob);
                 
@@ -1055,45 +1313,137 @@
                 link.click();
                 document.body.removeChild(link);
                 
-                showToast('Đã tải ảnh xuống', 'success');
+                // Clean up
+                setTimeout(() => URL.revokeObjectURL(imageUrl), 1000);
+                
+                showToast('✅ Đã tải ảnh xuống', 'success');
             } catch (error) {
-                showToast('Lỗi khi chụp ảnh', 'error');
+                console.error('Capture error:', error);
+                showToast('❌ Lỗi khi chụp ảnh', 'error');
             }
         }
         
         function takeSnapshot() {
-            if (!state.currentCamera) return;
+            if (!state.isStreaming) {
+                showToast('Stream chưa bật', 'warning');
+                return;
+            }
             
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                
-                const link = document.createElement('a');
-                link.download = `snapshot-${Date.now()}.jpg`;
-                link.href = canvas.toDataURL('image/jpeg');
-                link.click();
-                
-                showToast('Đã chụp snapshot', 'success');
-            };
-            img.src = `${state.currentCamera}/capture?_=${Date.now()}`;
+            const videoElement = document.getElementById('videoStream');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = videoElement.videoWidth || 800;
+            canvas.height = videoElement.videoHeight || 600;
+            
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            
+            const link = document.createElement('a');
+            link.download = `snapshot-${Date.now()}.jpg`;
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.click();
+            
+            showToast('📸 Đã chụp snapshot từ stream', 'success');
         }
         
-        function toggleFlash() {
+        async function toggleFlash() {
             if (!state.currentCamera) return;
             
-            fetch(`${state.currentCamera}/control?flash=1`)
-                .then(response => response.json())
-                .then(data => {
-                    showToast(data.flash === 1 ? 'Flash ON' : 'Flash OFF', 'info');
-                })
-                .catch(() => {
-                    showToast('Lỗi điều khiển flash', 'error');
+            state.isFlashOn = !state.isFlashOn;
+            const flashValue = state.isFlashOn ? '1' : '0';
+            
+            try {
+                const response = await fetch(`${state.currentCamera}${APP_CONFIG.apiEndpoints.control}?flash=${flashValue}`);
+                const data = await response.json();
+                
+                const flashBtn = document.getElementById('flashToggle');
+                if (state.isFlashOn) {
+                    flashBtn.innerHTML = '<i class="fas fa-lightbulb"></i> Flash ON';
+                    flashBtn.classList.add('active');
+                    showToast('💡 Flash ON', 'success');
+                } else {
+                    flashBtn.innerHTML = '<i class="fas fa-lightbulb"></i> Flash';
+                    flashBtn.classList.remove('active');
+                    showToast('💡 Flash OFF', 'info');
+                }
+            } catch (error) {
+                showToast('❌ Lỗi điều khiển flash', 'error');
+            }
+        }
+        
+        function updateQuality() {
+            const value = document.getElementById('qualitySlider').value;
+            document.getElementById('qualityValue').textContent = value;
+            state.settings.quality = parseInt(value);
+        }
+        
+        function updateBrightness() {
+            const value = document.getElementById('brightnessSlider').value;
+            document.getElementById('brightnessValue').textContent = value;
+            state.settings.brightness = parseInt(value);
+        }
+        
+        async function applySettings() {
+            if (!state.currentCamera) {
+                showToast('Chưa kết nối camera', 'warning');
+                return;
+            }
+            
+            const quality = state.settings.quality || 10;
+            const brightness = state.settings.brightness || 0;
+            const framesize = document.getElementById('resolutionSelect').value || '10';
+            
+            try {
+                showToast('Đang áp dụng cài đặt...', 'info');
+                
+                const params = new URLSearchParams({
+                    quality: quality,
+                    brightness: brightness,
+                    framesize: framesize
                 });
+                
+                const response = await fetch(`${state.currentCamera}${APP_CONFIG.apiEndpoints.control}?${params}`);
+                const data = await response.json();
+                
+                // Save settings
+                saveSettings();
+                
+                showToast('✅ Đã áp dụng cài đặt', 'success');
+                
+                // Restart stream to apply changes
+                if (state.isStreaming) {
+                    setTimeout(() => {
+                        stopStream();
+                        setTimeout(startStream, 1000);
+                    }, 500);
+                }
+                
+            } catch (error) {
+                console.error('Settings error:', error);
+                showToast('❌ Lỗi áp dụng cài đặt', 'error');
+            }
+        }
+        
+        async function rebootCamera() {
+            if (!state.currentCamera || !confirm('Khởi động lại camera? Camera sẽ mất kết nối 10-15 giây.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${state.currentCamera}${APP_CONFIG.apiEndpoints.reboot}`);
+                if (response.ok) {
+                    showToast('🔄 Camera đang khởi động lại...', 'warning');
+                    updateConnectionStatus(false);
+                    stopStream();
+                    
+                    // Try to reconnect after 15 seconds
+                    setTimeout(() => {
+                        connectToCamera(state.currentCamera);
+                    }, 15000);
+                }
+            } catch (error) {
+                showToast('❌ Lỗi khởi động lại', 'error');
+            }
         }
         
         function fullscreen() {
@@ -1101,10 +1451,14 @@
             if (!document.fullscreenElement) {
                 if (videoContainer.requestFullscreen) {
                     videoContainer.requestFullscreen();
+                } else if (videoContainer.webkitRequestFullscreen) {
+                    videoContainer.webkitRequestFullscreen();
                 }
             } else {
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
                 }
             }
         }
@@ -1118,15 +1472,19 @@
             
             updateMQTTStatus('Đang kết nối...', false);
             
+            const broker = document.getElementById('mqttBroker').value.trim() || 
+                          'wss://broker.emqx.io:8084/mqtt';
+            
             const options = {
-                ...APP_CONFIG.mqttConfig.options,
+                clean: true,
+                connectTimeout: 4000,
                 clientId: state.clientId,
-                username: 'emqx',
+                username: 'emqx',     // Public broker credentials
                 password: 'public'
             };
             
             try {
-                state.mqttClient = mqtt.connect(APP_CONFIG.mqttConfig.broker, options);
+                state.mqttClient = mqtt.connect(broker, options);
                 
                 state.mqttClient.on('connect', () => {
                     state.isMQTTConnected = true;
@@ -1182,7 +1540,14 @@
         function subscribeToTopics() {
             if (!state.mqttClient || !state.isMQTTConnected) return;
             
-            Object.values(APP_CONFIG.mqttConfig.topics).forEach(topic => {
+            const topics = [
+                'smartclock/command',
+                'smartclock/status',
+                'smartclock/alarm',
+                'smartclock/sensors'
+            ];
+            
+            topics.forEach(topic => {
                 state.mqttClient.subscribe(topic, (err) => {
                     if (!err) {
                         console.log(`✅ Subscribed to ${topic}`);
@@ -1195,7 +1560,7 @@
             try {
                 const data = JSON.parse(message);
                 
-                if (topic === APP_CONFIG.mqttConfig.topics.alarm) {
+                if (topic === 'smartclock/alarm') {
                     // Update alarm status
                     const statusDiv = document.getElementById('alarmStatus');
                     if (data.enabled) {
@@ -1234,7 +1599,7 @@
             };
             
             try {
-                state.mqttClient.publish(APP_CONFIG.mqttConfig.topics.command, JSON.stringify(message));
+                state.mqttClient.publish('smartclock/command', JSON.stringify(message));
                 console.log(`📤 Sent MQTT command: ${command}`, data);
                 return true;
             } catch (error) {
@@ -1312,7 +1677,7 @@
         function updateConnectionStatus(connected) {
             const indicator = document.getElementById('connectionStatus');
             if (connected) {
-                indicator.innerHTML = '<span class="status-dot" style="background: #4CAF50;"></span><span>Đã kết nối</span>';
+                indicator.innerHTML = '<span class="status-dot" style="background: #4CAF50; box-shadow: 0 0 10px #4CAF50;"></span><span>Đã kết nối</span>';
                 indicator.style.color = '#4CAF50';
             } else {
                 indicator.innerHTML = '<span class="status-dot"></span><span>Chưa kết nối</span>';
@@ -1340,55 +1705,38 @@
         }
         
         function startFPSCounter() {
-            let frameCount = 0;
-            
-            if (state.fpsInterval) {
-                clearInterval(state.fpsInterval);
-            }
-            
-            state.fpsInterval = setInterval(() => {
-                state.fps = frameCount;
-                document.getElementById('statFps').textContent = frameCount;
-                frameCount = 0;
-            }, 1000);
-            
             const video = document.getElementById('videoStream');
-            const observer = new MutationObserver(() => {
-                frameCount++;
-            });
-            observer.observe(video, { attributes: true, attributeFilter: ['src'] });
+            
+            video.onload = function() {
+                state.frameCount++;
+                updateFPS();
+            };
         }
         
-        function startStatsUpdate() {
-            if (state.statsInterval) {
-                clearInterval(state.statsInterval);
+        function updateFPS() {
+            const now = Date.now();
+            if (now - state.lastFpsUpdate >= 1000) {
+                state.fps = state.frameCount;
+                document.getElementById('statFps').textContent = state.fps;
+                state.frameCount = 0;
+                state.lastFpsUpdate = now;
             }
-            
-            state.statsInterval = setInterval(async () => {
-                if (state.currentCamera && state.isCameraConnected) {
-                    try {
-                        const startTime = Date.now();
-                        const response = await fetchWithTimeout(`${state.currentCamera}/status`, { timeout: 3000 });
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            state.latency = Date.now() - startTime;
-                            document.getElementById('statLatency').textContent = state.latency + ' ms';
-                            updateCameraInfo(data);
-                        }
-                    } catch (error) {
-                        // Silent fail
-                    }
-                }
-            }, 5000);
         }
         
         function requestStatusUpdate() {
             if (state.currentCamera) {
-                fetch(`${state.currentCamera}/status`)
+                fetch(`${state.currentCamera}${APP_CONFIG.apiEndpoints.status}`)
                     .then(response => response.json())
                     .then(data => {
                         updateCameraInfo(data);
+                        
+                        // Update latency
+                        fetch(`${state.currentCamera}${APP_CONFIG.apiEndpoints.capture}`)
+                            .then(() => {
+                                state.latency = Date.now() - startTime;
+                                document.getElementById('statLatency').textContent = state.latency + ' ms';
+                            });
+                            
                         showToast('✅ Đã cập nhật trạng thái', 'success');
                     })
                     .catch(() => {
@@ -1399,20 +1747,27 @@
         
         // ================= CAMERA HISTORY =================
         function saveCameraToHistory(url, name) {
+            // Escape HTML để tránh XSS
+            const escapedUrl = escapeHtml(url);
+            const escapedName = escapeHtml(name);
+            
             const camera = {
-                url: url,
-                name: name,
-                ip: url.replace('http://', ''),
+                url: escapedUrl,
+                name: escapedName,
+                ip: escapedUrl.replace('http://', ''),
                 timestamp: Date.now()
             };
             
-            state.cameraList = state.cameraList.filter(cam => cam.url !== url);
-            state.cameraList.unshift(camera);
+            // Remove duplicates
+            state.cameraList = state.cameraList.filter(cam => cam.url !== escapedUrl);
             
+            // Add to beginning and limit to 5
+            state.cameraList.unshift(camera);
             if (state.cameraList.length > 5) {
                 state.cameraList = state.cameraList.slice(0, 5);
             }
             
+            // Save to localStorage
             localStorage.setItem(
                 APP_CONFIG.localStorageKeys.cameraHistory,
                 JSON.stringify(state.cameraList)
@@ -1420,7 +1775,7 @@
             
             localStorage.setItem(
                 APP_CONFIG.localStorageKeys.lastCamera,
-                JSON.stringify({ ip: camera.ip, name: camera.name })
+                JSON.stringify({ ip: camera.ip, name: camera.name, url: camera.url })
             );
             
             renderCameraList();
@@ -1446,24 +1801,69 @@
                 return;
             }
             
-            container.innerHTML = state.cameraList.map((camera, index) => `
-                <div class="camera-item">
-                    <div style="flex: 1;">
-                        <div style="font-weight: 600; font-size: 13px;">${camera.name}</div>
-                        <div style="font-size: 11px; color: #666;">${camera.ip}</div>
-                    </div>
-                    <div style="display: flex; gap: 5px;">
-                        <button onclick="connectToCamera('${camera.url}')" 
-                                style="background:#4a6fa5;color:white;border:none;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:12px;">
-                            <i class="fas fa-plug"></i>
-                        </button>
-                        <button onclick="removeCamera(${index})" 
-                                style="background:#dc3545;color:white;border:none;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:12px;">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+            container.innerHTML = '';
+            
+            state.cameraList.forEach((camera, index) => {
+                const item = document.createElement('div');
+                item.className = 'camera-item';
+                
+                const infoDiv = document.createElement('div');
+                infoDiv.style.flex = '1';
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.style.fontWeight = '600';
+                nameDiv.style.fontSize = '13px';
+                nameDiv.textContent = camera.name;
+                
+                const ipDiv = document.createElement('div');
+                ipDiv.style.fontSize = '11px';
+                ipDiv.style.color = '#666';
+                ipDiv.textContent = camera.ip;
+                
+                infoDiv.appendChild(nameDiv);
+                infoDiv.appendChild(ipDiv);
+                
+                const actionsDiv = document.createElement('div');
+                actionsDiv.style.display = 'flex';
+                actionsDiv.style.gap = '5px';
+                
+                // Connect button
+                const connectBtn = document.createElement('button');
+                connectBtn.innerHTML = '<i class="fas fa-plug"></i>';
+                connectBtn.style.background = '#4a6fa5';
+                connectBtn.style.color = 'white';
+                connectBtn.style.border = 'none';
+                connectBtn.style.width = '24px';
+                connectBtn.style.height = '24px';
+                connectBtn.style.borderRadius = '4px';
+                connectBtn.style.cursor = 'pointer';
+                connectBtn.style.fontSize = '12px';
+                connectBtn.onclick = () => {
+                    document.getElementById('cameraIp').value = camera.ip.split(':')[0];
+                    connectCamera();
+                };
+                
+                // Delete button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                deleteBtn.style.background = '#dc3545';
+                deleteBtn.style.color = 'white';
+                deleteBtn.style.border = 'none';
+                deleteBtn.style.width = '24px';
+                deleteBtn.style.height = '24px';
+                deleteBtn.style.borderRadius = '4px';
+                deleteBtn.style.cursor = 'pointer';
+                deleteBtn.style.fontSize = '12px';
+                deleteBtn.onclick = () => removeCamera(index);
+                
+                actionsDiv.appendChild(connectBtn);
+                actionsDiv.appendChild(deleteBtn);
+                
+                item.appendChild(infoDiv);
+                item.appendChild(actionsDiv);
+                
+                container.appendChild(item);
+            });
         }
         
         function removeCamera(index) {
@@ -1488,15 +1888,36 @@
             }
         }
         
-        function scanNetwork() {
-            showToast('Chức năng quét mạng sẽ có trong phiên bản tới', 'info');
-        }
-        
         // ================= SETTINGS =================
         function loadSettings() {
             try {
                 const saved = localStorage.getItem(APP_CONFIG.localStorageKeys.settings);
                 state.settings = saved ? JSON.parse(saved) : { ...APP_CONFIG.defaultSettings };
+                
+                // Apply to UI
+                document.getElementById('qualitySlider').value = state.settings.quality;
+                document.getElementById('qualityValue').textContent = state.settings.quality;
+                document.getElementById('brightnessSlider').value = state.settings.brightness;
+                document.getElementById('brightnessValue').textContent = state.settings.brightness;
+                
+                // Auto-connect to last camera
+                const lastCamera = localStorage.getItem(APP_CONFIG.localStorageKeys.lastCamera);
+                if (lastCamera && state.settings.autoConnect) {
+                    try {
+                        const camera = JSON.parse(lastCamera);
+                        if (camera.ip) {
+                            document.getElementById('cameraIp').value = camera.ip;
+                            setTimeout(() => {
+                                if (confirm('Tự động kết nối đến camera cuối cùng?')) {
+                                    connectCamera();
+                                }
+                            }, 2000);
+                        }
+                    } catch (e) {
+                        console.log('No valid last camera found');
+                    }
+                }
+                
             } catch (error) {
                 state.settings = { ...APP_CONFIG.defaultSettings };
             }
@@ -1519,6 +1940,12 @@
                     setTimeout(() => reject(new Error('Request timeout')), timeout)
                 )
             ]);
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
         
         function showToast(message, type = 'info') {
@@ -1557,8 +1984,36 @@
         
         function showQRCode() {
             const url = window.location.href;
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
-            window.open(qrUrl, '_blank', 'width=300,height=300');
+            const canvas = document.getElementById('qrCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Generate QR code
+            QRCode.toCanvas(canvas, url, {
+                width: canvas.width,
+                height: canvas.height,
+                margin: 1,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, function(error) {
+                if (error) {
+                    console.error('QR Code error:', error);
+                    showToast('Lỗi tạo QR Code', 'error');
+                    return;
+                }
+                
+                // Show modal
+                document.getElementById('qrModal').style.display = 'flex';
+            });
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
         }
         
         function sharePage() {
@@ -1569,8 +2024,18 @@
                     url: window.location.href
                 });
             } else {
-                navigator.clipboard.writeText(window.location.href);
-                showToast('Đã copy link vào clipboard', 'success');
+                navigator.clipboard.writeText(window.location.href)
+                    .then(() => showToast('✅ Đã copy link vào clipboard', 'success'))
+                    .catch(() => {
+                        // Fallback
+                        const textarea = document.createElement('textarea');
+                        textarea.value = window.location.href;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                        showToast('✅ Đã copy link vào clipboard', 'success');
+                    });
             }
         }
         
@@ -1582,10 +2047,14 @@
         window.toggleFlash = toggleFlash;
         window.fullscreen = fullscreen;
         window.connectCamera = connectCamera;
-        window.scanNetwork = scanNetwork;
+        window.testCamera = testCamera;
         window.connectToCamera = connectToCamera;
         window.removeCamera = removeCamera;
         window.clearSavedCameras = clearSavedCameras;
+        window.updateQuality = updateQuality;
+        window.updateBrightness = updateBrightness;
+        window.applySettings = applySettings;
+        window.rebootCamera = rebootCamera;
         window.connectMQTT = connectMQTT;
         window.disconnectMQTT = disconnectMQTT;
         window.testMQTT = testMQTT;
@@ -1595,6 +2064,7 @@
         window.requestStatusUpdate = requestStatusUpdate;
         window.showQRCode = showQRCode;
         window.sharePage = sharePage;
+        window.closeModal = closeModal;
         
         console.log('ESP32 Control Center initialized successfully!');
     </script>
