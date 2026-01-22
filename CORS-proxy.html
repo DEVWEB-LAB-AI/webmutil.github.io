@@ -3,8 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CORS Proxy & MQTT Tester - ESP32 Smart Clock</title>
+    <title>CORS Proxy & Connection Tester - ESP32 Smart Clock</title>
     <style>
+        :root {
+            --primary: #2196F3;
+            --secondary: #1976D2;
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --danger: #F44336;
+            --info: #00BCD4;
+            --dark: #333;
+            --light: #F8F9FA;
+            --gray: #6C757D;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -20,166 +32,251 @@
         }
         
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.98);
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
         }
         
+        /* Header */
         .header {
-            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             color: white;
             padding: 30px;
             text-align: center;
+            position: relative;
         }
         
         .header h1 {
-            font-size: 2rem;
+            font-size: 2.2rem;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
         }
         
         .header p {
             opacity: 0.9;
-            font-size: 1rem;
+            font-size: 1.1rem;
+            max-width: 800px;
+            margin: 0 auto;
         }
         
+        /* Tabs */
+        .tab-container {
+            display: flex;
+            background: white;
+            border-bottom: 2px solid #E0E0E0;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+        
+        .tab:hover {
+            background: #F5F5F5;
+        }
+        
+        .tab.active {
+            border-bottom-color: var(--primary);
+            background: #E3F2FD;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        /* Content */
         .content {
             padding: 30px;
         }
         
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Section */
         .section {
-            margin-bottom: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid #2196F3;
+            background: var(--light);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
         
         .section h3 {
-            color: #2c3e50;
-            margin-bottom: 15px;
+            color: var(--dark);
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
+            font-size: 1.4rem;
         }
         
+        /* Input Groups */
         .input-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         
-        label {
+        .input-group label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
         }
         
-        input, select, button {
-            padding: 12px 15px;
+        .input-group input, 
+        .input-group select, 
+        .input-group textarea {
             width: 100%;
-            border: 2px solid #ddd;
-            border-radius: 8px;
+            padding: 14px;
+            border: 2px solid #DDD;
+            border-radius: 10px;
             font-size: 1rem;
-            margin-bottom: 10px;
             transition: all 0.3s;
+            background: white;
         }
         
-        input:focus, select:focus {
+        .input-group input:focus, 
+        .input-group select:focus, 
+        .input-group textarea:focus {
             outline: none;
-            border-color: #2196F3;
+            border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
         }
         
-        button {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            color: white;
+        /* Buttons */
+        .btn {
+            padding: 14px 25px;
             border: none;
-            font-weight: bold;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         
-        button:hover {
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #45a049 100%);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning) 0%, #F57C00 100%);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #D32F2F 100%);
+            color: white;
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, var(--info) 0%, #0097A7 100%);
+            color: white;
+        }
+        
+        .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
         
-        button.secondary {
-            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
-        }
-        
-        button.warning {
-            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-        }
-        
-        button.danger {
-            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        .btn:active {
+            transform: translateY(0);
         }
         
         .button-group {
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
-            margin-top: 15px;
+            margin: 20px 0;
         }
         
-        .button-group button {
+        .button-group .btn {
             flex: 1;
+            min-width: 150px;
         }
         
-        .result {
-            margin-top: 20px;
-            padding: 20px;
-            border-radius: 10px;
-            background: white;
-            border: 2px solid #ddd;
-            max-height: 400px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-        }
-        
-        .result.success {
-            border-color: #4CAF50;
-            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-        }
-        
-        .result.error {
-            border-color: #f44336;
-            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-        }
-        
-        .result.info {
-            border-color: #2196F3;
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-        }
-        
+        /* Status Indicator */
         .status-indicator {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 12px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         }
         
         .status-dot {
-            width: 12px;
-            height: 12px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            background: #ccc;
+            background: #CCC;
+            transition: all 0.3s;
         }
         
         .status-dot.connected {
-            background: #4CAF50;
-            box-shadow: 0 0 10px #4CAF50;
+            background: var(--success);
+            box-shadow: 0 0 15px var(--success);
         }
         
+        .status-dot.connecting {
+            background: var(--warning);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Info Box */
         .info-box {
-            padding: 15px;
-            background: #e3f2fd;
+            background: #E3F2FD;
+            border-left: 4px solid var(--primary);
             border-radius: 8px;
-            margin: 15px 0;
-            border-left: 4px solid #2196F3;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .info-box h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .info-box ul {
@@ -188,81 +285,88 @@
         }
         
         .info-box li {
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            line-height: 1.5;
         }
         
-        .tab-container {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #ddd;
-        }
-        
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-        
-        .tab.active {
-            border-bottom-color: #2196F3;
-            background: #e3f2fd;
-            font-weight: bold;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .endpoint-list {
+        /* Endpoint Grid */
+        .endpoint-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
-            margin: 15px 0;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
         }
         
-        .endpoint {
-            padding: 10px;
+        .endpoint-card {
             background: white;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-            font-size: 0.9rem;
-            cursor: pointer;
+            border-radius: 10px;
+            padding: 15px;
+            border: 2px solid #EEE;
             transition: all 0.3s;
+            cursor: pointer;
         }
         
-        .endpoint:hover {
-            background: #e3f2fd;
-            border-color: #2196F3;
+        .endpoint-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
         
-        .endpoint .method {
+        .endpoint-card .method {
             display: inline-block;
-            padding: 2px 8px;
-            background: #4CAF50;
+            padding: 4px 12px;
+            background: var(--primary);
             color: white;
-            border-radius: 4px;
+            border-radius: 20px;
             font-size: 0.8rem;
-            margin-right: 5px;
             font-weight: bold;
+            margin-bottom: 10px;
         }
         
-        .endpoint .method.get {
-            background: #2196F3;
+        .endpoint-card .method.get { background: var(--success); }
+        .endpoint-card .method.post { background: var(--warning); }
+        .endpoint-card .method.put { background: var(--info); }
+        .endpoint-card .method.delete { background: var(--danger); }
+        
+        /* Result Area */
+        .result-area {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 10px;
+            background: white;
+            border: 2px solid #DDD;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
         }
         
-        .endpoint .method.post {
-            background: #ff9800;
+        .result-area.success {
+            border-color: var(--success);
+            background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
         }
         
+        .result-area.error {
+            border-color: var(--danger);
+            background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%);
+        }
+        
+        .result-area.info {
+            border-color: var(--info);
+            background: linear-gradient(135deg, #E0F7FA 0%, #B2EBF2 100%);
+        }
+        
+        .result-area.warning {
+            border-color: var(--warning);
+            background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+        }
+        
+        /* Loading */
         .loading {
             display: none;
             text-align: center;
-            padding: 20px;
+            padding: 30px;
         }
         
         .loading.active {
@@ -270,13 +374,13 @@
         }
         
         .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #2196F3;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #F3F3F3;
+            border-top: 5px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto 15px;
         }
         
         @keyframes spin {
@@ -284,74 +388,211 @@
             100% { transform: rotate(360deg); }
         }
         
+        /* QR Code */
+        .qr-container {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        #qrCode {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+            border: 10px solid white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        /* Log Area */
+        .log-area {
+            background: #1E1E1E;
+            color: #FFFFFF;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+        
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #333;
+        }
+        
+        .log-entry.success { color: #4CAF50; }
+        .log-entry.error { color: #F44336; }
+        .log-entry.warning { color: #FF9800; }
+        .log-entry.info { color: #2196F3; }
+        
+        /* Responsive */
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
-                padding: 15px;
+                border-radius: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .tab-container {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1;
+                min-width: 120px;
+                padding: 12px;
+                justify-content: center;
             }
             
             .content {
-                padding: 15px;
+                padding: 20px;
             }
             
             .button-group {
                 flex-direction: column;
             }
             
-            .endpoint-list {
+            .button-group .btn {
+                width: 100%;
+            }
+            
+            .endpoint-grid {
                 grid-template-columns: 1fr;
             }
         }
+        
+        /* Code Highlight */
+        pre {
+            background: #2D2D2D;
+            color: #FFFFFF;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 0.9rem;
+        }
+        
+        code {
+            background: #F5F5F5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: #D63384;
+        }
     </style>
+    
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
+    <!-- MQTT.js Library -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
 <body>
     <div class="container">
+        <!-- Header -->
         <div class="header">
-            <h1>🌐 ESP32 Smart Clock - Connection Tester</h1>
-            <p>Test CORS, MQTT, and HTTP connections to your ESP32 device</p>
+            <h1>
+                <span>🌐</span>
+                ESP32 Connection Tester
+                <span>🌐</span>
+            </h1>
+            <p>Test CORS, MQTT, WebSocket, and HTTP connections to your ESP32 device. Multiple proxy options available.</p>
         </div>
         
-        <div class="content">
-            <!-- Tab Navigation -->
-            <div class="tab-container">
-                <div class="tab active" onclick="switchTab('cors')">🔍 CORS Tester</div>
-                <div class="tab" onclick="switchTab('mqtt')">🌐 MQTT Tester</div>
-                <div class="tab" onclick="switchTab('endpoints')">📡 API Endpoints</div>
-                <div class="tab" onclick="switchTab('diagnostics')">🩺 Diagnostics</div>
+        <!-- Tab Navigation -->
+        <div class="tab-container">
+            <div class="tab active" onclick="switchTab('cors')">
+                <span>🔍</span>
+                CORS Tester
             </div>
-            
+            <div class="tab" onclick="switchTab('mqtt')">
+                <span>🌐</span>
+                MQTT Tester
+            </div>
+            <div class="tab" onclick="switchTab('websocket')">
+                <span>🔗</span>
+                WebSocket
+            </div>
+            <div class="tab" onclick="switchTab('http')">
+                <span>📡</span>
+                HTTP Direct
+            </div>
+            <div class="tab" onclick="switchTab('qr')">
+                <span>📱</span>
+                QR Generator
+            </div>
+            <div class="tab" onclick="switchTab('diagnostics')">
+                <span>🩺</span>
+                Diagnostics
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="content">
             <!-- CORS Testing Tab -->
             <div id="cors-tab" class="tab-content active">
                 <div class="section">
-                    <h3>🔍 CORS Connection Test</h3>
-                    <p>Test HTTP connection to your ESP32 through CORS proxy</p>
+                    <h3><span>🔍</span> CORS Connection Testing</h3>
                     
                     <div class="input-group">
                         <label for="espIp">ESP32 IP Address:</label>
-                        <input type="text" id="espIp" placeholder="192.168.1.100" value="">
+                        <input type="text" id="espIp" placeholder="192.168.1.100 or esp32.local" value="192.168.1.100">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="proxySelect">Select Proxy Method:</label>
+                        <select id="proxySelect">
+                            <option value="cors-anywhere">CORS Anywhere (cors-anywhere.herokuapp.com)</option>
+                            <option value="allorigins">All Origins (api.allorigins.win)</option>
+                            <option value="thingproxy">ThingProxy (thingproxy.freeboard.io)</option>
+                            <option value="corsproxy">CORS Proxy (corsproxy.org)</option>
+                            <option value="direct">Direct (No Proxy - may fail)</option>
+                        </select>
                     </div>
                     
                     <div class="button-group">
-                        <button onclick="testCorsConnection()" class="secondary">Test Connection</button>
-                        <button onclick="testAllEndpoints()" class="warning">Test All Endpoints</button>
+                        <button class="btn btn-primary" onclick="testCorsConnection()">
+                            <span>🔗</span>
+                            Test Connection
+                        </button>
+                        <button class="btn btn-warning" onclick="testAllEndpoints()">
+                            <span>📊</span>
+                            Test All Endpoints
+                        </button>
+                        <button class="btn btn-info" onclick="testWithAllProxies()">
+                            <span>🔄</span>
+                            Test All Proxies
+                        </button>
                     </div>
                     
                     <div class="info-box">
-                        <strong>📝 CORS Information:</strong>
+                        <h4><span>💡</span> About CORS</h4>
+                        <p>CORS (Cross-Origin Resource Sharing) is a security feature in browsers. When your web app (on GitHub Pages) tries to access your ESP32 (local network), the browser blocks it.</p>
+                        <p><strong>Solutions:</strong></p>
                         <ul>
-                            <li>Browsers block cross-origin requests by default</li>
-                            <li>Use this tool to test if your ESP32 is accessible</li>
-                            <li>For production, use MQTT instead of direct HTTP</li>
-                            <li>Or add CORS headers to your ESP32 code</li>
+                            <li>Use <strong>MQTT</strong> (recommended)</li>
+                            <li>Add CORS headers to ESP32 code</li>
+                            <li>Use a CORS proxy (temporary solution)</li>
+                            <li>Run web app from same origin as ESP32</li>
                         </ul>
                     </div>
                     
                     <div class="loading" id="corsLoading">
                         <div class="spinner"></div>
-                        <p>Testing connection...</p>
+                        <p>Testing connection to ESP32...</p>
                     </div>
                     
-                    <div class="result" id="corsResult">
+                    <div class="result-area" id="corsResult">
                         <!-- Results will appear here -->
                     </div>
                 </div>
@@ -360,96 +601,162 @@
             <!-- MQTT Testing Tab -->
             <div id="mqtt-tab" class="tab-content">
                 <div class="section">
-                    <h3>🌐 MQTT Connection Test</h3>
-                    <p>Test MQTT connection to broker and ESP32 communication</p>
-                    
-                    <div class="input-group">
-                        <label for="mqttBroker">MQTT Broker:</label>
-                        <input type="text" id="mqttBroker" value="wss://broker.emqx.io:8084/mqtt">
-                    </div>
-                    
-                    <div class="button-group">
-                        <button onclick="testMQTTConnection()" class="secondary">Test MQTT</button>
-                        <button onclick="sendTestMessage()" class="warning">Send Test Message</button>
-                    </div>
+                    <h3><span>🌐</span> MQTT Connection Testing</h3>
                     
                     <div class="status-indicator">
                         <div class="status-dot" id="mqttStatusDot"></div>
-                        <span id="mqttStatusText">Not connected</span>
+                        <span id="mqttStatusText">Disconnected</span>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="mqttBroker">MQTT Broker URL:</label>
+                        <input type="text" id="mqttBroker" value="wss://broker.emqx.io:8084/mqtt">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="mqttTopic">Topic to Subscribe:</label>
+                        <input type="text" id="mqttTopic" value="smartclock/status">
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-success" onclick="connectMQTT()" id="connectBtn">
+                            <span>🔌</span>
+                            Connect MQTT
+                        </button>
+                        <button class="btn btn-warning" onclick="sendMQTTTest()" id="sendBtn" disabled>
+                            <span>📤</span>
+                            Send Test Message
+                        </button>
+                        <button class="btn btn-danger" onclick="disconnectMQTT()" id="disconnectBtn" disabled>
+                            <span>🔌</span>
+                            Disconnect
+                        </button>
                     </div>
                     
                     <div class="info-box">
-                        <strong>📡 MQTT Topics (ESP32):</strong>
+                        <h4><span>📡</span> MQTT Topics for ESP32 Smart Clock</h4>
                         <ul>
                             <li><code>smartclock/command</code> - Send commands to ESP32</li>
                             <li><code>smartclock/status</code> - Receive status updates</li>
-                            <li><code>smartclock/alarm</code> - Alarm state updates</li>
-                            <li><code>smartclock/sensors</code> - Sensor data</li>
+                            <li><code>smartclock/alarm</code> - Alarm state changes</li>
+                            <li><code>smartclock/sensors</code> - Temperature/Humidity data</li>
+                            <li><code>smartclock/#</code> - Subscribe to all topics</li>
                         </ul>
                     </div>
                     
-                    <div class="loading" id="mqttLoading">
-                        <div class="spinner"></div>
-                        <p>Connecting to MQTT broker...</p>
-                    </div>
-                    
-                    <div class="result" id="mqttResult">
+                    <div class="log-area" id="mqttLog">
                         <!-- MQTT messages will appear here -->
                     </div>
                 </div>
             </div>
             
-            <!-- Endpoints Tab -->
-            <div id="endpoints-tab" class="tab-content">
+            <!-- WebSocket Tab -->
+            <div id="websocket-tab" class="tab-content">
                 <div class="section">
-                    <h3>📡 Available Endpoints</h3>
-                    <p>Click any endpoint to test it</p>
+                    <h3><span>🔗</span> WebSocket Testing</h3>
                     
-                    <div class="endpoint-list">
-                        <div class="endpoint" onclick="testEndpoint('/')">
-                            <span class="method get">GET</span> / (Root)
-                        </div>
-                        <div class="endpoint" onclick="testEndpoint('/setAlarm')">
-                            <span class="method get">GET</span> /setAlarm
-                        </div>
-                        <div class="endpoint" onclick="testEndpoint('/setAlarmDirect')">
-                            <span class="method get">GET</span> /setAlarmDirect
-                        </div>
-                        <div class="endpoint" onclick="testEndpoint('/button')">
-                            <span class="method get">GET</span> /button
-                        </div>
-                        <div class="endpoint" onclick="testEndpoint('/snooze')">
-                            <span class="method get">GET</span> /snooze
-                        </div>
-                        <div class="endpoint" onclick="testEndpoint('/reset')">
-                            <span class="method get">GET</span> /reset
-                        </div>
-                        <div class="endpoint" onclick="testEndpoint('/resetSleepTimer')">
-                            <span class="method get">GET</span> /resetSleepTimer
-                        </div>
-                        <div class="endpoint" onclick="testEndpoint('/unlock')">
-                            <span class="method post">POST</span> /unlock
-                        </div>
-                        <div class="endpoint" onclick="testEndpoint('/manifest.json')">
-                            <span class="method get">GET</span> /manifest.json
-                        </div>
-                        <div class="endpoint" onclick="testEndpoint('/sw.js')">
-                            <span class="method get">GET</span> /sw.js
-                        </div>
+                    <div class="status-indicator">
+                        <div class="status-dot" id="wsStatusDot"></div>
+                        <span id="wsStatusText">Disconnected</span>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="wsUrl">WebSocket URL:</label>
+                        <input type="text" id="wsUrl" placeholder="ws://192.168.1.100:81">
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-success" onclick="connectWebSocket()" id="wsConnectBtn">
+                            <span>🔌</span>
+                            Connect WebSocket
+                        </button>
+                        <button class="btn btn-warning" onclick="sendWsMessage()" id="wsSendBtn" disabled>
+                            <span>📤</span>
+                            Send Message
+                        </button>
+                        <button class="btn btn-danger" onclick="disconnectWebSocket()" id="wsDisconnectBtn" disabled>
+                            <span>🔌</span>
+                            Disconnect
+                        </button>
                     </div>
                     
                     <div class="info-box">
-                        <strong>💡 Usage:</strong>
+                        <h4><span>⚡</span> WebSocket Information</h4>
+                        <p>ESP32 can run a WebSocket server on port 81. This allows real-time bidirectional communication without polling.</p>
+                        <p><strong>Advantages:</strong></p>
                         <ul>
-                            <li>First, enter ESP32 IP in CORS tab</li>
-                            <li>Then click any endpoint to test it</li>
-                            <li>Green = working, Red = error</li>
-                            <li>Some endpoints require POST data</li>
+                            <li>Real-time updates</li>
+                            <li>Low latency</li>
+                            <li>Efficient communication</li>
+                            <li>Works behind NAT</li>
                         </ul>
                     </div>
                     
-                    <div class="result" id="endpointResult">
-                        <!-- Endpoint test results -->
+                    <div class="log-area" id="wsLog">
+                        <!-- WebSocket messages will appear here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- HTTP Direct Tab -->
+            <div id="http-tab" class="tab-content">
+                <div class="section">
+                    <h3><span>📡</span> HTTP Direct Testing</h3>
+                    
+                    <div class="endpoint-grid" id="endpointList">
+                        <!-- Endpoints will be loaded dynamically -->
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4><span>⚡</span> HTTP Direct Testing</h4>
+                        <p>This only works if:</p>
+                        <ul>
+                            <li>Your web app and ESP32 are on same network</li>
+                            <li>ESP32 has CORS headers enabled</li>
+                            <li>You're accessing via HTTP (not HTTPS)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="result-area" id="httpResult">
+                        <!-- HTTP results will appear here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- QR Generator Tab -->
+            <div id="qr-tab" class="tab-content">
+                <div class="section">
+                    <h3><span>📱</span> QR Code Generator</h3>
+                    
+                    <div class="input-group">
+                        <label for="qrData">Data for QR Code:</label>
+                        <textarea id="qrData" rows="4" placeholder="Enter text or URL...">http://192.168.1.100</textarea>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="generateQR()">
+                            <span>📱</span>
+                            Generate QR Code
+                        </button>
+                        <button class="btn btn-success" onclick="downloadQR()">
+                            <span>💾</span>
+                            Download QR Code
+                        </button>
+                    </div>
+                    
+                    <div class="qr-container">
+                        <canvas id="qrCode"></canvas>
+                        <p>Scan this QR code with your phone to connect to ESP32</p>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4><span>💡</span> QR Code Uses</h4>
+                        <ul>
+                            <li>Share ESP32 IP address</li>
+                            <li>Quick connection from mobile</li>
+                            <li>Share MQTT configuration</li>
+                            <li>Distribute WiFi credentials</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -457,22 +764,31 @@
             <!-- Diagnostics Tab -->
             <div id="diagnostics-tab" class="tab-content">
                 <div class="section">
-                    <h3>🩺 Network Diagnostics</h3>
-                    <p>Run comprehensive network tests</p>
+                    <h3><span>🩺</span> Network Diagnostics</h3>
                     
                     <div class="button-group">
-                        <button onclick="runFullDiagnostics()" class="secondary">Run Full Diagnostics</button>
-                        <button onclick="checkLocalNetwork()" class="warning">Check Local Network</button>
-                        <button onclick="testInternetConnection()" class="warning">Test Internet</button>
+                        <button class="btn btn-primary" onclick="runFullDiagnostics()">
+                            <span>🔍</span>
+                            Run Full Diagnostics
+                        </button>
+                        <button class="btn btn-warning" onclick="checkBrowserSupport()">
+                            <span>🌐</span>
+                            Check Browser Support
+                        </button>
+                        <button class="btn btn-info" onclick="checkNetworkInfo()">
+                            <span>📶</span>
+                            Network Information
+                        </button>
                     </div>
                     
                     <div class="info-box">
-                        <strong>🔧 Common Issues & Solutions:</strong>
+                        <h4><span>🔧</span> Common Issues & Solutions</h4>
                         <ul>
-                            <li><strong>CORS Errors:</strong> Use MQTT or add CORS headers to ESP32</li>
-                            <li><strong>Connection Refused:</strong> Check if ESP32 is running web server</li>
-                            <li><strong>Timeout:</strong> Verify both devices are on same network</li>
-                            <li><strong>MQTT Issues:</strong> Check broker URL and firewall settings</li>
+                            <li><strong>CORS Errors:</strong> Use MQTT or WebSocket instead</li>
+                            <li><strong>Connection Refused:</strong> Check ESP32 is running</li>
+                            <li><strong>Timeout:</strong> Verify both devices on same network</li>
+                            <li><strong>MQTT Issues:</strong> Check firewall and broker URL</li>
+                            <li><strong>WebSocket Issues:</strong> Check ESP32 WebSocket server</li>
                         </ul>
                     </div>
                     
@@ -481,23 +797,22 @@
                         <p>Running diagnostics...</p>
                     </div>
                     
-                    <div class="result" id="diagnosticsResult">
-                        <!-- Diagnostics results -->
+                    <div class="result-area" id="diagnosticsResult">
+                        <!-- Diagnostics results will appear here -->
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Load MQTT.js from CDN -->
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-    
     <script>
-        // Tab management
+        // ================= GLOBAL VARIABLES =================
         let currentTab = 'cors';
         let mqttClient = null;
-        let mqttConnected = false;
+        let wsClient = null;
+        let testInProgress = false;
         
+        // ================= TAB MANAGEMENT =================
         function switchTab(tabName) {
             // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -511,85 +826,89 @@
             document.getElementById(`${tabName}-tab`).classList.add('active');
             document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
             currentTab = tabName;
+            
+            // Load content for specific tabs
+            if (tabName === 'http') {
+                loadEndpoints();
+            }
         }
         
-        // CORS Testing Functions
+        // ================= CORS TESTING =================
         async function testCorsConnection() {
             const ip = document.getElementById('espIp').value.trim();
+            const proxyMethod = document.getElementById('proxySelect').value;
+            
             if (!ip) {
                 showResult('corsResult', 'Please enter ESP32 IP address', 'error');
                 return;
             }
             
             showLoading('corsLoading', true);
-            const resultDiv = document.getElementById('corsResult');
             
             try {
-                // First try direct connection (will likely fail due to CORS)
-                try {
-                    const directResponse = await fetch(`http://${ip}/`, { 
-                        mode: 'no-cors',
-                        cache: 'no-cache'
-                    });
-                    console.log('Direct fetch attempt:', directResponse);
-                } catch (directError) {
-                    console.log('Direct fetch failed (expected):', directError.message);
+                const url = `http://${ip}/`;
+                let testUrl;
+                
+                // Select proxy based on method
+                switch(proxyMethod) {
+                    case 'cors-anywhere':
+                        testUrl = `https://cors-anywhere.herokuapp.com/${url}`;
+                        break;
+                    case 'allorigins':
+                        testUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                        break;
+                    case 'thingproxy':
+                        testUrl = `https://thingproxy.freeboard.io/fetch/${url}`;
+                        break;
+                    case 'corsproxy':
+                        testUrl = `https://corsproxy.org/?${encodeURIComponent(url)}`;
+                        break;
+                    case 'direct':
+                        testUrl = url;
+                        break;
                 }
                 
-                // Try through CORS proxy
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`http://${ip}/`)}`;
-                const response = await fetch(proxyUrl, { 
-                    timeout: 10000 
-                });
+                const response = await fetchWithTimeout(testUrl, 10000);
                 
-                if (!response.ok) {
-                    throw new Error(`Proxy error: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.contents) {
+                if (proxyMethod === 'allorigins') {
+                    const data = await response.json();
                     showResult('corsResult', `
-                        <h3>✅ ESP32 Found!</h3>
-                        <p><strong>IP Address:</strong> ${ip}</p>
-                        <p><strong>Status:</strong> Web server is running</p>
-                        <p><strong>Response:</strong> Received ${data.contents.length} characters</p>
-                        <p><strong>Recommendation:</strong> Use MQTT for reliable communication</p>
+                        <h3>✅ Connection Successful via ${proxyMethod}</h3>
+                        <p><strong>ESP32 IP:</strong> ${ip}</p>
+                        <p><strong>Proxy Method:</strong> ${proxyMethod}</p>
+                        <p><strong>Response Length:</strong> ${data.contents?.length || 0} characters</p>
+                        <pre>${escapeHtml(data.contents?.substring(0, 500) || 'No content')}</pre>
                     `, 'success');
                 } else {
+                    const text = await response.text();
                     showResult('corsResult', `
-                        <h3>⚠️ ESP32 Responding</h3>
-                        <p>Device found but returned empty response</p>
-                        <p>Try testing specific endpoints</p>
-                    `, 'info');
+                        <h3>✅ Connection Successful via ${proxyMethod}</h3>
+                        <p><strong>ESP32 IP:</strong> ${ip}</p>
+                        <p><strong>Proxy Method:</strong> ${proxyMethod}</p>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <pre>${escapeHtml(text.substring(0, 500))}</pre>
+                    `, 'success');
                 }
                 
             } catch (error) {
                 showResult('corsResult', `
                     <h3>❌ Connection Failed</h3>
                     <p><strong>Error:</strong> ${error.message}</p>
-                    <p><strong>Possible Causes:</strong></p>
+                    <p><strong>Proxy Method:</strong> ${document.getElementById('proxySelect').value}</p>
+                    <p><strong>Recommendations:</strong></p>
                     <ul>
-                        <li>ESP32 not powered on</li>
-                        <li>Wrong IP address</li>
-                        <li>Devices on different networks</li>
-                        <li>ESP32 web server not running</li>
-                        <li>Firewall blocking connection</li>
+                        <li>Try a different proxy method</li>
+                        <li>Use MQTT instead (recommended)</li>
+                        <li>Verify ESP32 is running and accessible</li>
+                        <li>Check if devices are on same network</li>
                     </ul>
-                    <p><strong>Solutions:</strong></p>
-                    <ol>
-                        <li>Check ESP32 power and Serial Monitor</li>
-                        <li>Verify IP in ESP32 Serial output</li>
-                        <li>Use MQTT instead of HTTP</li>
-                        <li>Add CORS headers to ESP32 code</li>
-                    </ol>
                 `, 'error');
             } finally {
                 showLoading('corsLoading', false);
             }
         }
         
-        async function testAllEndpoints() {
+        async function testWithAllProxies() {
             const ip = document.getElementById('espIp').value.trim();
             if (!ip) {
                 showResult('corsResult', 'Please enter ESP32 IP address', 'error');
@@ -597,284 +916,486 @@
             }
             
             showLoading('corsLoading', true);
-            const resultDiv = document.getElementById('corsResult');
-            let html = '<h3>📊 Testing All Endpoints</h3>';
-            
-            const endpoints = [
-                { path: '/', method: 'GET' },
-                { path: '/setAlarm', method: 'GET' },
-                { path: '/setAlarmDirect', method: 'GET' },
-                { path: '/button', method: 'GET' },
-                { path: '/snooze', method: 'GET' },
-                { path: '/reset', method: 'GET' },
-                { path: '/resetSleepTimer', method: 'GET' },
-                { path: '/manifest.json', method: 'GET' },
-                { path: '/sw.js', method: 'GET' }
+            const proxies = [
+                { name: 'CORS Anywhere', value: 'cors-anywhere' },
+                { name: 'All Origins', value: 'allorigins' },
+                { name: 'ThingProxy', value: 'thingproxy' },
+                { name: 'CORS Proxy', value: 'corsproxy' }
             ];
             
-            for (const endpoint of endpoints) {
+            let results = '';
+            
+            for (const proxy of proxies) {
                 try {
-                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`http://${ip}${endpoint.path}`)}`;
-                    const response = await fetch(proxyUrl, { timeout: 5000 });
-                    const data = await response.json();
+                    document.getElementById('proxySelect').value = proxy.value;
+                    const url = `http://${ip}/`;
+                    let testUrl;
                     
-                    html += `
-                        <div style="margin: 5px 0; padding: 5px; background: #d4edda; border-radius: 4px;">
-                            ✅ ${endpoint.method} ${endpoint.path} - Working
-                        </div>
-                    `;
+                    switch(proxy.value) {
+                        case 'cors-anywhere':
+                            testUrl = `https://cors-anywhere.herokuapp.com/${url}`;
+                            break;
+                        case 'allorigins':
+                            testUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                            break;
+                        case 'thingproxy':
+                            testUrl = `https://thingproxy.freeboard.io/fetch/${url}`;
+                            break;
+                        case 'corsproxy':
+                            testUrl = `https://corsproxy.org/?${encodeURIComponent(url)}`;
+                            break;
+                    }
+                    
+                    const response = await fetch(testUrl, { timeout: 5000 });
+                    results += `<div style="margin: 10px 0; padding: 10px; background: #d4edda; border-radius: 5px;">
+                        ✅ <strong>${proxy.name}:</strong> Working
+                    </div>`;
+                    
                 } catch (error) {
-                    html += `
-                        <div style="margin: 5px 0; padding: 5px; background: #f8d7da; border-radius: 4px;">
-                            ❌ ${endpoint.method} ${endpoint.path} - Failed: ${error.message}
-                        </div>
-                    `;
+                    results += `<div style="margin: 10px 0; padding: 10px; background: #f8d7da; border-radius: 5px;">
+                        ❌ <strong>${proxy.name}:</strong> Failed - ${error.message}
+                    </div>`;
                 }
             }
             
-            showResult('corsResult', html, 'info');
+            showResult('corsResult', `
+                <h3>📊 Proxy Test Results</h3>
+                ${results}
+                <p><strong>Recommendation:</strong> Use the first working proxy, or switch to MQTT for reliable communication.</p>
+            `, 'info');
+            
             showLoading('corsLoading', false);
         }
         
-        // MQTT Functions
-        async function testMQTTConnection() {
-            showLoading('mqttLoading', true);
+        // ================= MQTT FUNCTIONS =================
+        function connectMQTT() {
             const brokerUrl = document.getElementById('mqttBroker').value;
+            const topic = document.getElementById('mqttTopic').value;
+            
+            updateMQTTStatus('connecting');
             
             try {
-                const clientId = 'tester_' + Math.random().toString(16).substr(2, 8);
+                const clientId = 'tester_' + Date.now() + '_' + Math.random().toString(16).substr(2, 6);
+                
                 mqttClient = mqtt.connect(brokerUrl, {
                     clientId: clientId,
                     clean: true,
                     connectTimeout: 4000,
-                    reconnectPeriod: 2000
+                    reconnectPeriod: 2000,
+                    username: 'emqx',
+                    password: 'public'
                 });
                 
                 mqttClient.on('connect', () => {
-                    mqttConnected = true;
-                    updateMQTTStatus(true);
-                    showLoading('mqttLoading', false);
+                    updateMQTTStatus('connected');
+                    addMQTTLog('✅ Connected to MQTT broker', 'success');
                     
-                    showResult('mqttResult', `
-                        <h3>✅ MQTT Connected!</h3>
-                        <p><strong>Broker:</strong> ${brokerUrl}</p>
-                        <p><strong>Client ID:</strong> ${clientId}</p>
-                        <p><strong>Status:</strong> Ready to send/receive messages</p>
-                    `, 'success');
-                    
-                    // Subscribe to test topics
-                    mqttClient.subscribe('smartclock/status');
-                    mqttClient.subscribe('smartclock/alarm');
-                    mqttClient.subscribe('smartclock/sensors');
-                    
-                    mqttClient.on('message', (topic, message) => {
-                        const msg = message.toString();
-                        addMQTTMessage(`📨 ${topic}: ${msg}`);
+                    // Subscribe to topic
+                    mqttClient.subscribe(topic, (err) => {
+                        if (!err) {
+                            addMQTTLog(`📡 Subscribed to topic: ${topic}`, 'info');
+                        }
                     });
+                    
+                    // Subscribe to common ESP32 topics
+                    mqttClient.subscribe('smartclock/#', (err) => {
+                        if (!err) {
+                            addMQTTLog('📡 Subscribed to smartclock/#', 'info');
+                        }
+                    });
+                    
+                    // Update UI
+                    document.getElementById('connectBtn').disabled = true;
+                    document.getElementById('sendBtn').disabled = false;
+                    document.getElementById('disconnectBtn').disabled = false;
+                });
+                
+                mqttClient.on('message', (topic, message) => {
+                    const msg = message.toString();
+                    addMQTTLog(`📨 ${topic}: ${msg}`, 'info');
                 });
                 
                 mqttClient.on('error', (error) => {
-                    mqttConnected = false;
-                    updateMQTTStatus(false);
-                    showLoading('mqttLoading', false);
-                    showResult('mqttResult', `
-                        <h3>❌ MQTT Connection Failed</h3>
-                        <p><strong>Error:</strong> ${error.message}</p>
-                        <p>Check broker URL and internet connection</p>
-                    `, 'error');
+                    updateMQTTStatus('disconnected');
+                    addMQTTLog(`❌ MQTT Error: ${error.message}`, 'error');
+                    resetMQTTButtons();
+                });
+                
+                mqttClient.on('close', () => {
+                    updateMQTTStatus('disconnected');
+                    addMQTTLog('🔌 MQTT Connection closed', 'warning');
+                    resetMQTTButtons();
+                });
+                
+                mqttClient.on('reconnect', () => {
+                    updateMQTTStatus('connecting');
+                    addMQTTLog('🔄 Reconnecting to MQTT...', 'warning');
                 });
                 
             } catch (error) {
-                showLoading('mqttLoading', false);
-                showResult('mqttResult', `
-                    <h3>❌ MQTT Error</h3>
-                    <p>${error.message}</p>
-                `, 'error');
+                addMQTTLog(`❌ Failed to connect: ${error.message}`, 'error');
+                updateMQTTStatus('disconnected');
             }
         }
         
-        function sendTestMessage() {
-            if (!mqttClient || !mqttConnected) {
-                showResult('mqttResult', 'Not connected to MQTT broker', 'error');
+        function sendMQTTTest() {
+            if (!mqttClient || !mqttClient.connected) {
+                addMQTTLog('Not connected to MQTT', 'error');
                 return;
             }
             
             const testMessage = {
-                test: true,
-                message: 'Hello ESP32 from CORS tester',
-                timestamp: Date.now()
+                type: 'test',
+                message: 'Hello from CORS Proxy Tester',
+                timestamp: Date.now(),
+                client: 'web_tester'
             };
             
             mqttClient.publish('smartclock/test', JSON.stringify(testMessage));
-            addMQTTMessage(`📤 Sent test message: ${JSON.stringify(testMessage)}`);
+            addMQTTLog(`📤 Sent test message: ${JSON.stringify(testMessage)}`, 'success');
         }
         
-        function updateMQTTStatus(connected) {
+        function disconnectMQTT() {
+            if (mqttClient) {
+                mqttClient.end();
+                mqttClient = null;
+                updateMQTTStatus('disconnected');
+                resetMQTTButtons();
+                addMQTTLog('Disconnected from MQTT', 'info');
+            }
+        }
+        
+        function updateMQTTStatus(status) {
             const dot = document.getElementById('mqttStatusDot');
             const text = document.getElementById('mqttStatusText');
             
-            if (connected) {
-                dot.classList.add('connected');
-                text.textContent = 'Connected';
-                text.style.color = '#4CAF50';
-            } else {
-                dot.classList.remove('connected');
-                text.textContent = 'Disconnected';
-                text.style.color = '#f44336';
+            dot.className = 'status-dot';
+            switch(status) {
+                case 'connected':
+                    dot.classList.add('connected');
+                    text.textContent = 'Connected';
+                    text.style.color = '#4CAF50';
+                    break;
+                case 'connecting':
+                    dot.classList.add('connecting');
+                    text.textContent = 'Connecting...';
+                    text.style.color = '#FF9800';
+                    break;
+                default:
+                    text.textContent = 'Disconnected';
+                    text.style.color = '#F44336';
             }
         }
         
-        function addMQTTMessage(message) {
-            const resultDiv = document.getElementById('mqttResult');
-            const div = document.createElement('div');
-            div.style.cssText = 'margin: 5px 0; padding: 8px; background: #e3f2fd; border-radius: 4px; font-size: 0.9rem;';
-            div.textContent = message;
-            resultDiv.prepend(div);
+        function resetMQTTButtons() {
+            document.getElementById('connectBtn').disabled = false;
+            document.getElementById('sendBtn').disabled = true;
+            document.getElementById('disconnectBtn').disabled = true;
+        }
+        
+        // ================= WEBSOCKET FUNCTIONS =================
+        function connectWebSocket() {
+            const wsUrl = document.getElementById('wsUrl').value;
             
-            // Limit to 20 messages
-            if (resultDiv.children.length > 20) {
-                resultDiv.removeChild(resultDiv.lastChild);
+            if (!wsUrl) {
+                addWSLog('Please enter WebSocket URL', 'error');
+                return;
+            }
+            
+            updateWSStatus('connecting');
+            
+            try {
+                wsClient = new WebSocket(wsUrl);
+                
+                wsClient.onopen = () => {
+                    updateWSStatus('connected');
+                    addWSLog('✅ WebSocket connected', 'success');
+                    document.getElementById('wsConnectBtn').disabled = true;
+                    document.getElementById('wsSendBtn').disabled = false;
+                    document.getElementById('wsDisconnectBtn').disabled = false;
+                };
+                
+                wsClient.onmessage = (event) => {
+                    addWSLog(`📨 Received: ${event.data}`, 'info');
+                };
+                
+                wsClient.onerror = (error) => {
+                    updateWSStatus('disconnected');
+                    addWSLog(`❌ WebSocket error: ${error.message || 'Unknown error'}`, 'error');
+                    resetWSButtons();
+                };
+                
+                wsClient.onclose = () => {
+                    updateWSStatus('disconnected');
+                    addWSLog('🔌 WebSocket closed', 'warning');
+                    resetWSButtons();
+                };
+                
+            } catch (error) {
+                addWSLog(`❌ Failed to connect: ${error.message}`, 'error');
+                updateWSStatus('disconnected');
             }
         }
         
-        // Endpoint Testing
-        async function testEndpoint(path) {
+        function sendWsMessage() {
+            if (!wsClient || wsClient.readyState !== WebSocket.OPEN) {
+                addWSLog('WebSocket not connected', 'error');
+                return;
+            }
+            
+            const message = JSON.stringify({
+                type: 'test',
+                message: 'Hello from WebSocket tester',
+                timestamp: Date.now()
+            });
+            
+            wsClient.send(message);
+            addWSLog(`📤 Sent: ${message}`, 'success');
+        }
+        
+        function disconnectWebSocket() {
+            if (wsClient) {
+                wsClient.close();
+                wsClient = null;
+                updateWSStatus('disconnected');
+                resetWSButtons();
+                addWSLog('Disconnected from WebSocket', 'info');
+            }
+        }
+        
+        function updateWSStatus(status) {
+            const dot = document.getElementById('wsStatusDot');
+            const text = document.getElementById('wsStatusText');
+            
+            dot.className = 'status-dot';
+            switch(status) {
+                case 'connected':
+                    dot.classList.add('connected');
+                    text.textContent = 'Connected';
+                    text.style.color = '#4CAF50';
+                    break;
+                case 'connecting':
+                    dot.classList.add('connecting');
+                    text.textContent = 'Connecting...';
+                    text.style.color = '#FF9800';
+                    break;
+                default:
+                    text.textContent = 'Disconnected';
+                    text.style.color = '#F44336';
+            }
+        }
+        
+        function resetWSButtons() {
+            document.getElementById('wsConnectBtn').disabled = false;
+            document.getElementById('wsSendBtn').disabled = true;
+            document.getElementById('wsDisconnectBtn').disabled = true;
+        }
+        
+        // ================= HTTP DIRECT TESTING =================
+        function loadEndpoints() {
+            const endpoints = [
+                { method: 'GET', path: '/', description: 'Root endpoint' },
+                { method: 'GET', path: '/status', description: 'System status' },
+                { method: 'GET', path: '/info', description: 'Device information' },
+                { method: 'GET', path: '/setAlarm', description: 'Set alarm (requires params)' },
+                { method: 'GET', path: '/button', description: 'Simulate button press' },
+                { method: 'GET', path: '/snooze', description: 'Snooze alarm' },
+                { method: 'GET', path: '/reset', description: 'Reset device' },
+                { method: 'POST', path: '/unlock', description: 'Unlock device' },
+                { method: 'GET', path: '/capture', description: 'Capture image (camera)' },
+                { method: 'GET', path: '/stream', description: 'Video stream (camera)' },
+                { method: 'GET', path: '/control', description: 'Control camera' }
+            ];
+            
+            const container = document.getElementById('endpointList');
+            container.innerHTML = '';
+            
+            endpoints.forEach(endpoint => {
+                const div = document.createElement('div');
+                div.className = 'endpoint-card';
+                div.onclick = () => testHttpEndpoint(endpoint);
+                div.innerHTML = `
+                    <div class="method ${endpoint.method.toLowerCase()}">${endpoint.method}</div>
+                    <div style="font-weight: bold; margin-bottom: 5px;">${endpoint.path}</div>
+                    <div style="font-size: 0.9rem; color: #666;">${endpoint.description}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        async function testHttpEndpoint(endpoint) {
             const ip = document.getElementById('espIp').value.trim();
             if (!ip) {
-                showResult('endpointResult', 'Please enter ESP32 IP address first', 'error');
+                showResult('httpResult', 'Please enter ESP32 IP address first', 'error');
                 return;
             }
             
             try {
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`http://${ip}${path}`)}`;
-                const response = await fetch(proxyUrl, { timeout: 5000 });
-                const data = await response.json();
+                // Try direct connection (may fail due to CORS)
+                const url = `http://${ip}${endpoint.path}`;
+                const response = await fetch(url, { 
+                    mode: 'no-cors',
+                    cache: 'no-cache'
+                });
                 
-                let content = data.contents || 'No content';
-                if (content.length > 500) {
-                    content = content.substring(0, 500) + '... (truncated)';
-                }
-                
-                showResult('endpointResult', `
-                    <h3>✅ ${path} - Working</h3>
-                    <p><strong>Status:</strong> ${response.status}</p>
-                    <p><strong>Content Preview:</strong></p>
-                    <pre style="background: white; padding: 10px; border-radius: 5px; overflow: auto; max-height: 200px;">${escapeHtml(content)}</pre>
-                `, 'success');
+                showResult('httpResult', `
+                    <h3>✅ ${endpoint.method} ${endpoint.path}</h3>
+                    <p><strong>Status:</strong> Request sent (CORS prevented response reading)</p>
+                    <p><strong>URL:</strong> ${url}</p>
+                    <p><em>Note: Browser blocked response due to CORS. Use MQTT or add CORS headers to ESP32.</em></p>
+                `, 'info');
                 
             } catch (error) {
-                showResult('endpointResult', `
-                    <h3>❌ ${path} - Failed</h3>
+                showResult('httpResult', `
+                    <h3>❌ ${endpoint.method} ${endpoint.path}</h3>
                     <p><strong>Error:</strong> ${error.message}</p>
-                    <p>Endpoint may require authentication or POST data</p>
+                    <p><strong>CORS Issue:</strong> Direct HTTP requests blocked by browser</p>
+                    <p><strong>Solution:</strong> Use MQTT communication instead</p>
                 `, 'error');
             }
         }
         
-        // Diagnostics Functions
-        async function runFullDiagnostics() {
-            showLoading('diagLoading', true);
-            const ip = document.getElementById('espIp').value.trim();
-            let html = '<h3>🔍 Full Diagnostics Report</h3>';
-            
-            // Test 1: Local network connectivity
-            html += '<h4>1. Local Network Test</h4>';
-            try {
-                const response = await fetch('https://httpbin.org/ip', { timeout: 5000 });
-                const data = await response.json();
-                html += `<p>✅ Internet accessible: ${data.origin}</p>`;
-            } catch (error) {
-                html += `<p>❌ No internet connection: ${error.message}</p>`;
+        // ================= QR CODE GENERATOR =================
+        function generateQR() {
+            const data = document.getElementById('qrData').value.trim();
+            if (!data) {
+                alert('Please enter data for QR code');
+                return;
             }
             
-            // Test 2: ESP32 connection
-            if (ip) {
-                html += '<h4>2. ESP32 Connection Test</h4>';
+            try {
+                const canvas = document.getElementById('qrCode');
+                QRCode.toCanvas(canvas, data, {
+                    width: 200,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                }, function(error) {
+                    if (error) {
+                        console.error('QR generation error:', error);
+                        alert('Failed to generate QR code');
+                    }
+                });
+                
+            } catch (error) {
+                console.error('QR code error:', error);
+                alert('Failed to generate QR code');
+            }
+        }
+        
+        function downloadQR() {
+            const canvas = document.getElementById('qrCode');
+            const data = document.getElementById('qrData').value.trim();
+            
+            if (!data) {
+                alert('Please generate QR code first');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.download = `esp32-qr-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // ================= DIAGNOSTICS =================
+        async function runFullDiagnostics() {
+            showLoading('diagLoading', true);
+            
+            let report = '<h3>🔍 Full Diagnostics Report</h3>';
+            
+            // Test 1: Browser features
+            report += '<h4>1. Browser Capabilities</h4>';
+            report += `<p>✅ WebSocket: ${'WebSocket' in window ? 'Supported' : 'Not Supported'}</p>`;
+            report += `<p>✅ Fetch API: ${'fetch' in window ? 'Supported' : 'Not Supported'}</p>`;
+            report += `<p>✅ LocalStorage: ${'localStorage' in window ? 'Supported' : 'Not Supported'}</p>`;
+            report += `<p>✅ MQTT Library: ${typeof mqtt !== 'undefined' ? 'Loaded' : 'Not Loaded'}</p>`;
+            
+            // Test 2: Network connectivity
+            report += '<h4>2. Network Connectivity</h4>';
+            try {
+                const networkTest = await fetch('https://httpbin.org/ip', { timeout: 5000 });
+                const data = await networkTest.json();
+                report += `<p>✅ Internet: Connected (IP: ${data.origin})</p>`;
+            } catch (error) {
+                report += `<p>❌ Internet: Not connected - ${error.message}</p>`;
+            }
+            
+            // Test 3: CORS proxy availability
+            report += '<h4>3. CORS Proxy Services</h4>';
+            const proxies = [
+                { name: 'CORS Anywhere', url: 'https://cors-anywhere.herokuapp.com/' },
+                { name: 'All Origins', url: 'https://api.allorigins.win/' },
+                { name: 'CORS Proxy', url: 'https://corsproxy.org/' }
+            ];
+            
+            for (const proxy of proxies) {
                 try {
-                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(`http://${ip}/`)}`;
-                    const response = await fetch(proxyUrl, { timeout: 5000 });
-                    html += `<p>✅ ESP32 accessible via proxy</p>`;
+                    await fetch(proxy.url, { method: 'HEAD', timeout: 3000 });
+                    report += `<p>✅ ${proxy.name}: Available</p>`;
                 } catch (error) {
-                    html += `<p>❌ ESP32 not accessible: ${error.message}</p>`;
+                    report += `<p>❌ ${proxy.name}: Unavailable</p>`;
                 }
             }
             
-            // Test 3: MQTT broker
-            html += '<h4>3. MQTT Broker Test</h4>';
-            try {
-                const testClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
-                    clientId: 'diag_' + Math.random().toString(16).substr(2, 8),
-                    connectTimeout: 3000
-                });
-                
-                await new Promise((resolve, reject) => {
-                    testClient.once('connect', resolve);
-                    testClient.once('error', reject);
-                    setTimeout(() => reject(new Error('Timeout')), 5000);
-                });
-                
-                html += '<p>✅ MQTT broker accessible</p>';
-                testClient.end();
-                
-            } catch (error) {
-                html += `<p>❌ MQTT broker not accessible: ${error.message}</p>`;
+            // Test 4: MQTT broker
+            report += '<h4>4. MQTT Brokers</h4>';
+            const brokers = [
+                { name: 'EMQX Public', url: 'wss://broker.emqx.io:8084/mqtt' },
+                { name: 'HiveMQ', url: 'wss://broker.hivemq.com:8884/mqtt' }
+            ];
+            
+            for (const broker of brokers) {
+                report += `<p>📡 ${broker.name}: ${broker.url}</p>`;
             }
             
             // Recommendations
-            html += '<h4>📋 Recommendations</h4>';
-            if (ip) {
-                html += '<p>✅ Use MQTT for reliable communication</p>';
-                html += '<p>✅ Add CORS headers to ESP32 code if using HTTP</p>';
-            } else {
-                html += '<p>⚠️ Enter ESP32 IP for complete diagnostics</p>';
-            }
+            report += '<h4>📋 Recommendations</h4>';
+            report += '<ul>';
+            report += '<li>✅ Use <strong>MQTT</strong> for reliable communication</li>';
+            report += '<li>✅ Consider <strong>WebSocket</strong> for real-time updates</li>';
+            report += '<li>⚠️ HTTP Direct only works on same origin</li>';
+            report += '<li>⚠️ CORS proxies are temporary solutions</li>';
+            report += '</ul>';
             
-            showResult('diagnosticsResult', html, 'info');
+            showResult('diagnosticsResult', report, 'info');
             showLoading('diagLoading', false);
         }
         
-        function checkLocalNetwork() {
-            showResult('diagnosticsResult', `
-                <h3>🏠 Local Network Check</h3>
-                <p><strong>Your IP:</strong> ${window.location.hostname}</p>
-                <p><strong>Protocol:</strong> ${window.location.protocol}</p>
-                <p><strong>Local Testing:</strong></p>
-                <ul>
-                    <li>ESP32 and computer must be on same WiFi network</li>
-                    <li>ESP32 IP usually starts with 192.168.x.x</li>
-                    <li>Check ESP32 Serial Monitor for exact IP</li>
-                    <li>Disable VPNs that might interfere</li>
-                </ul>
-            `, 'info');
+        function checkBrowserSupport() {
+            const features = [
+                { name: 'WebSocket', supported: 'WebSocket' in window },
+                { name: 'Fetch API', supported: 'fetch' in window },
+                { name: 'LocalStorage', supported: 'localStorage' in window },
+                { name: 'SessionStorage', supported: 'sessionStorage' in window },
+                { name: 'Service Workers', supported: 'serviceWorker' in navigator },
+                { name: 'Notifications', supported: 'Notification' in window },
+                { name: 'Geolocation', supported: 'geolocation' in navigator }
+            ];
+            
+            let report = '<h3>🌐 Browser Support Check</h3>';
+            
+            features.forEach(feature => {
+                report += `<p>${feature.supported ? '✅' : '❌'} ${feature.name}: ${feature.supported ? 'Supported' : 'Not Supported'}</p>`;
+            });
+            
+            report += '<p><strong>Note:</strong> All modern browsers should support WebSocket and Fetch API.</p>';
+            
+            showResult('diagnosticsResult', report, 'info');
         }
         
-        function testInternetConnection() {
-            fetch('https://httpbin.org/ip', { timeout: 5000 })
-                .then(response => response.json())
-                .then(data => {
-                    showResult('diagnosticsResult', `
-                        <h3>🌐 Internet Connection Test</h3>
-                        <p>✅ Internet connection working</p>
-                        <p><strong>Your Public IP:</strong> ${data.origin}</p>
-                        <p><strong>MQTT:</strong> Should work if internet is available</p>
-                    `, 'success');
-                })
-                .catch(error => {
-                    showResult('diagnosticsResult', `
-                        <h3>❌ Internet Connection Test</h3>
-                        <p>No internet connection detected</p>
-                        <p><strong>Error:</strong> ${error.message}</p>
-                        <p><strong>Solutions:</strong></p>
-                        <ul>
-                            <li>Check WiFi/Ethernet connection</li>
-                            <li>Disable firewall temporarily</li>
-                            <li>Try using mobile hotspot</li>
-                        </ul>
-                    `, 'error');
-                });
+        // ================= UTILITY FUNCTIONS =================
+        function fetchWithTimeout(url, timeout = 10000) {
+            return Promise.race([
+                fetch(url),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error(`Request timeout after ${timeout}ms`)), timeout)
+                )
+            ]);
         }
         
-        // Utility Functions
         function showLoading(elementId, show) {
             const element = document.getElementById(elementId);
             element.classList.toggle('active', show);
@@ -883,10 +1404,8 @@
         function showResult(elementId, content, type = 'info') {
             const element = document.getElementById(elementId);
             element.innerHTML = content;
-            element.className = 'result ' + type;
-            
-            // Auto-scroll to result
-            element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            element.className = 'result-area ' + type;
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         
         function escapeHtml(text) {
@@ -895,32 +1414,51 @@
             return div.innerHTML;
         }
         
-        // Initialize with sample IP if localhost
+        function addMQTTLog(message, type = 'info') {
+            addLog('mqttLog', message, type);
+        }
+        
+        function addWSLog(message, type = 'info') {
+            addLog('wsLog', message, type);
+        }
+        
+        function addLog(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `log-entry ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            
+            // Limit to 50 entries
+            if (container.children.length > 50) {
+                container.removeChild(container.firstChild);
+            }
+        }
+        
+        // ================= INITIALIZATION =================
         document.addEventListener('DOMContentLoaded', function() {
+            // Set default IP if on localhost
             if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
                 document.getElementById('espIp').value = '192.168.1.100';
+                document.getElementById('wsUrl').value = 'ws://192.168.1.100:81';
             }
             
-            // Auto-switch to MQTT tab if CORS likely to fail
-            if (window.location.protocol === 'https:') {
-                setTimeout(() => {
-                    showResult('corsResult', `
-                        <h3>⚠️ HTTPS Detected</h3>
-                        <p>You're using HTTPS, which will block direct HTTP connections to ESP32.</p>
-                        <p><strong>Recommendation:</strong> Use the MQTT tab for communication.</p>
-                        <button onclick="switchTab('mqtt')" style="padding: 10px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                            Switch to MQTT Tab
-                        </button>
-                    `, 'info');
-                }, 1000);
-            }
-        });
-        
-        // Cleanup MQTT connection on page unload
-        window.addEventListener('beforeunload', () => {
-            if (mqttClient) {
-                mqttClient.end();
-            }
+            // Auto-load endpoints for HTTP tab
+            loadEndpoints();
+            
+            // Generate initial QR code
+            setTimeout(generateQR, 1000);
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                if (mqttClient) {
+                    mqttClient.end();
+                }
+                if (wsClient) {
+                    wsClient.close();
+                }
+            });
         });
     </script>
 </body>
