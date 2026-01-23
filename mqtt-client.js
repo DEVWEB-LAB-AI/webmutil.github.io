@@ -1,6 +1,6 @@
 /**
  * MQTT Web Client for ESP32 Smart Clock with Multi-Device Support
- * Complete and Error-Free Version
+ * COMPLETE VERSION WITH KEEP-ALIVE FIX for 10s Timeout Issue
  */
 class MQTTClient {
     constructor(config = {}) {
@@ -8,6 +8,9 @@ class MQTTClient {
         this.config = {
             MQTT: {
                 BROKER: 'wss://broker.emqx.io:8084/mqtt',
+                // ⭐ ALTERNATIVE BROKERS (uncomment to use):
+                // BROKER: 'wss://test.mosquitto.org:8081', // More stable
+                // BROKER: 'wss://broker.hivemq.com:8884/mqtt',
                 TOPIC_PREFIX: 'smartclock/', // Base topic prefix
                 TOPICS: {
                     COMMAND: 'smartclock/{device_id}/command',
@@ -22,7 +25,7 @@ class MQTTClient {
                     connectTimeout: 4000,
                     reconnectPeriod: 2000,
                     clientId: 'web_' + Math.random().toString(36).substr(2, 9),
-                    keepalive: 60,
+                    keepalive: 30, // ⭐ CHANGED from 60 to 30 seconds
                     resubscribe: true
                 }
             },
@@ -79,7 +82,8 @@ class MQTTClient {
             reconnects: 0,
             bytesSent: 0,
             bytesReceived: 0,
-            devicesConnected: 0
+            devicesConnected: 0,
+            keepAlivePings: 0 // ⭐ NEW: Track keep-alive pings
         };
         
         // Auto-reconnect
@@ -98,8 +102,111 @@ class MQTTClient {
         this.healthCheckTime = 30000; // 30 seconds
         this.lastActivity = null;
         
-        console.log('🔧 MQTT Client initialized with Device ID support');
+        // ⭐ KEEP-ALIVE SYSTEM TO PREVENT 10s TIMEOUT
+        this.keepAliveInterval = null;
+        this.keepAliveTime = 8000; // Send ping every 8s (less than 10s timeout)
+        this.lastKeepAlive = null;
+        this.keepAliveEnabled = true;
+        
+        console.log('🔧 MQTT Client initialized with Keep-Alive system');
     }
+    
+    // ================================
+    // ⭐ KEEP-ALIVE SYSTEM METHODS
+    // ================================
+    
+    /**
+     * Start keep-alive ping interval
+     * @private
+     */
+    _startKeepAliveInterval() {
+        // Clear existing interval
+        if (this.keepAliveInterval) {
+            clearInterval(this.keepAliveInterval);
+            this.keepAliveInterval = null;
+        }
+        
+        if (!this.keepAliveEnabled) return;
+        
+        // Start new interval
+        this.keepAliveInterval = setInterval(() => {
+            if (this.client && this.connected && this.currentDeviceId) {
+                this._sendKeepAlivePing();
+            }
+        }, this.keepAliveTime);
+        
+        console.log(`✅ Keep-alive interval started: ${this.keepAliveTime}ms`);
+    }
+    
+    /**
+     * Stop keep-alive ping interval
+     * @private
+     */
+    _stopKeepAliveInterval() {
+        if (this.keepAliveInterval) {
+            clearInterval(this.keepAliveInterval);
+            this.keepAliveInterval = null;
+            console.log('🧹 Keep-alive interval stopped');
+        }
+    }
+    
+    /**
+     * Send keep-alive ping to prevent timeout
+     * @private
+     */
+    _sendKeepAlivePing() {
+        if (!this.client || !this.connected || !this.currentDeviceId) return;
+        
+        try {
+            // Create ping topic
+            const deviceKey = this.currentDeviceId.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            const pingTopic = `smartclock/${deviceKey}/ping`;
+            
+            // Create ping message
+            const pingMsg = JSON.stringify({
+                type: 'keepalive',
+                clientId: this.client.options.clientId,
+                deviceId: this.currentDeviceId,
+                timestamp: Date.now(),
+                source: 'web_mqtt_client'
+            });
+            
+            // Send ping
+            this.client.publish(pingTopic, pingMsg, { qos: 0, retain: false }, (err) => {
+                if (err) {
+                    console.warn('⚠️ Keep-alive ping failed:', err);
+                } else {
+                    this.lastKeepAlive = Date.now();
+                    this.stats.keepAlivePings++;
+                    
+                    // Log only every 5th ping to avoid console spam
+                    if (this.stats.keepAlivePings % 5 === 0) {
+                        console.log(`📡 Keep-alive ping #${this.stats.keepAlivePings} sent`);
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error sending keep-alive ping:', error);
+        }
+    }
+    
+    /**
+     * Enable/disable keep-alive system
+     * @param {boolean} enabled - Enable or disable keep-alive
+     */
+    setKeepAlive(enabled) {
+        this.keepAliveEnabled = enabled;
+        if (enabled && this.connected) {
+            this._startKeepAliveInterval();
+        } else {
+            this._stopKeepAliveInterval();
+        }
+        console.log(`🔧 Keep-alive ${enabled ? 'enabled' : 'disabled'}`);
+    }
+    
+    // ================================
+    // MAIN METHODS
+    // ================================
     
     /**
      * Set Device ID and update topics
@@ -161,11 +268,11 @@ class MQTTClient {
             SENSORS: `${this.config.MQTT.TOPIC_PREFIX}${deviceKey}/sensors`,
             AUTH: `${this.config.MQTT.TOPIC_PREFIX}${deviceKey}/auth`,
             AUTH_RESPONSE: `${this.config.MQTT.TOPIC_PREFIX}${deviceKey}/auth/response/{clientId}`,
-            TEST: `${this.config.MQTT.TOPIC_PREFIX}${deviceKey}/test`
+            TEST: `${this.config.MQTT.TOPIC_PREFIX}${deviceKey}/test`,
+            PING: `${this.config.MQTT.TOPIC_PREFIX}${deviceKey}/ping` // ⭐ NEW: Ping topic
         };
         
-        console.log(`🔧 Updated topics for device ${this.currentDeviceId}:`, 
-            Object.values(this.config.MQTT.TOPICS).filter(t => !t.includes('{clientId}')));
+        console.log(`🔧 Updated topics for device ${this.currentDeviceId}`);
     }
     
     /**
@@ -318,11 +425,15 @@ class MQTTClient {
                 }
             };
             
-            // Get broker URL
-            const brokerUrl = options.broker || this.config.MQTT.BROKER;
+            // Get broker URL (you can switch brokers here)
+            let brokerUrl = options.broker || this.config.MQTT.BROKER;
+            
+            // ⭐ OPTIONAL: Switch to alternative broker if needed
+            // brokerUrl = 'wss://test.mosquitto.org:8081';
             
             console.log(`🔗 Connecting to MQTT broker for device ${this.currentDeviceId}: ${brokerUrl}`);
             console.log(`📋 Client ID: ${connectOptions.clientId}`);
+            console.log(`📡 Keep-alive: ${connectOptions.keepalive}s`);
             
             this.stats.connectionAttempts++;
             this.connectionAttempts++;
@@ -366,6 +477,9 @@ class MQTTClient {
                     
                     console.log(`✅ MQTT Connected successfully to device ${this.currentDeviceId}`);
                     console.log(`📡 Session present: ${this.client.options.sessionPresent}`);
+                    
+                    // ⭐ START KEEP-ALIVE SYSTEM
+                    this._startKeepAliveInterval();
                     
                     // Start health check
                     this._startHealthCheck();
@@ -424,7 +538,8 @@ class MQTTClient {
             ip: ip,
             timestamp: Date.now(),
             version: '2.0.0',
-            mqttAuthEnabled: this.authRequired
+            mqttAuthEnabled: this.authRequired,
+            keepAliveEnabled: this.keepAliveEnabled // ⭐ Include keep-alive status
         }, { qos: 1, retain: true });
     }
     
@@ -452,7 +567,8 @@ class MQTTClient {
         const topics = [
             { topic: this.config.MQTT.TOPICS.STATUS, options: { qos: 1 } },
             { topic: this.config.MQTT.TOPICS.ALARM, options: { qos: 1 } },
-            { topic: this.config.MQTT.TOPICS.SENSORS, options: { qos: 1 } }
+            { topic: this.config.MQTT.TOPICS.SENSORS, options: { qos: 1 } },
+            { topic: this.config.MQTT.TOPICS.PING, options: { qos: 0 } } // ⭐ Subscribe to ping topic
         ];
         
         console.log(`📡 Subscribing to device topics for ${this.currentDeviceId}...`);
@@ -549,6 +665,7 @@ class MQTTClient {
             console.log('🔌 MQTT Connection closed');
             this.connected = false;
             this._stopHealthCheck();
+            this._stopKeepAliveInterval(); // ⭐ Stop keep-alive
             
             // Publish offline status
             this._publishDeviceStatus('offline').catch(() => {});
@@ -581,6 +698,7 @@ class MQTTClient {
         this.client.on('offline', () => {
             console.log('📴 MQTT Offline');
             this.connected = false;
+            this._stopKeepAliveInterval(); // ⭐ Stop keep-alive
             this._triggerEvent('offline', { 
                 deviceId: this.currentDeviceId,
                 timestamp: Date.now() 
@@ -593,23 +711,27 @@ class MQTTClient {
             this.connected = false;
             this.client = null;
             this._stopHealthCheck();
+            this._stopKeepAliveInterval(); // ⭐ Stop keep-alive
         });
         
-        // Packetsend handler (for monitoring)
+        // ⭐ UPDATE ACTIVITY ON ALL PACKET EVENTS
         this.client.on('packetsend', (packet) => {
-            // Track ping requests
+            this.lastActivity = Date.now();
             if (packet.cmd === 'pingreq') {
-                console.debug('📤 Sending ping request');
+                console.debug('📤 Sending MQTT ping request');
             }
         });
         
-        // Packetreceive handler
         this.client.on('packetreceive', (packet) => {
-            // Track ping responses
+            this.lastActivity = Date.now();
             if (packet.cmd === 'pingresp') {
-                console.debug('📥 Received ping response');
-                this.lastActivity = Date.now();
+                console.debug('📥 Received MQTT ping response');
             }
+        });
+        
+        // ⭐ NEW: Connection activity events
+        this.client.on('connect', () => {
+            this.lastActivity = Date.now();
         });
     }
     
@@ -623,6 +745,7 @@ class MQTTClient {
             this.stats.messagesReceived++;
             this.stats.lastMessageTime = Date.now();
             this.stats.bytesReceived += message.length;
+            this.lastActivity = Date.now(); // ⭐ UPDATE ACTIVITY
             
             // Parse message
             let data;
@@ -638,6 +761,12 @@ class MQTTClient {
             // Handle authentication responses
             if (topic.includes('/auth/response/')) {
                 this._handleAuthResponse(topic, data);
+                return;
+            }
+            
+            // Handle ping responses
+            if (topic.includes('/ping')) {
+                console.debug('📥 Received ping response from device');
                 return;
             }
             
@@ -978,7 +1107,7 @@ class MQTTClient {
                 // Update stats
                 this.stats.messagesSent++;
                 this.stats.bytesSent += JSON.stringify(message).length;
-                this.lastActivity = Date.now();
+                this.lastActivity = Date.now(); // ⭐ UPDATE ACTIVITY
                 
                 console.log(`📤 [${this.currentDeviceId}] Command sent: ${command}`, data);
                 
@@ -986,6 +1115,10 @@ class MQTTClient {
             });
         });
     }
+    
+    // ================================
+    // DEVICE CONTROL METHODS
+    // ================================
     
     /**
      * Set alarm on device
@@ -1049,6 +1182,14 @@ class MQTTClient {
      */
     setBrightness(brightness) {
         return this.sendCommand('set_brightness', { brightness }, { qos: 1 });
+    }
+    
+    /**
+     * Send a ping to check connection
+     * @returns {Promise<boolean>}
+     */
+    ping() {
+        return this.sendCommand('ping', { type: 'keepalive' });
     }
     
     /**
@@ -1200,7 +1341,7 @@ class MQTTClient {
                     // Update stats
                     this.stats.messagesSent++;
                     this.stats.bytesSent += payload.length;
-                    this.lastActivity = Date.now();
+                    this.lastActivity = Date.now(); // ⭐ UPDATE ACTIVITY
                     
                     // Log for debugging
                     if (this.stats.messagesSent <= 5 || this.stats.messagesSent % 10 === 0) {
@@ -1246,7 +1387,8 @@ class MQTTClient {
             id: this.currentDeviceId,
             hasToken: this._isTokenValid(),
             tokenExpiry: this.tokenExpiry,
-            connected: this.connected
+            connected: this.connected,
+            keepAliveEnabled: this.keepAliveEnabled // ⭐ Include keep-alive status
         };
     }
     
@@ -1286,12 +1428,14 @@ class MQTTClient {
             broker: this.client?.options?.hostname || this.config.MQTT.BROKER,
             subscriptions: Array.from(this.subscriptions.keys()),
             authenticated: this._isTokenValid(),
+            keepAliveEnabled: this.keepAliveEnabled, // ⭐ Include keep-alive status
             stats: {
                 ...this.stats,
                 uptimeFormatted: this._formatUptime(uptime),
                 queueSize: this.messageQueue.length,
                 lastActivityAgo: this.lastActivity ? Math.floor((now - this.lastActivity) / 1000) : null,
-                devicesConnected: this.availableDevices.size
+                devicesConnected: this.availableDevices.size,
+                lastKeepAliveAgo: this.lastKeepAlive ? Math.floor((now - this.lastKeepAlive) / 1000) : null
             },
             uptime,
             connectionAttempts: this.connectionAttempts,
@@ -1318,6 +1462,9 @@ class MQTTClient {
     disconnect() {
         if (this.client) {
             console.log('🔌 Disconnecting MQTT client...');
+            
+            // Stop keep-alive interval
+            this._stopKeepAliveInterval();
             
             // Publish offline status if connected
             if (this.connected && this.currentDeviceId) {
@@ -1358,13 +1505,285 @@ class MQTTClient {
         }
     }
     
-    // Các phương thức helper khác giữ nguyên...
-    // (các phương thức như _handleError, _scheduleReconnect, _startHealthCheck, 
-    // _stopHealthCheck, _resubscribeTopics, _queueMessage, _processMessageQueue, 
-    // _formatUptime, getUptime, destroy, addMessageHandler, removeMessageHandler, 
-    // on, off, _triggerEvent vẫn giữ nguyên như file gốc)
+    // ================================
+    // HELPER METHODS (missing from original)
+    // ================================
     
-    // ... (giữ nguyên tất cả các phương thức helper khác từ file gốc)
+    /**
+     * Handle errors
+     * @private
+     */
+    _handleError(error) {
+        console.error('❌ MQTT Error:', error);
+        this.stats.errors++;
+        
+        this._triggerEvent('error', {
+            error: error.message || error,
+            deviceId: this.currentDeviceId,
+            timestamp: Date.now()
+        });
+    }
+    
+    /**
+     * Schedule reconnection
+     * @private
+     */
+    _scheduleReconnect() {
+        if (this.reconnecting || !this.autoReconnect) return;
+        
+        if (this.connectionAttempts >= this.maxConnectionAttempts) {
+            console.error(`❌ Max reconnection attempts (${this.maxConnectionAttempts}) reached`);
+            this._triggerEvent('max_reconnect_attempts', {
+                deviceId: this.currentDeviceId,
+                attempts: this.connectionAttempts,
+                timestamp: Date.now()
+            });
+            return;
+        }
+        
+        const delay = Math.min(
+            this.reconnectDelay * Math.pow(this.reconnectBackoffFactor, this.connectionAttempts - 1),
+            30000 // Max 30 seconds
+        );
+        
+        console.log(`⏳ Reconnecting in ${Math.round(delay / 1000)} seconds...`);
+        
+        this.reconnecting = true;
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnecting = false;
+            this.connect().catch(error => {
+                console.error('Reconnection failed:', error);
+            });
+        }, delay);
+    }
+    
+    /**
+     * Start health check interval
+     * @private
+     */
+    _startHealthCheck() {
+        if (this.healthCheckInterval) {
+            clearInterval(this.healthCheckInterval);
+        }
+        
+        this.healthCheckInterval = setInterval(() => {
+            if (!this.connected) return;
+            
+            const now = Date.now();
+            const lastActivityAgo = now - this.lastActivity;
+            
+            // If no activity for too long, try to ping
+            if (lastActivityAgo > this.healthCheckTime) {
+                console.log(`⚠️ No MQTT activity for ${Math.round(lastActivityAgo / 1000)}s`);
+                
+                // Send a ping to check connection
+                if (this.keepAliveEnabled) {
+                    this._sendKeepAlivePing();
+                }
+            }
+        }, 15000); // Check every 15 seconds
+    }
+    
+    /**
+     * Stop health check interval
+     * @private
+     */
+    _stopHealthCheck() {
+        if (this.healthCheckInterval) {
+            clearInterval(this.healthCheckInterval);
+            this.healthCheckInterval = null;
+        }
+    }
+    
+    /**
+     * Resubscribe to all topics
+     * @private
+     */
+    async _resubscribeTopics() {
+        if (!this.client || !this.connected) return;
+        
+        const topics = Array.from(this.subscriptions.entries());
+        
+        for (const [topic, subscription] of topics) {
+            try {
+                await new Promise((resolve, reject) => {
+                    this.client.subscribe(topic, subscription.options, (err) => {
+                        if (err) {
+                            console.error(`❌ Failed to resubscribe to ${topic}:`, err);
+                            reject(err);
+                        } else {
+                            console.log(`✅ Resubscribed to: ${topic}`);
+                            resolve();
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error(`Error resubscribing to ${topic}:`, error);
+            }
+        }
+    }
+    
+    /**
+     * Queue message for later sending
+     * @private
+     */
+    _queueMessage(topic, message, options) {
+        if (this.messageQueue.length >= this.maxQueueSize) {
+            console.warn(`⚠️ Message queue full (${this.maxQueueSize}), dropping oldest message`);
+            this.messageQueue.shift();
+        }
+        
+        this.messageQueue.push({ topic, message, options, timestamp: Date.now() });
+        console.log(`📝 Queued message for ${topic} (queue size: ${this.messageQueue.length})`);
+    }
+    
+    /**
+     * Process queued messages
+     * @private
+     */
+    async _processMessageQueue() {
+        if (this.messageQueue.length === 0 || !this.connected) return;
+        
+        console.log(`Processing ${this.messageQueue.length} queued messages...`);
+        
+        const processed = [];
+        
+        for (const item of this.messageQueue) {
+            try {
+                await this.publish(item.topic, item.message, item.options);
+                processed.push(item);
+            } catch (error) {
+                console.error(`Failed to process queued message for ${item.topic}:`, error);
+                break; // Stop if we encounter an error
+            }
+        }
+        
+        // Remove processed messages
+        this.messageQueue = this.messageQueue.filter(item => !processed.includes(item));
+        
+        console.log(`✅ Processed ${processed.length} queued messages`);
+    }
+    
+    /**
+     * Format uptime
+     * @private
+     */
+    _formatUptime(ms) {
+        if (!ms) return '0s';
+        
+        const seconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        
+        if (hours > 0) {
+            return `${hours}h ${minutes % 60}m`;
+        } else if (minutes > 0) {
+            return `${minutes}m ${seconds % 60}s`;
+        } else {
+            return `${seconds}s`;
+        }
+    }
+    
+    /**
+     * Get connection uptime
+     * @returns {number} Uptime in milliseconds
+     */
+    getUptime() {
+        if (!this.stats.connectionStart || !this.connected) return 0;
+        return Date.now() - this.stats.connectionStart;
+    }
+    
+    /**
+     * Destroy client and cleanup
+     */
+    destroy() {
+        console.log('🧹 Destroying MQTT client...');
+        
+        this.disconnect();
+        
+        // Clear all intervals
+        this._stopHealthCheck();
+        this._stopKeepAliveInterval();
+        
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+        }
+        
+        // Clear all handlers
+        this.messageHandlers.clear();
+        this.globalHandlers = [];
+        this.subscriptions.clear();
+        
+        // Clear event callbacks
+        Object.keys(this.eventCallbacks).forEach(event => {
+            this.eventCallbacks[event] = [];
+        });
+        
+        console.log('✅ MQTT client destroyed');
+    }
+    
+    /**
+     * Add message handler
+     * @param {Function} handler - Handler function
+     */
+    addMessageHandler(handler) {
+        if (typeof handler === 'function') {
+            this.globalHandlers.push(handler);
+        }
+    }
+    
+    /**
+     * Remove message handler
+     * @param {Function} handler - Handler function to remove
+     */
+    removeMessageHandler(handler) {
+        const index = this.globalHandlers.indexOf(handler);
+        if (index > -1) {
+            this.globalHandlers.splice(index, 1);
+        }
+    }
+    
+    /**
+     * Add event listener
+     * @param {string} event - Event name
+     * @param {Function} callback - Callback function
+     */
+    on(event, callback) {
+        if (this.eventCallbacks[event] && typeof callback === 'function') {
+            this.eventCallbacks[event].push(callback);
+        }
+    }
+    
+    /**
+     * Remove event listener
+     * @param {string} event - Event name
+     * @param {Function} callback - Callback function to remove
+     */
+    off(event, callback) {
+        if (this.eventCallbacks[event]) {
+            const index = this.eventCallbacks[event].indexOf(callback);
+            if (index > -1) {
+                this.eventCallbacks[event].splice(index, 1);
+            }
+        }
+    }
+    
+    /**
+     * Trigger event
+     * @private
+     */
+    _triggerEvent(event, data) {
+        if (this.eventCallbacks[event]) {
+            this.eventCallbacks[event].forEach(callback => {
+                try {
+                    callback(data);
+                } catch (error) {
+                    console.error(`Error in ${event} callback:`, error);
+                }
+            });
+        }
+    }
 }
 
 // Singleton instance management
@@ -1397,7 +1816,7 @@ function initMQTT(config = {}) {
     
     if (!mqttClientInstance) {
         mqttClientInstance = new MQTTClient(config);
-        console.log('🎉 MQTT Client with Device ID support initialized successfully');
+        console.log('🎉 MQTT Client with Keep-Alive system initialized successfully');
     } else {
         console.log('🔁 Using existing MQTT Client instance');
     }
@@ -1427,7 +1846,8 @@ function createMockMQTTClient() {
     const mockStats = {
         messagesSent: 0,
         messagesReceived: 0,
-        connected: false
+        connected: false,
+        keepAlivePings: 0
     };
     
     return {
@@ -1478,6 +1898,17 @@ function createMockMQTTClient() {
             return Promise.resolve(true);
         },
         
+        ping: () => {
+            console.log('📡 [MOCK] Keep-alive ping sent');
+            mockStats.keepAlivePings++;
+            return Promise.resolve(true);
+        },
+        
+        setKeepAlive: (enabled) => {
+            console.log(`🔧 [MOCK] Keep-alive ${enabled ? 'enabled' : 'disabled'}`);
+            return true;
+        },
+        
         disconnect: () => {
             console.log('🔌 [MOCK] Disconnected');
             mockStats.connected = false;
@@ -1487,6 +1918,7 @@ function createMockMQTTClient() {
             connected: mockStats.connected,
             currentDeviceId: 'ESP32_CLOCK_001',
             authenticated: true,
+            keepAliveEnabled: true,
             mock: true,
             stats: mockStats,
             message: 'Running in mock mode'
@@ -1501,11 +1933,16 @@ function createMockMQTTClient() {
             id: 'ESP32_CLOCK_001',
             hasToken: true,
             tokenExpiry: Date.now() + 3600000,
-            connected: true
+            connected: true,
+            keepAliveEnabled: true
         }),
         
         logout: () => {
             console.log('🚪 [MOCK] Logged out');
+        },
+        
+        setKeepAlive: (enabled) => {
+            console.log(`🔧 [MOCK] Keep-alive ${enabled ? 'enabled' : 'disabled'}`);
         },
         
         isConnected: () => mockStats.connected,
@@ -1544,6 +1981,10 @@ if (typeof window !== 'undefined') {
                         window.mqttClient.setDeviceId(lastDeviceId);
                         console.log(`📱 Restored last device: ${lastDeviceId}`);
                     }
+                    
+                    // Enable keep-alive by default
+                    window.mqttClient.setKeepAlive(true);
+                    
                 } catch (error) {
                     console.error('Failed to auto-initialize MQTT:', error);
                 }
@@ -1560,64 +2001,3 @@ if (typeof module !== 'undefined' && module.exports) {
         getMQTTClient
     };
 }
-
-// Example usage with Device ID:
-/*
-// 1. Initialize client
-const mqtt = initMQTT({
-    MQTT: {
-        BROKER: 'wss://broker.emqx.io:8084/mqtt',
-        TOPIC_PREFIX: 'smartclock/',
-        OPTIONS: {
-            clientId: 'web-client-' + Math.random().toString(36).substr(2, 8),
-            clean: true,
-            connectTimeout: 5000
-        }
-    }
-});
-
-// 2. Set Device ID (required before connection)
-mqtt.setDeviceId('ESP32_CLOCK_001');
-
-// 3. Connect to broker
-mqtt.connect()
-    .then(() => {
-        console.log('✅ Connected to device');
-        
-        // 4. Authenticate with device password
-        return mqtt.authenticate('123456');
-    })
-    .then(() => {
-        console.log('🔐 Authenticated successfully');
-        
-        // 5. Now you can send commands
-        mqtt.setAlarm(7, 30, 0, true, 'Morning Alarm');
-        mqtt.pressButton(1);
-        
-        // 6. Handle messages from device
-        mqtt.on('message', (msg) => {
-            console.log('📨 Message from device:', msg.topic, msg.data);
-        });
-        
-        // 7. Get status
-        const status = mqtt.getStatus();
-        console.log('📊 Connection status:', status);
-        
-        // 8. List available devices
-        const devices = mqtt.getDevices();
-        console.log('📱 Available devices:', devices);
-    })
-    .catch(error => {
-        console.error('❌ Error:', error);
-    });
-
-// 9. Switch to another device
-mqtt.setDeviceId('ESP32_CLOCK_002');
-mqtt.connect().then(() => mqtt.authenticate('789012'));
-
-// 10. Logout from current device
-mqtt.logout();
-
-// 11. Cleanup
-// mqtt.destroy();
-*/
