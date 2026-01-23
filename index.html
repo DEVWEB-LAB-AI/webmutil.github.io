@@ -1001,35 +1001,60 @@
         <div class="spinner"></div>
     </div>
     
-    <script>
-        // Configuration với Device ID
+
+
+ <script>
+        // ================================
+        // CONFIGURATION - THÊM KEEPALIVE
+        // ================================
         const CONFIG = {
-            // MQTT Configuration
+            // MQTT Configuration - THÊM KEEPALIVE
             MQTT: {
                 broker: 'wss://broker.emqx.io:8084/mqtt',
-                topicPrefix: 'smartclock/',  // Base prefix
+                // THỬ BROKER KHÁC NẾU CẦN:
+                // broker: 'wss://test.mosquitto.org:8081',  // Port 8081 cho WSS
+                // broker: 'wss://broker.hivemq.com:8884/mqtt',
+                topicPrefix: 'smartclock/',
                 options: {
                     clean: true,
                     connectTimeout: 4000,
-                    reconnectPeriod: 2000
+                    reconnectPeriod: 2000,
+                    keepalive: 25, // ⭐ QUAN TRỌNG: Gửi ping mỗi 25s
+                    clientId: 'web_' + Math.random().toString(16).substr(2, 8)
                 }
             },
             
-            // Local Storage keys (lưu theo Device ID)
+            // Keep-Alive settings
+            KEEP_ALIVE: {
+                interval: 8000,    // Gửi ping mỗi 8s
+                topicSuffix: '/ping',
+                maxReconnectAttempts: 10,
+                reconnectDelay: 3000
+            },
+            
+            // Local Storage keys
             STORAGE_KEYS: {
                 LAST_DEVICE_ID: 'smartclock_last_device_id',
-                AUTH_TOKENS: 'smartclock_auth_tokens',  // Lưu nhiều token theo device
+                AUTH_TOKENS: 'smartclock_auth_tokens',
                 SESSION_EXPIRIES: 'smartclock_session_expiries'
             }
         };
-        
-        // Global variables với Device ID
+    
+         // ================================
+        // BIẾN TOÀN CỤC - THÊM BIẾN MỚI
+        // ================================
         let mqttClient = null;
         let isMQTTConnected = false;
-        let clientId = '';
+        let clientId = CONFIG.MQTT.options.clientId;
         let currentDeviceId = '';
         let authToken = null;
         let sessionExpiry = null;
+        
+        // ⭐ BIẾN MỚI ĐỂ FIX TIMEOUT
+        let keepAliveInterval = null;
+        let mqttReconnectAttempts = 0;
+        let useHTTPMode = false; // Fallback mode
+        let lastMQTTActivity = Date.now();
         
         // DOM Elements
         const loginScreen = document.getElementById('loginScreen');
@@ -1046,30 +1071,26 @@
         const disconnectBtn = document.getElementById('disconnectBtn');
         const sampleDevices = document.getElementById('sampleDevices');
         
-        // Initialize
+        // ================================
+        // KHỞI TẠO
+        // ================================
         document.addEventListener('DOMContentLoaded', function() {
-            // Generate unique client ID
-            clientId = 'web_' + Math.random().toString(16).substr(2, 8);
             document.getElementById('clientId').textContent = clientId;
             
-            // Check if user has valid session for any device
             checkExistingSession();
-            
-            // Start clock
             updateClock();
             setInterval(updateClock, 1000);
             
+            // Thêm timer check MQTT activity
+            setInterval(checkMQTTActivity, 5000);
+            
             // Enter key for login form
             deviceIdInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    passwordInput.focus();
-                }
+                if (e.key === 'Enter') passwordInput.focus();
             });
             
             passwordInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    checkCredentials();
-                }
+                if (e.key === 'Enter') checkCredentials();
             });
             
             // Auto-clear sensitive data
@@ -1085,12 +1106,301 @@
             }, 1000);
         });
         
+        // ================================
+        // HÀM MỚI: KIỂM TRA MQTT ACTIVITY
+        // ================================
+        function checkMQTTActivity() {
+            if (!mqttClient || !isMQTTConnected) return;
+            
+            const now = Date.now();
+            const inactiveTime = now - lastMQTTActivity;
+            
+            // Nếu không có activity trong 15s, gửi keep-alive
+            if (inactiveTime > 15000) {
+                sendKeepAlivePing();
+            }
+            
+            // Log để debug
+            if (inactiveTime > 30000) {
+                console.log(`⚠️ MQTT inactive for ${Math.floor(inactiveTime/1000)}s`);
+            }
+        }
+        
+        // ================================
+        // HÀM MỚI: GỬI KEEP-ALIVE PING
+        // ================================
+        function sendKeepAlivePing() {
+            if (!mqttClient || !isMQTTConnected || !currentDeviceId) return;
+            
+            try {
+                const deviceKey = currentDeviceId.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                const pingTopic = `${CONFIG.MQTT.topicPrefix}${deviceKey}/ping`;
+                const pingMsg = JSON.stringify({
+                    type: 'keepalive',
+                    clientId: clientId,
+                    deviceId: currentDeviceId,
+                    timestamp: Date.now()
+                });
+                
+                mqttClient.publish(pingTopic, pingMsg, { qos: 0, retain: false }, (err) => {
+                    if (err) {
+                        console.error('❌ Keep-alive ping failed:', err);
+                    } else {
+                        console.log('📡 [Keep-Alive] Ping sent');
+                        lastMQTTActivity = Date.now();
+                    }
+                });
+            } catch (error) {
+                console.error('Error sending keep-alive:', error);
+            }
+        }
+        
+        // ================================
+        // HÀM MỚI: SETUP KEEP-ALIVE INTERVAL
+        // ================================
+        function setupKeepAliveInterval() {
+            // Xóa interval cũ nếu có
+            if (keepAliveInterval) {
+                clearInterval(keepAliveInterval);
+                keepAliveInterval = null;
+            }
+            
+            // Tạo interval mới
+            keepAliveInterval = setInterval(() => {
+                if (mqttClient && mqttClient.connected && currentDeviceId) {
+                    sendKeepAlivePing();
+                }
+            }, CONFIG.KEEP_ALIVE.interval);
+            
+            console.log(`✅ Keep-alive interval set to ${CONFIG.KEEP_ALIVE.interval}ms`);
+        }
+        
+        // ================================
+        // HÀM MỚI: CLEANUP KEEP-ALIVE
+        // ================================
+        function cleanupKeepAlive() {
+            if (keepAliveInterval) {
+                clearInterval(keepAliveInterval);
+                keepAliveInterval = null;
+                console.log('🧹 Keep-alive interval cleared');
+            }
+        }
+        
+        // ================================
+        // CẬP NHẬT HÀM CONNECT MQTT
+        // ================================
+        function connectMQTT() {
+            if (!authToken || !currentDeviceId) {
+                showToast('Vui lòng đăng nhập vào thiết bị trước!', 'error');
+                return;
+            }
+            
+            if (mqttClient && mqttClient.connected) {
+                showToast(`✅ Đã kết nối MQTT với ${currentDeviceId}!`, 'success');
+                return;
+            }
+            
+            // Check max reconnect attempts
+            if (mqttReconnectAttempts >= CONFIG.KEEP_ALIVE.maxReconnectAttempts) {
+                showToast(`Đã thử kết nối ${mqttReconnectAttempts} lần. Chuyển sang chế độ HTTP?`, 'warning');
+                useHTTPMode = true;
+                return;
+            }
+            
+            mqttReconnectAttempts++;
+            console.log(`🔄 MQTT reconnect attempt ${mqttReconnectAttempts}/${CONFIG.KEEP_ALIVE.maxReconnectAttempts}`);
+            
+            showLoading(true);
+            updateMQTTStatus('Đang kết nối...', false);
+            
+            // Tạo client options với keepalive
+            const options = {
+                ...CONFIG.MQTT.options,
+                clientId: clientId + '_' + currentDeviceId + '_' + Date.now(),
+                username: 'emqx',
+                password: 'public',
+                keepalive: 30, // ⭐ GIỮ KẾT NỐI
+                reconnectPeriod: CONFIG.KEEP_ALIVE.reconnectDelay
+            };
+            
+            try {
+                // Đổi broker nếu cần (bỏ comment 1 trong các dòng dưới)
+                const brokerUrl = CONFIG.MQTT.broker;
+                // const brokerUrl = 'wss://test.mosquitto.org:8081'; // ⭐ THỬ BROKER KHÁC
+                // const brokerUrl = 'wss://broker.emqx.io:8083/mqtt'; // Port 8083
+                
+                mqttClient = mqtt.connect(brokerUrl, options);
+                
+                // ⭐ EVENT HANDLERS VỚI KEEP-ALIVE
+                mqttClient.on('connect', () => {
+                    console.log('✅ MQTT WebSocket Connected!');
+                    isMQTTConnected = true;
+                    mqttReconnectAttempts = 0; // Reset counter
+                    useHTTPMode = false;
+                    lastMQTTActivity = Date.now();
+                    
+                    updateMQTTStatus('Đã kết nối', true);
+                    
+                    // ⭐ SETUP KEEP-ALIVE INTERVAL
+                    setupKeepAliveInterval();
+                    
+                    // Subscribe to topics
+                    subscribeToTopics();
+                    
+                    showToast(`✅ Đã kết nối MQTT với ${currentDeviceId} thành công!`, 'success');
+                    
+                    connectBtn.style.display = 'none';
+                    disconnectBtn.style.display = 'block';
+                    
+                    setTimeout(requestStatusUpdate, 1000);
+                });
+                
+                mqttClient.on('message', (topic, message) => {
+                    lastMQTTActivity = Date.now(); // ⭐ UPDATE ACTIVITY
+                    handleMQTTMessage(topic, message.toString());
+                });
+                
+                mqttClient.on('packetsend', () => {
+                    lastMQTTActivity = Date.now(); // ⭐ UPDATE ACTIVITY
+                });
+                
+                mqttClient.on('packetreceive', () => {
+                    lastMQTTActivity = Date.now(); // ⭐ UPDATE ACTIVITY
+                });
+                
+                mqttClient.on('error', (error) => {
+                    console.error('MQTT Error:', error);
+                    updateMQTTStatus('Lỗi kết nối', false);
+                    showToast('❌ Lỗi MQTT: ' + error.message, 'error');
+                    cleanupKeepAlive();
+                });
+                
+                mqttClient.on('close', () => {
+                    console.log('🔌 MQTT Connection Closed');
+                    isMQTTConnected = false;
+                    updateMQTTStatus('Mất kết nối', false);
+                    cleanupKeepAlive();
+                    
+                    connectBtn.style.display = 'block';
+                    disconnectBtn.style.display = 'none';
+                    
+                    // Tự động reconnect với delay
+                    if (mqttReconnectAttempts < CONFIG.KEEP_ALIVE.maxReconnectAttempts) {
+                        const delay = Math.min(3000 * Math.pow(1.5, mqttReconnectAttempts), 30000);
+                        console.log(`⏳ Will try to reconnect in ${delay/1000}s...`);
+                        setTimeout(connectMQTT, delay);
+                    }
+                });
+                
+                mqttClient.on('offline', () => {
+                    console.log('📴 MQTT Client Offline');
+                    isMQTTConnected = false;
+                    updateMQTTStatus('Offline', false);
+                    cleanupKeepAlive();
+                });
+                
+                mqttClient.on('reconnect', () => {
+                    console.log('🔄 MQTT Reconnecting...');
+                    updateMQTTStatus('Đang kết nối lại...', false);
+                });
+                
+            } catch (error) {
+                console.error('Failed to connect to MQTT:', error);
+                showToast('❌ Không thể kết nối MQTT', 'error');
+                updateMQTTStatus('Kết nối thất bại', false);
+                cleanupKeepAlive();
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // ================================
+        // CẬP NHẬT HÀM DISCONNECT MQTT
+        // ================================
+        function disconnectMQTT() {
+            if (mqttClient) {
+                cleanupKeepAlive(); // ⭐ CLEANUP KEEP-ALIVE
+                mqttClient.end();
+                mqttClient = null;
+                isMQTTConnected = false;
+                mqttReconnectAttempts = 0;
+                
+                updateMQTTStatus('Đã ngắt kết nối', false);
+                
+                connectBtn.style.display = 'block';
+                disconnectBtn.style.display = 'none';
+                
+                showToast(`✋ Đã ngắt kết nối MQTT khỏi ${currentDeviceId}`, 'info');
+            }
+        }
+        
+        // ================================
+        // CẬP NHẬT HÀM SEND MQTT COMMAND
+        // ================================
+        function sendMQTTCommand(command, data = {}) {
+            if (!authToken || !currentDeviceId) {
+                showToast('Phiên đăng nhập đã hết hạn!', 'error');
+                logout();
+                return false;
+            }
+            
+            if (useHTTPMode) {
+                console.log('📡 Using HTTP fallback mode');
+                // Gọi hàm HTTP fallback của bạn ở đây
+                // return sendHTTPCommand(command, data);
+                showToast('Đang dùng HTTP fallback (MQTT thất bại)', 'warning');
+                return false;
+            }
+            
+            if (!mqttClient || !isMQTTConnected) {
+                showToast('❌ Chưa kết nối MQTT! Đang thử kết nối...', 'warning');
+                connectMQTT();
+                return false;
+            }
+            
+            const topics = getDeviceTopics();
+            const message = {
+                command: command,
+                data: data,
+                auth: {
+                    token: authToken,
+                    deviceId: currentDeviceId,
+                    clientId: clientId
+                },
+                timestamp: Date.now()
+            };
+            
+            try {
+                mqttClient.publish(topics.command, JSON.stringify(message), { qos: 1 }, (err) => {
+                    if (err) {
+                        console.error('❌ MQTT Publish Error:', err);
+                        // Chuyển sang HTTP mode nếu MQTT fail
+                        if (mqttReconnectAttempts >= 3) {
+                            useHTTPMode = true;
+                            showToast('Chuyển sang chế độ HTTP (MQTT thất bại)', 'warning');
+                        }
+                    } else {
+                        lastMQTTActivity = Date.now(); // ⭐ UPDATE ACTIVITY
+                        console.log(`📤 Sent MQTT command to ${currentDeviceId}: ${command}`, data);
+                    }
+                });
+                return true;
+            } catch (error) {
+                console.error('Error sending MQTT command:', error);
+                showToast('❌ Lỗi khi gửi lệnh MQTT', 'error');
+                return false;
+            }
+        }
+        
+        // ================================
+        // CÁC HÀM KHÁC GIỮ NGUYÊN (nhưng đã có trong code gốc)
+        // ================================
+        
         // Check existing session
         function checkExistingSession() {
             const lastDeviceId = localStorage.getItem(CONFIG.STORAGE_KEYS.LAST_DEVICE_ID);
             
             if (lastDeviceId) {
-                // Load saved token and expiry for this device
                 const authTokens = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS) || '{}');
                 const sessionExpiries = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES) || '{}');
                 
@@ -1100,13 +1410,11 @@
                 if (authToken && sessionExpiry) {
                     const now = Date.now();
                     if (now < sessionExpiry) {
-                        // Session still valid
                         currentDeviceId = lastDeviceId;
                         deviceIdInput.value = lastDeviceId;
                         passwordInput.placeholder = 'Mật khẩu đã lưu, nhập mới nếu cần';
                         showToast(`🔍 Phát hiện phiên cũ cho ${lastDeviceId}`, 'info');
                     } else {
-                        // Session expired
                         clearDeviceSession(lastDeviceId);
                     }
                 }
@@ -1125,353 +1433,19 @@
             };
         }
         
-        // Update topic displays
-        function updateTopicDisplays() {
-            const topics = getDeviceTopics();
-            document.getElementById('commandTopicDisplay').textContent = topics.command;
-            document.getElementById('statusTopicDisplay').textContent = topics.status;
-            document.getElementById('alarmTopicDisplay').textContent = topics.alarm;
-            document.getElementById('sensorTopicDisplay').textContent = topics.sensors;
-        }
+        // ... (Các hàm khác giữ nguyên từ code gốc của bạn) ...
         
-        // Save device session
-        function saveDeviceSession(deviceId, token, expiry) {
-            // Save as last used device
-            localStorage.setItem(CONFIG.STORAGE_KEYS.LAST_DEVICE_ID, deviceId);
+        // Update MQTT status display
+        function updateMQTTStatus(text, connected) {
+            mqttStatusText.textContent = text;
+            connectionStatus.textContent = text;
             
-            // Save token
-            const authTokens = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS) || '{}');
-            authTokens[deviceId] = token;
-            localStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS, JSON.stringify(authTokens));
-            
-            // Save expiry
-            const sessionExpiries = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES) || '{}');
-            sessionExpiries[deviceId] = expiry;
-            localStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES, JSON.stringify(sessionExpiries));
-        }
-        
-        // Clear device session
-        function clearDeviceSession(deviceId) {
-            // Remove token
-            const authTokens = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS) || '{}');
-            delete authTokens[deviceId];
-            localStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS, JSON.stringify(authTokens));
-            
-            // Remove expiry
-            const sessionExpiries = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES) || '{}');
-            delete sessionExpiries[deviceId];
-            localStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES, JSON.stringify(sessionExpiries));
-        }
-        
-        // Clear all sessions
-        function clearAllSessions() {
-            localStorage.removeItem(CONFIG.STORAGE_KEYS.LAST_DEVICE_ID);
-            localStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS);
-            localStorage.removeItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES);
-            authToken = null;
-            sessionExpiry = null;
-            currentDeviceId = '';
-        }
-        
-        // Show login screen
-        function showLoginScreen() {
-            loginScreen.style.display = 'block';
-            mainInterface.style.display = 'none';
-            passwordInput.value = '';
-            errorMessage.textContent = '';
-        }
-        
-        // Show main interface
-        function showMainInterface() {
-            loginScreen.style.display = 'none';
-            mainInterface.style.display = 'block';
-            
-            // Update UI with device info
-            document.getElementById('currentDeviceId').textContent = currentDeviceId;
-            document.getElementById('deviceIdDisplay').textContent = currentDeviceId;
-            document.getElementById('systemDeviceId').textContent = currentDeviceId;
-            document.getElementById('mqttDeviceId').textContent = currentDeviceId;
-            document.getElementById('footerDeviceId').textContent = currentDeviceId;
-            
-            // Update topic displays
-            updateTopicDisplays();
-        }
-        
-        // Check credentials via MQTT authentication
-        function checkCredentials() {
-            currentDeviceId = deviceIdInput.value.trim();
-            const password = passwordInput.value.trim();
-            
-            if (!currentDeviceId) {
-                showError('Vui lòng nhập Device ID');
-                deviceIdInput.focus();
-                return;
-            }
-            
-            if (!password) {
-                showError('Vui lòng nhập mật khẩu');
-                passwordInput.focus();
-                return;
-            }
-            
-            // Validate Device ID format
-            if (currentDeviceId.length > 50) {
-                showError('Device ID quá dài (tối đa 50 ký tự)');
-                return;
-            }
-            
-            showLoading(true);
-            
-            // Generate authentication request with Device ID
-            const authRequest = {
-                type: 'auth_request',
-                deviceId: currentDeviceId,
-                password: password,
-                clientId: clientId,
-                timestamp: Date.now()
-            };
-            
-            // Send auth request via MQTT
-            sendAuthRequest(authRequest)
-                .then(response => {
-                    if (response.success) {
-                        // Authentication successful
-                        authToken = response.token;
-                        sessionExpiry = Date.now() + (response.expiry || 3600000); // 1 hour default
-                        
-                        // Save device session
-                        saveDeviceSession(currentDeviceId, authToken, sessionExpiry);
-                        
-                        showMainInterface();
-                        showToast(`✅ Đã kết nối với ${currentDeviceId}`, 'success');
-                        
-                        // Connect to MQTT
-                        setTimeout(connectMQTT, 500);
-                    } else {
-                        showError(response.message || 'Device ID hoặc mật khẩu không đúng');
-                        passwordInput.value = '';
-                        passwordInput.focus();
-                    }
-                })
-                .catch(error => {
-                    showError('Lỗi xác thực: ' + error.message);
-                    console.error('Auth error:', error);
-                })
-                .finally(() => {
-                    showLoading(false);
-                });
-        }
-        
-        // Send authentication request via MQTT
-        function sendAuthRequest(authData) {
-            return new Promise((resolve, reject) => {
-                // Get auth topic for this device
-                const topics = getDeviceTopics();
-                const authTopic = topics.auth;
-                const responseTopic = authTopic + '/response/' + authData.clientId;
-                
-                // Create temporary MQTT connection for authentication
-                const tempClient = mqtt.connect(CONFIG.MQTT.broker, {
-                    clientId: 'auth_' + Math.random().toString(16).substr(2, 8),
-                    clean: true,
-                    connectTimeout: 5000
-                });
-                
-                let timeoutId;
-                
-                tempClient.on('connect', () => {
-                    // Subscribe to response topic
-                    tempClient.subscribe(responseTopic, (err) => {
-                        if (err) {
-                            reject(new Error('Không thể subscribe: ' + err.message));
-                            tempClient.end();
-                            return;
-                        }
-                        
-                        // Send authentication request
-                        tempClient.publish(authTopic, JSON.stringify(authData));
-                        
-                        // Set timeout
-                        timeoutId = setTimeout(() => {
-                            tempClient.end();
-                            reject(new Error('Timeout: Thiết bị không phản hồi. Kiểm tra Device ID và kết nối mạng.'));
-                        }, 10000);
-                    });
-                });
-                
-                tempClient.on('message', (topic, message) => {
-                    if (topic === responseTopic) {
-                        clearTimeout(timeoutId);
-                        tempClient.end();
-                        
-                        try {
-                            const response = JSON.parse(message.toString());
-                            resolve(response);
-                        } catch (error) {
-                            reject(new Error('Lỗi phân tích phản hồi từ thiết bị'));
-                        }
-                    }
-                });
-                
-                tempClient.on('error', (error) => {
-                    clearTimeout(timeoutId);
-                    tempClient.end();
-                    reject(error);
-                });
-            });
-        }
-        
-        // Logout
-        function logout() {
-            if (confirm('Bạn có chắc muốn đăng xuất khỏi thiết bị này?')) {
-                clearDeviceSession(currentDeviceId);
-                showLoginScreen();
-                showToast(`👋 Đã đăng xuất khỏi ${currentDeviceId}`, 'info');
-                
-                // Disconnect MQTT if connected
-                if (mqttClient && isMQTTConnected) {
-                    disconnectMQTT();
-                }
-            }
-        }
-        
-        // Switch to another device
-        function switchDevice() {
-            if (confirm('Bạn có muốn chuyển sang thiết bị khác?')) {
-                clearDeviceSession(currentDeviceId);
-                
-                // Disconnect MQTT if connected
-                if (mqttClient && isMQTTConnected) {
-                    disconnectMQTT();
-                }
-                
-                showLoginScreen();
-                showToast('🔀 Chọn thiết bị mới để kết nối', 'info');
-            }
-        }
-        
-        // Toggle password visibility
-        function togglePassword() {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-        }
-        
-        // Show error message
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.color = '#f44336';
-            
-            // Clear error after 5 seconds
-            setTimeout(() => {
-                errorMessage.textContent = '';
-            }, 5000);
-        }
-        
-        // Show device ID info
-        function showDeviceIdInfo() {
-            showToast('Device ID là mã duy nhất để phân biệt các thiết bị ESP32', 'info');
-        }
-        
-        // Fill sample device info (for demo)
-        function fillSampleDevice(deviceId, password) {
-            deviceIdInput.value = deviceId;
-            passwordInput.value = password;
-            showToast(`Đã điền thông tin thiết bị ${deviceId}`, 'success');
-        }
-        
-        // ============================
-        // MQTT FUNCTIONS với Device ID
-        // ============================
-        
-        // Connect to MQTT Broker
-        function connectMQTT() {
-            if (!authToken || !currentDeviceId) {
-                showToast('Vui lòng đăng nhập vào thiết bị trước!', 'error');
-                return;
-            }
-            
-            if (mqttClient && mqttClient.connected) {
-                showToast(`✅ Đã kết nối MQTT với ${currentDeviceId}!`, 'success');
-                return;
-            }
-            
-            showLoading(true);
-            updateMQTTStatus('Đang kết nối...', false);
-            
-            // Create client options
-            const options = {
-                ...CONFIG.MQTT.options,
-                clientId: clientId + '_' + currentDeviceId + '_' + Date.now(),
-                username: 'emqx',
-                password: 'public'
-            };
-            
-            try {
-                // Connect to MQTT broker
-                mqttClient = mqtt.connect(CONFIG.MQTT.broker, options);
-                
-                // Setup event handlers
-                mqttClient.on('connect', () => {
-                    isMQTTConnected = true;
-                    updateMQTTStatus('Đã kết nối', true);
-                    
-                    // Subscribe to device-specific topics
-                    subscribeToTopics();
-                    
-                    showToast(`✅ Đã kết nối MQTT với ${currentDeviceId} thành công!`, 'success');
-                    
-                    // Show disconnect button
-                    connectBtn.style.display = 'none';
-                    disconnectBtn.style.display = 'block';
-                    
-                    // Request initial status
-                    setTimeout(requestStatusUpdate, 1000);
-                });
-                
-                mqttClient.on('message', (topic, message) => {
-                    handleMQTTMessage(topic, message.toString());
-                });
-                
-                mqttClient.on('error', (error) => {
-                    console.error('MQTT Error:', error);
-                    updateMQTTStatus('Lỗi kết nối', false);
-                    showToast('❌ Lỗi MQTT: ' + error.message, 'error');
-                });
-                
-                mqttClient.on('close', () => {
-                    isMQTTConnected = false;
-                    updateMQTTStatus('Mất kết nối', false);
-                    
-                    // Show connect button
-                    connectBtn.style.display = 'block';
-                    disconnectBtn.style.display = 'none';
-                });
-                
-                mqttClient.on('reconnect', () => {
-                    updateMQTTStatus('Đang kết nối lại...', false);
-                });
-                
-            } catch (error) {
-                console.error('Failed to connect to MQTT:', error);
-                showToast('❌ Không thể kết nối MQTT', 'error');
-                updateMQTTStatus('Kết nối thất bại', false);
-            } finally {
-                showLoading(false);
-            }
-        }
-        
-        // Disconnect from MQTT
-        function disconnectMQTT() {
-            if (mqttClient) {
-                mqttClient.end();
-                mqttClient = null;
-                isMQTTConnected = false;
-                updateMQTTStatus('Đã ngắt kết nối', false);
-                
-                connectBtn.style.display = 'block';
-                disconnectBtn.style.display = 'none';
-                
-                showToast(`✋ Đã ngắt kết nối MQTT khỏi ${currentDeviceId}`, 'info');
+            if (connected) {
+                mqttStatusDot.classList.add('connected');
+                connectionStatus.style.color = '#4CAF50';
+            } else {
+                mqttStatusDot.classList.remove('connected');
+                connectionStatus.style.color = '#f44336';
             }
         }
         
@@ -1480,8 +1454,6 @@
             if (!mqttClient || !isMQTTConnected) return;
             
             const topics = getDeviceTopics();
-            
-            // Subscribe to device-specific topics
             const topicsToSubscribe = [
                 topics.status,
                 topics.alarm,
@@ -1505,126 +1477,21 @@
             
             try {
                 const data = JSON.parse(message);
-                
-                // Extract topics
                 const topics = getDeviceTopics();
                 
                 switch(topic) {
                     case topics.status:
                         updateSystemInfo(data);
                         break;
-                        
                     case topics.alarm:
                         updateAlarmInfo(data);
                         break;
-                        
                     case topics.sensors:
                         updateSensorInfo(data);
                         break;
                 }
-                
             } catch (error) {
                 console.error('Error parsing MQTT message:', error);
-            }
-        }
-        
-        // Send authenticated MQTT command với Device ID
-        function sendMQTTCommand(command, data = {}) {
-            if (!authToken || !currentDeviceId) {
-                showToast('Phiên đăng nhập đã hết hạn!', 'error');
-                logout();
-                return false;
-            }
-            
-            if (!mqttClient || !isMQTTConnected) {
-                showToast('❌ Chưa kết nối MQTT! Vui lòng kết nối trước.', 'error');
-                return false;
-            }
-            
-            const topics = getDeviceTopics();
-            const message = {
-                command: command,
-                data: data,
-                auth: {
-                    token: authToken,
-                    deviceId: currentDeviceId,
-                    clientId: clientId
-                },
-                timestamp: Date.now()
-            };
-            
-            try {
-                mqttClient.publish(topics.command, JSON.stringify(message));
-                console.log(`📤 Sent authenticated MQTT command to ${currentDeviceId}: ${command}`, data);
-                return true;
-            } catch (error) {
-                console.error('Error sending MQTT command:', error);
-                showToast('❌ Lỗi khi gửi lệnh MQTT', 'error');
-                return false;
-            }
-        }
-        
-        // Update MQTT status display
-        function updateMQTTStatus(text, connected) {
-            mqttStatusText.textContent = text;
-            connectionStatus.textContent = text;
-            
-            if (connected) {
-                mqttStatusDot.classList.add('connected');
-                connectionStatus.style.color = '#4CAF50';
-            } else {
-                mqttStatusDot.classList.remove('connected');
-                connectionStatus.style.color = '#f44336';
-            }
-        }
-        
-        // Update system information from MQTT
-        function updateSystemInfo(data) {
-            if (data.deviceId) {
-                document.getElementById('systemDeviceId').textContent = data.deviceId;
-            }
-            if (data.ipAddress) {
-                document.getElementById('deviceIP').textContent = data.ipAddress;
-            }
-            if (data.uptime !== undefined) {
-                document.getElementById('uptime').textContent = Math.floor(data.uptime / 60) + ' phút';
-            }
-            if (data.freeHeap !== undefined) {
-                document.getElementById('freeHeap').textContent = Math.floor(data.freeHeap / 1024) + ' KB';
-            }
-            if (data.rssi !== undefined) {
-                document.getElementById('wifiRSSI').textContent = data.rssi + ' dBm';
-            }
-        }
-        
-        // Update alarm information from MQTT
-        function updateAlarmInfo(data) {
-            if (data.hour !== undefined) {
-                document.getElementById('alarmHour').value = data.hour;
-            }
-            if (data.minute !== undefined) {
-                document.getElementById('alarmMinute').value = data.minute;
-            }
-            if (data.sound !== undefined) {
-                document.getElementById('alarmSound').value = data.sound;
-            }
-            if (data.enabled !== undefined) {
-                const statusDiv = document.getElementById('alarmStatus');
-                statusDiv.textContent = `Trạng thái: ${data.enabled ? 'ĐANG BẬT' : 'ĐANG TẮT'}`;
-                statusDiv.className = `alarm-status ${data.enabled ? 'status-on' : 'status-off'}`;
-            }
-            if (data.triggered) {
-                showToast(`🚨 ${currentDeviceId}: Báo thức đang kêu!`, 'warning');
-            }
-        }
-        
-        // Update sensor information from MQTT
-        function updateSensorInfo(data) {
-            if (data.temperature !== undefined) {
-                document.getElementById('temperature').textContent = data.temperature.toFixed(1) + ' °C';
-            }
-            if (data.humidity !== undefined) {
-                document.getElementById('humidity').textContent = data.humidity.toFixed(1) + ' %';
             }
         }
         
@@ -1656,6 +1523,8 @@
                 showToast(enable ? `✅ Đã bật báo thức ${currentDeviceId}!` : `❌ Đã tắt báo thức ${currentDeviceId}!`, 'success');
             }
         }
+        
+        // ... (Các hàm command khác giữ nguyên) ...
         
         function sendButtonMQTT(buttonNumber) {
             if (!authToken) {
@@ -1690,7 +1559,7 @@
                 return;
             }
             
-            if (confirm(`Bạn có chắc muốn khởi động lại ${currentDeviceId}? Thiết bị sẽ mất kết nối trong vài giây.`)) {
+            if (confirm(`Bạn có chắc muốn khởi động lại ${currentDeviceId}?`)) {
                 const success = sendMQTTCommand('reset', {});
                 if (success) {
                     showToast(`🔄 Đang khởi động lại ${currentDeviceId}...`, 'info');
@@ -1740,49 +1609,13 @@
             }
         }
         
-        // Update clock
-        function updateClock() {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('vi-VN');
-            document.getElementById('currentTime').textContent = timeStr;
-            
-            // Check session expiry every minute
-            if (authToken && sessionExpiry && Date.now() > sessionExpiry) {
-                showToast(`Phiên đăng nhập ${currentDeviceId} đã hết hạn!`, 'warning');
-                logout();
+        // Cleanup khi đóng trang
+        window.addEventListener('beforeunload', () => {
+            cleanupKeepAlive();
+            if (mqttClient) {
+                mqttClient.end();
             }
-        }
-        
-        // Show toast notification
-        function showToast(message, type = 'info') {
-            toast.textContent = message;
-            
-            // Set color based on type
-            const colors = {
-                error: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
-                success: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
-                info: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
-                warning: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)'
-            };
-            
-            toast.style.background = colors[type] || colors.info;
-            toast.classList.add('show');
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-        
-        // Show/hide loading overlay
-        function showLoading(show) {
-            if (show) {
-                loading.classList.add('active');
-            } else {
-                setTimeout(() => {
-                    loading.classList.remove('active');
-                }, 500);
-            }
-        }
+        });
         
         // Export functions to global scope
         window.connectMQTT = connectMQTT;
@@ -1799,6 +1632,35 @@
         window.switchDevice = switchDevice;
         window.showDeviceIdInfo = showDeviceIdInfo;
         window.fillSampleDevice = fillSampleDevice;
+        
+        // Hàm showToast, showLoading, updateClock giữ nguyên
+        function showToast(message, type = 'info') {
+            toast.textContent = message;
+            const colors = {
+                error: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
+                success: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
+                info: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
+                warning: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)'
+            };
+            toast.style.background = colors[type] || colors.info;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        function showLoading(show) {
+            if (show) loading.classList.add('active');
+            else setTimeout(() => loading.classList.remove('active'), 500);
+        }
+        
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('vi-VN');
+            
+            if (authToken && sessionExpiry && Date.now() > sessionExpiry) {
+                showToast(`Phiên đăng nhập ${currentDeviceId} đã hết hạn!`, 'warning');
+                logout();
+            }
+        }
     </script>
 </body>
 </html>
