@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -19,23 +18,166 @@
             min-height: 100vh;
             padding: 20px;
             color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+        /* Login Container */
+        .login-container {
+            max-width: 400px;
+            width: 100%;
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
+            text-align: center;
         }
         
-        /* Header */
+        .login-header {
+            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+            color: white;
+            padding: 30px;
+            position: relative;
+        }
+        
+        .login-header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .login-header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+        
+        .login-form {
+            padding: 40px 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.95rem;
+        }
+        
+        .password-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+        
+        .password-input:focus {
+            outline: none;
+            border-color: #9C27B0;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.1);
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            font-size: 1.2rem;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .error-message {
+            color: #f44336;
+            font-size: 0.9rem;
+            margin-top: 8px;
+            text-align: center;
+            min-height: 20px;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid #90caf9;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        
+        .info-box h3 {
+            color: #1976D2;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+        
+        .info-box ul {
+            padding-left: 20px;
+            margin: 0;
+            color: #555;
+            font-size: 0.9rem;
+        }
+        
+        .info-box li {
+            margin-bottom: 5px;
+        }
+        
+        /* Main Container (hidden by default) */
+        .main-container {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: none;
+        }
+        
+        /* Rest of your existing styles for main interface... */
         .header {
             background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
             color: white;
             padding: 30px;
-            text-align: center;
             position: relative;
         }
         
@@ -51,6 +193,26 @@
         .header p {
             opacity: 0.9;
             font-size: 1.1rem;
+        }
+        
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
         }
         
         /* MQTT Connection Panel */
@@ -416,13 +578,68 @@
                 flex-direction: column;
                 text-align: center;
             }
+            
+            .login-container {
+                margin: 10px;
+                max-width: 100%;
+            }
+            
+            .login-form {
+                padding: 30px 20px;
+            }
         }
     </style>
     <!-- Load MQTT.js from CDN -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
 <body>
-    <div class="container">
+    <!-- Login Screen -->
+    <div class="login-container" id="loginScreen">
+        <div class="login-header">
+            <h1>
+                <span>🔒</span>
+                Smart Clock Control
+                <span>🔒</span>
+            </h1>
+            <p>Vui lòng nhập mật khẩu để tiếp tục</p>
+        </div>
+        
+        <div class="login-form">
+            <div class="input-group">
+                <label for="password">Mật khẩu truy cập:</label>
+                <div class="input-wrapper">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        class="password-input" 
+                        placeholder="Nhập mật khẩu..."
+                        autocomplete="current-password"
+                    >
+                    <button type="button" class="password-toggle" onclick="togglePassword()">
+                        👁️
+                    </button>
+                </div>
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+            
+            <button class="btn-login" onclick="checkPassword()">
+                🔓 Đăng nhập
+            </button>
+            
+            <div class="info-box">
+                <h3>💡 Thông tin:</h3>
+                <ul>
+                    <li>Mật khẩu mặc định: <strong>123456</strong></li>
+                    <li>Mật khẩu được lưu trong bộ nhớ trình duyệt</li>
+                    <li>Để đổi mật khẩu, cập nhật trong code ESP32</li>
+                    <li>Trang web hoạt động qua MQTT, không cần IP cục bộ</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Interface (Hidden until login) -->
+    <div class="main-container" id="mainInterface">
         <!-- Header -->
         <div class="header">
             <h1>
@@ -430,7 +647,10 @@
                 ESP32 Smart Clock - MQTT Control
                 <span>🌐</span>
             </h1>
-            <p>Điều khiển từ xa qua Internet sử dụng MQTT - Không cần IP cục bộ</p>
+            <p>Điều khiển từ xa qua Internet sử dụng MQTT</p>
+            <button class="logout-btn" onclick="logout()">
+                🚪 Đăng xuất
+            </button>
         </div>
         
         <!-- MQTT Connection Panel -->
@@ -637,7 +857,7 @@
                     
                     <div class="info-item">
                         <div class="info-label">Kết nối từ</div>
-                        <div class="info-value" id="connectionSource">GitHub Pages</div>
+                        <div class="info-value" id="connectionSource">Web Interface</div>
                     </div>
                 </div>
                 
@@ -668,19 +888,31 @@
     </div>
     
     <script>
-        // MQTT Configuration
-        const MQTT_CONFIG = {
-            broker: 'wss://broker.emqx.io:8084/mqtt',
-            topics: {
-                command: 'smartclock/command',
-                status: 'smartclock/status',
-                alarm: 'smartclock/alarm',
-                sensors: 'smartclock/sensors'
+        // Configuration
+        const CONFIG = {
+            // Password từ file Arduino (phải khớp với webPassword trong code ESP32)
+            DEFAULT_PASSWORD: "123456",
+            
+            // MQTT Configuration
+            MQTT: {
+                broker: 'wss://broker.emqx.io:8084/mqtt',
+                topics: {
+                    command: 'smartclock/command',
+                    status: 'smartclock/status',
+                    alarm: 'smartclock/alarm',
+                    sensors: 'smartclock/sensors'
+                },
+                options: {
+                    clean: true,
+                    connectTimeout: 4000,
+                    reconnectPeriod: 2000
+                }
             },
-            options: {
-                clean: true,
-                connectTimeout: 4000,
-                reconnectPeriod: 2000
+            
+            // Local Storage keys
+            STORAGE_KEYS: {
+                PASSWORD: 'smartclock_password',
+                LOGGED_IN: 'smartclock_logged_in'
             }
         };
         
@@ -688,8 +920,13 @@
         let mqttClient = null;
         let isMQTTConnected = false;
         let clientId = '';
+        let isAuthenticated = false;
         
         // DOM Elements
+        const loginScreen = document.getElementById('loginScreen');
+        const mainInterface = document.getElementById('mainInterface');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('errorMessage');
         const mqttStatusDot = document.getElementById('mqttStatusDot');
         const mqttStatusText = document.getElementById('mqttStatusText');
         const connectionStatus = document.getElementById('connectionStatus');
@@ -700,6 +937,9 @@
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is already logged in
+            checkLoginStatus();
+            
             // Generate unique client ID
             clientId = 'web_' + Math.random().toString(16).substr(2, 8);
             document.getElementById('clientId').textContent = clientId;
@@ -708,17 +948,120 @@
             updateClock();
             setInterval(updateClock, 1000);
             
-            // Auto-connect to MQTT
-            setTimeout(connectMQTT, 1000);
-            
             // Detect connection source
             const isGithub = window.location.hostname.includes('github.io');
             document.getElementById('connectionSource').textContent = 
                 isGithub ? 'GitHub Pages' : window.location.hostname;
+                
+            // Enter key for password input
+            passwordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkPassword();
+                }
+            });
         });
+        
+        // Check login status
+        function checkLoginStatus() {
+            const loggedIn = localStorage.getItem(CONFIG.STORAGE_KEYS.LOGGED_IN);
+            const savedPassword = localStorage.getItem(CONFIG.STORAGE_KEYS.PASSWORD);
+            
+            if (loggedIn === 'true' && savedPassword === CONFIG.DEFAULT_PASSWORD) {
+                isAuthenticated = true;
+                showMainInterface();
+                
+                // Auto-connect to MQTT after login
+                setTimeout(connectMQTT, 1000);
+            } else {
+                showLoginScreen();
+            }
+        }
+        
+        // Show login screen
+        function showLoginScreen() {
+            loginScreen.style.display = 'block';
+            mainInterface.style.display = 'none';
+            passwordInput.value = '';
+            errorMessage.textContent = '';
+            isAuthenticated = false;
+        }
+        
+        // Show main interface
+        function showMainInterface() {
+            loginScreen.style.display = 'none';
+            mainInterface.style.display = 'block';
+            isAuthenticated = true;
+        }
+        
+        // Check password
+        function checkPassword() {
+            const password = passwordInput.value.trim();
+            
+            if (!password) {
+                showError('Vui lòng nhập mật khẩu');
+                passwordInput.focus();
+                return;
+            }
+            
+            if (password === CONFIG.DEFAULT_PASSWORD) {
+                // Password correct
+                localStorage.setItem(CONFIG.STORAGE_KEYS.PASSWORD, password);
+                localStorage.setItem(CONFIG.STORAGE_KEYS.LOGGED_IN, 'true');
+                
+                showMainInterface();
+                showToast('✅ Đăng nhập thành công!', 'success');
+                
+                // Auto-connect to MQTT
+                setTimeout(connectMQTT, 500);
+            } else {
+                showError('Mật khẩu không đúng. Vui lòng thử lại.');
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        }
+        
+        // Logout
+        function logout() {
+            if (confirm('Bạn có chắc muốn đăng xuất?')) {
+                localStorage.removeItem(CONFIG.STORAGE_KEYS.LOGGED_IN);
+                showLoginScreen();
+                showToast('👋 Đã đăng xuất thành công', 'info');
+                
+                // Disconnect MQTT if connected
+                if (mqttClient && isMQTTConnected) {
+                    disconnectMQTT();
+                }
+            }
+        }
+        
+        // Toggle password visibility
+        function togglePassword() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+        }
+        
+        // Show error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.color = '#f44336';
+            
+            // Clear error after 3 seconds
+            setTimeout(() => {
+                errorMessage.textContent = '';
+            }, 3000);
+        }
+        
+        // ============================
+        // MQTT FUNCTIONS (from original)
+        // ============================
         
         // Connect to MQTT Broker
         function connectMQTT() {
+            if (!isAuthenticated) {
+                showToast('Vui lòng đăng nhập trước!', 'error');
+                return;
+            }
+            
             if (mqttClient && mqttClient.connected) {
                 showToast('✅ Đã kết nối MQTT rồi!', 'success');
                 return;
@@ -729,7 +1072,7 @@
             
             // Create client options
             const options = {
-                ...MQTT_CONFIG.options,
+                ...CONFIG.MQTT.options,
                 clientId: clientId,
                 username: 'emqx',
                 password: 'public'
@@ -737,7 +1080,7 @@
             
             try {
                 // Connect to MQTT broker
-                mqttClient = mqtt.connect(MQTT_CONFIG.broker, options);
+                mqttClient = mqtt.connect(CONFIG.MQTT.broker, options);
                 
                 // Setup event handlers
                 mqttClient.on('connect', () => {
@@ -808,7 +1151,7 @@
         function subscribeToTopics() {
             if (!mqttClient || !isMQTTConnected) return;
             
-            Object.values(MQTT_CONFIG.topics).forEach(topic => {
+            Object.values(CONFIG.MQTT.topics).forEach(topic => {
                 mqttClient.subscribe(topic, (err) => {
                     if (!err) {
                         console.log(`✅ Subscribed to ${topic}`);
@@ -827,15 +1170,15 @@
                 const data = JSON.parse(message);
                 
                 switch(topic) {
-                    case MQTT_CONFIG.topics.status:
+                    case CONFIG.MQTT.topics.status:
                         updateSystemInfo(data);
                         break;
                         
-                    case MQTT_CONFIG.topics.alarm:
+                    case CONFIG.MQTT.topics.alarm:
                         updateAlarmInfo(data);
                         break;
                         
-                    case MQTT_CONFIG.topics.sensors:
+                    case CONFIG.MQTT.topics.sensors:
                         updateSensorInfo(data);
                         break;
                 }
@@ -847,6 +1190,11 @@
         
         // Send MQTT command
         function sendMQTTCommand(command, data = {}) {
+            if (!isAuthenticated) {
+                showToast('Vui lòng đăng nhập trước!', 'error');
+                return false;
+            }
+            
             if (!mqttClient || !isMQTTConnected) {
                 showToast('❌ Chưa kết nối MQTT! Vui lòng kết nối trước.', 'error');
                 return false;
@@ -856,11 +1204,12 @@
                 command: command,
                 data: data,
                 timestamp: Date.now(),
-                source: 'web_mqtt_control'
+                source: 'web_mqtt_control',
+                authenticated: true
             };
             
             try {
-                mqttClient.publish(MQTT_CONFIG.topics.command, JSON.stringify(message));
+                mqttClient.publish(CONFIG.MQTT.topics.command, JSON.stringify(message));
                 console.log(`📤 Sent MQTT command: ${command}`, data);
                 return true;
             } catch (error) {
@@ -898,9 +1247,6 @@
             if (data.rssi !== undefined) {
                 document.getElementById('wifiRSSI').textContent = data.rssi + ' dBm';
             }
-            if (data.ssid) {
-                // Optional: Update WiFi SSID if needed
-            }
         }
         
         // Update alarm information from MQTT
@@ -936,6 +1282,8 @@
         
         // Command functions
         function setAlarmMQTT(enable) {
+            if (!isAuthenticated) return;
+            
             const hour = parseInt(document.getElementById('alarmHour').value);
             const minute = parseInt(document.getElementById('alarmMinute').value);
             const sound = parseInt(document.getElementById('alarmSound').value);
@@ -958,6 +1306,8 @@
         }
         
         function sendButtonMQTT(buttonNumber) {
+            if (!isAuthenticated) return;
+            
             const success = sendMQTTCommand('button', { btn: buttonNumber });
             if (success) {
                 showToast(`🎮 Đã nhấn nút ${buttonNumber}`, 'success');
@@ -965,6 +1315,8 @@
         }
         
         function snoozeAlarmMQTT() {
+            if (!isAuthenticated) return;
+            
             const success = sendMQTTCommand('snooze', {});
             if (success) {
                 showToast('⏸️ Đã tạm dừng báo thức', 'info');
@@ -972,6 +1324,8 @@
         }
         
         function resetESP32MQTT() {
+            if (!isAuthenticated) return;
+            
             if (confirm('Bạn có chắc muốn khởi động lại ESP32? Thiết bị sẽ mất kết nối trong vài giây.')) {
                 const success = sendMQTTCommand('reset', {});
                 if (success) {
@@ -981,6 +1335,8 @@
         }
         
         function requestStatusUpdate() {
+            if (!isAuthenticated) return;
+            
             const success = sendMQTTCommand('get_status', {});
             if (success) {
                 showToast('📊 Đang yêu cầu cập nhật trạng thái...', 'info');
@@ -988,6 +1344,11 @@
         }
         
         function testMQTT() {
+            if (!isAuthenticated) {
+                showToast('Vui lòng đăng nhập trước!', 'error');
+                return;
+            }
+            
             if (!isMQTTConnected) {
                 showToast('Vui lòng kết nối MQTT trước!', 'error');
                 return;
@@ -995,9 +1356,10 @@
             
             const testMessage = {
                 test: true,
-                message: 'Test từ trang web GitHub',
+                message: 'Test từ trang web',
                 timestamp: Date.now(),
-                clientId: clientId
+                clientId: clientId,
+                authenticated: isAuthenticated
             };
             
             try {
@@ -1055,6 +1417,9 @@
         window.snoozeAlarmMQTT = snoozeAlarmMQTT;
         window.resetESP32MQTT = resetESP32MQTT;
         window.requestStatusUpdate = requestStatusUpdate;
+        window.checkPassword = checkPassword;
+        window.togglePassword = togglePassword;
+        window.logout = logout;
     </script>
 </body>
 </html>
