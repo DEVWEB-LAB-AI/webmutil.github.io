@@ -6,188 +6,104 @@
     <title>CORS Proxy & Connection Tester - ESP32 Smart Clock</title>
     <style>
         :root {
-            --primary: #4361ee;
-            --secondary: #3a0ca3;
-            --success: #2ecc71;
-            --warning: #f39c12;
-            --danger: #e74c3c;
-            --info: #3498db;
-            --purple: #9b59b6;
-            --dark: #2c3e50;
-            --light: #ecf0f1;
-            --gray: #95a5a6;
-            --gradient-primary: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
-            --gradient-success: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
-            --gradient-warning: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-            --gradient-danger: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            --gradient-info: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            --gradient-purple: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
-            --shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            --shadow-hover: 0 15px 40px rgba(0, 0, 0, 0.2);
-            --border-radius: 16px;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --primary: #2196F3;
+            --secondary: #1976D2;
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --danger: #F44336;
+            --info: #00BCD4;
+            --dark: #333;
+            --light: #F8F9FA;
+            --gray: #6C757D;
         }
         
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
-            color: var(--dark);
-            line-height: 1.6;
+            color: #333;
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
             background: rgba(255, 255, 255, 0.98);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         /* Header */
         .header {
-            background: var(--gradient-primary);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             color: white;
-            padding: 40px 30px;
+            padding: 30px;
             text-align: center;
             position: relative;
-            overflow: hidden;
-        }
-        
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 50px 50px;
-            animation: float 20s linear infinite;
-            z-index: 0;
-        }
-        
-        @keyframes float {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            100% { transform: translate(-50px, -50px) rotate(360deg); }
-        }
-        
-        .header-content {
-            position: relative;
-            z-index: 1;
         }
         
         .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 20px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
-        
-        .header-icon {
-            font-size: 2rem;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            gap: 15px;
         }
         
         .header p {
-            opacity: 0.95;
-            font-size: 1.2rem;
+            opacity: 0.9;
+            font-size: 1.1rem;
             max-width: 800px;
             margin: 0 auto;
-            font-weight: 300;
         }
         
         /* Tabs */
         .tab-container {
             display: flex;
             background: white;
-            border-bottom: 2px solid #eef2f7;
+            border-bottom: 2px solid #E0E0E0;
             overflow-x: auto;
-            padding: 0 20px;
         }
         
         .tab {
-            padding: 18px 30px;
+            padding: 15px 25px;
             cursor: pointer;
-            border-bottom: 4px solid transparent;
-            transition: var(--transition);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
             white-space: nowrap;
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-weight: 600;
-            color: var(--gray);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .tab::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 50%;
-            width: 0;
-            height: 4px;
-            background: var(--primary);
-            transition: var(--transition);
-            transform: translateX(-50%);
+            gap: 8px;
+            font-weight: 500;
         }
         
         .tab:hover {
-            background: linear-gradient(to bottom, #f8fafc, #ffffff);
-            color: var(--primary);
-        }
-        
-        .tab:hover::after {
-            width: 60%;
+            background: #F5F5F5;
         }
         
         .tab.active {
-            background: linear-gradient(to bottom, #f0f7ff, #ffffff);
+            border-bottom-color: var(--primary);
+            background: #E3F2FD;
             color: var(--primary);
-            font-weight: 700;
-        }
-        
-        .tab.active::after {
-            width: 100%;
-        }
-        
-        .tab-icon {
-            font-size: 1.2rem;
-            transition: var(--transition);
-        }
-        
-        .tab.active .tab-icon {
-            transform: scale(1.2);
+            font-weight: 600;
         }
         
         /* Content */
         .content {
-            padding: 40px;
+            padding: 30px;
         }
         
         .tab-content {
             display: none;
-            animation: fadeIn 0.4s ease-out;
+            animation: fadeIn 0.3s ease;
         }
         
         .tab-content.active {
@@ -195,79 +111,51 @@
         }
         
         @keyframes fadeIn {
-            from { 
-                opacity: 0; 
-                transform: translateY(20px); 
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0); 
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         /* Section */
         .section {
-            background: linear-gradient(145deg, #ffffff, #f8fafc);
-            border-radius: calc(var(--border-radius) - 4px);
-            padding: 30px;
-            margin-bottom: 30px;
-            border-left: 5px solid var(--primary);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-            transition: var(--transition);
-        }
-        
-        .section:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            background: var(--light);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
         
         .section h3 {
             color: var(--dark);
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 15px;
-            font-size: 1.6rem;
-            font-weight: 700;
-        }
-        
-        .section-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            background: var(--gradient-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.5rem;
-            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+            gap: 10px;
+            font-size: 1.4rem;
         }
         
         /* Input Groups */
         .input-group {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
         
         .input-group label {
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             font-weight: 600;
             color: var(--dark);
-            font-size: 1.1rem;
         }
         
         .input-group input, 
         .input-group select, 
         .input-group textarea {
             width: 100%;
-            padding: 16px 20px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
+            padding: 14px;
+            border: 2px solid #DDD;
+            border-radius: 10px;
             font-size: 1rem;
-            transition: var(--transition);
+            transition: all 0.3s;
             background: white;
-            color: var(--dark);
         }
         
         .input-group input:focus, 
@@ -275,138 +163,93 @@
         .input-group textarea:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.15);
-            transform: translateY(-1px);
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
         }
         
         /* Buttons */
         .btn {
-            padding: 16px 30px;
+            padding: 14px 25px;
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: var(--transition);
+            transition: all 0.3s;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
-        }
-        
-        .btn:hover::before {
-            width: 300px;
-            height: 300px;
-        }
-        
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-hover);
-        }
-        
-        .btn:active {
-            transform: translateY(-1px);
+            gap: 8px;
         }
         
         .btn-primary {
-            background: var(--gradient-primary);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             color: white;
         }
         
         .btn-success {
-            background: var(--gradient-success);
+            background: linear-gradient(135deg, var(--success) 0%, #45a049 100%);
             color: white;
         }
         
         .btn-warning {
-            background: var(--gradient-warning);
+            background: linear-gradient(135deg, var(--warning) 0%, #F57C00 100%);
             color: white;
         }
         
         .btn-danger {
-            background: var(--gradient-danger);
+            background: linear-gradient(135deg, var(--danger) 0%, #D32F2F 100%);
             color: white;
         }
         
         .btn-info {
-            background: var(--gradient-info);
+            background: linear-gradient(135deg, var(--info) 0%, #0097A7 100%);
             color: white;
         }
         
-        .btn-purple {
-            background: var(--gradient-purple);
-            color: white;
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
         }
         
         .button-group {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
-            margin: 25px 0;
+            gap: 10px;
+            margin: 20px 0;
         }
         
         .button-group .btn {
             flex: 1;
-            min-width: 180px;
+            min-width: 150px;
         }
         
         /* Status Indicator */
         .status-indicator {
             display: flex;
             align-items: center;
-            gap: 20px;
-            padding: 20px;
+            gap: 12px;
+            padding: 15px;
             background: white;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         }
         
         .status-dot {
-            width: 18px;
-            height: 18px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            background: #bdc3c7;
-            transition: var(--transition);
-            position: relative;
-        }
-        
-        .status-dot::after {
-            content: '';
-            position: absolute;
-            top: -4px;
-            left: -4px;
-            right: -4px;
-            bottom: -4px;
-            border-radius: 50%;
-            border: 2px solid transparent;
-            animation: none;
+            background: #CCC;
+            transition: all 0.3s;
         }
         
         .status-dot.connected {
             background: var(--success);
-            box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
-        }
-        
-        .status-dot.connected::after {
-            border-color: var(--success);
-            animation: pulse-ring 1.5s infinite;
+            box-shadow: 0 0 15px var(--success);
         }
         
         .status-dot.connecting {
@@ -414,171 +257,116 @@
             animation: pulse 1.5s infinite;
         }
         
-        .status-dot.connecting::after {
-            border-color: var(--warning);
-            animation: pulse-ring 1.5s infinite;
-        }
-        
-        @keyframes pulse-ring {
-            0% { transform: scale(0.8); opacity: 0.8; }
-            100% { transform: scale(1.5); opacity: 0; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
         
         /* Info Box */
         .info-box {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            border-left: 5px solid var(--primary);
-            border-radius: 12px;
-            padding: 25px;
-            margin: 25px 0;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .info-box::before {
-            content: '💡';
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 3rem;
-            opacity: 0.1;
+            background: #E3F2FD;
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
         }
         
         .info-box h4 {
             color: var(--primary);
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 1.3rem;
+            gap: 8px;
         }
         
         .info-box ul {
-            padding-left: 25px;
-            margin: 15px 0;
+            padding-left: 20px;
+            margin: 10px 0;
         }
         
         .info-box li {
-            margin-bottom: 10px;
-            line-height: 1.6;
-            position: relative;
-            padding-left: 10px;
-        }
-        
-        .info-box li::before {
-            content: '→';
-            position: absolute;
-            left: -15px;
-            color: var(--primary);
-            font-weight: bold;
+            margin-bottom: 8px;
+            line-height: 1.5;
         }
         
         /* Endpoint Grid */
         .endpoint-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-            margin: 25px 0;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
         }
         
         .endpoint-card {
             background: white;
-            border-radius: 12px;
-            padding: 20px;
-            border: 2px solid #e2e8f0;
-            transition: var(--transition);
+            border-radius: 10px;
+            padding: 15px;
+            border: 2px solid #EEE;
+            transition: all 0.3s;
             cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .endpoint-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--primary);
-            transform: translateY(-100%);
-            transition: var(--transition);
         }
         
         .endpoint-card:hover {
             transform: translateY(-5px);
             border-color: var(--primary);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        
-        .endpoint-card:hover::before {
-            transform: translateY(0);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
         
         .endpoint-card .method {
             display: inline-block;
-            padding: 6px 16px;
+            padding: 4px 12px;
+            background: var(--primary);
             color: white;
             border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 10px;
         }
         
-        .endpoint-card .method.get { 
-            background: var(--gradient-success); 
-        }
-        .endpoint-card .method.post { 
-            background: var(--gradient-warning); 
-        }
-        .endpoint-card .method.put { 
-            background: var(--gradient-info); 
-        }
-        .endpoint-card .method.delete { 
-            background: var(--gradient-danger); 
-        }
+        .endpoint-card .method.get { background: var(--success); }
+        .endpoint-card .method.post { background: var(--warning); }
+        .endpoint-card .method.put { background: var(--info); }
+        .endpoint-card .method.delete { background: var(--danger); }
         
         /* Result Area */
         .result-area {
-            margin-top: 30px;
-            padding: 25px;
-            border-radius: 12px;
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 10px;
             background: white;
-            border: 2px solid #e2e8f0;
+            border: 2px solid #DDD;
             max-height: 500px;
             overflow-y: auto;
-            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-            font-size: 0.95rem;
-            line-height: 1.7;
-            transition: var(--transition);
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
         }
         
         .result-area.success {
             border-color: var(--success);
-            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
         }
         
         .result-area.error {
             border-color: var(--danger);
-            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%);
         }
         
         .result-area.info {
             border-color: var(--info);
-            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            background: linear-gradient(135deg, #E0F7FA 0%, #B2EBF2 100%);
         }
         
         .result-area.warning {
             border-color: var(--warning);
-            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
         }
         
         /* Loading */
         .loading {
             display: none;
             text-align: center;
-            padding: 40px;
+            padding: 30px;
         }
         
         .loading.active {
@@ -586,13 +374,13 @@
         }
         
         .spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(67, 97, 238, 0.1);
-            border-top: 4px solid var(--primary);
+            width: 50px;
+            height: 50px;
+            border: 5px solid #F3F3F3;
+            border-top: 5px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin: 0 auto 15px;
         }
         
         @keyframes spin {
@@ -603,116 +391,69 @@
         /* QR Code */
         .qr-container {
             text-align: center;
-            padding: 30px;
+            padding: 20px;
             background: white;
-            border-radius: 12px;
-            margin: 25px 0;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            border-radius: 10px;
+            margin: 20px 0;
         }
         
         #qrCode {
-            width: 220px;
-            height: 220px;
-            margin: 0 auto 25px;
-            border: 15px solid white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            background: white;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+            border: 10px solid white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         
         /* Log Area */
         .log-area {
-            background: #1e1e1e;
-            color: #d4d4d4;
-            padding: 20px;
-            border-radius: 12px;
-            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-            font-size: 0.9rem;
-            max-height: 350px;
+            background: #1E1E1E;
+            color: #FFFFFF;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            max-height: 300px;
             overflow-y: auto;
-            margin: 20px 0;
-            border: 1px solid #333;
+            margin: 15px 0;
         }
         
         .log-entry {
-            padding: 10px 0;
+            padding: 5px 0;
             border-bottom: 1px solid #333;
-            animation: slideIn 0.3s ease;
         }
         
-        @keyframes slideIn {
-            from { 
-                opacity: 0; 
-                transform: translateX(-10px); 
-            }
-            to { 
-                opacity: 1; 
-                transform: translateX(0); 
-            }
-        }
-        
-        .log-entry.success { color: #4EC9B0; }
-        .log-entry.error { color: #F48771; }
-        .log-entry.warning { color: #FFD700; }
-        .log-entry.info { color: #9CDCFE; }
-        
-        /* Code Highlight */
-        pre {
-            background: #1e1e1e;
-            color: #d4d4d4;
-            padding: 20px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 20px 0;
-            font-size: 0.9rem;
-            border: 1px solid #333;
-        }
-        
-        code {
-            background: #f1f3f9;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9em;
-            color: #d63384;
-            border: 1px solid #e2e8f0;
-        }
+        .log-entry.success { color: #4CAF50; }
+        .log-entry.error { color: #F44336; }
+        .log-entry.warning { color: #FF9800; }
+        .log-entry.info { color: #2196F3; }
         
         /* Responsive */
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
-                border-radius: 12px;
-            }
-            
-            .header {
-                padding: 30px 20px;
+                border-radius: 15px;
             }
             
             .header h1 {
                 font-size: 1.8rem;
                 flex-direction: column;
-                gap: 15px;
+                gap: 10px;
             }
             
             .tab-container {
                 flex-wrap: wrap;
-                padding: 0;
             }
             
             .tab {
-                flex: 1 0 calc(50% - 10px);
-                min-width: 140px;
-                padding: 15px;
+                flex: 1;
+                min-width: 120px;
+                padding: 12px;
                 justify-content: center;
-                font-size: 0.9rem;
             }
             
             .content {
-                padding: 20px;
-            }
-            
-            .section {
                 padding: 20px;
             }
             
@@ -727,61 +468,26 @@
             .endpoint-grid {
                 grid-template-columns: 1fr;
             }
-            
-            .header-icon {
-                font-size: 1.5rem;
-            }
         }
         
-        /* Scrollbar Styling */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a1a1a1;
-        }
-        
-        /* Custom Checkbox */
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        /* Code Highlight */
+        pre {
+            background: #2D2D2D;
+            color: #FFFFFF;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
             margin: 15px 0;
+            font-size: 0.9rem;
         }
         
-        .custom-checkbox {
-            width: 22px;
-            height: 22px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition);
-        }
-        
-        .custom-checkbox.checked {
-            background: var(--primary);
-            border-color: var(--primary);
-        }
-        
-        .custom-checkbox.checked::after {
-            content: '✓';
-            color: white;
-            font-weight: bold;
+        code {
+            background: #F5F5F5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: #D63384;
         }
     </style>
     
@@ -790,60 +496,970 @@
     
     <!-- MQTT.js Library -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-    
-    <!-- Font Awesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- HTML content remains the same, just update the icons -->
     <div class="container">
+        <!-- Header -->
         <div class="header">
-            <div class="header-content">
-                <h1>
-                    <span class="header-icon">🌐</span>
-                    ESP32 Connection Tester
-                    <span class="header-icon">🌐</span>
-                </h1>
-                <p>Test CORS, MQTT, WebSocket, and HTTP connections to your ESP32 device with enhanced visual interface</p>
-            </div>
+            <h1>
+                <span>🌐</span>
+                ESP32 Connection Tester
+                <span>🌐</span>
+            </h1>
+            <p>Test CORS, MQTT, WebSocket, and HTTP connections to your ESP32 device. Multiple proxy options available.</p>
         </div>
         
         <!-- Tab Navigation -->
         <div class="tab-container">
             <div class="tab active" onclick="switchTab('cors')">
-                <i class="fas fa-search tab-icon"></i>
+                <span>🔍</span>
                 CORS Tester
             </div>
             <div class="tab" onclick="switchTab('mqtt')">
-                <i class="fas fa-globe tab-icon"></i>
+                <span>🌐</span>
                 MQTT Tester
             </div>
             <div class="tab" onclick="switchTab('websocket')">
-                <i class="fas fa-plug tab-icon"></i>
+                <span>🔗</span>
                 WebSocket
             </div>
             <div class="tab" onclick="switchTab('http')">
-                <i class="fas fa-satellite-dish tab-icon"></i>
+                <span>📡</span>
                 HTTP Direct
             </div>
             <div class="tab" onclick="switchTab('qr')">
-                <i class="fas fa-qrcode tab-icon"></i>
+                <span>📱</span>
                 QR Generator
             </div>
             <div class="tab" onclick="switchTab('diagnostics')">
-                <i class="fas fa-stethoscope tab-icon"></i>
+                <span>🩺</span>
                 Diagnostics
             </div>
         </div>
         
-        <!-- Main Content - Keep your existing HTML structure -->
-        <!-- Only update icons to use Font Awesome -->
-        <!-- ... rest of your HTML ... -->
+        <!-- Main Content -->
+        <div class="content">
+            <!-- CORS Testing Tab -->
+            <div id="cors-tab" class="tab-content active">
+                <div class="section">
+                    <h3><span>🔍</span> CORS Connection Testing</h3>
+                    
+                    <div class="input-group">
+                        <label for="espIp">ESP32 IP Address:</label>
+                        <input type="text" id="espIp" placeholder="192.168.1.100 or esp32.local" value="192.168.1.100">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="proxySelect">Select Proxy Method:</label>
+                        <select id="proxySelect">
+                            <option value="cors-anywhere">CORS Anywhere (cors-anywhere.herokuapp.com)</option>
+                            <option value="allorigins">All Origins (api.allorigins.win)</option>
+                            <option value="thingproxy">ThingProxy (thingproxy.freeboard.io)</option>
+                            <option value="corsproxy">CORS Proxy (corsproxy.org)</option>
+                            <option value="direct">Direct (No Proxy - may fail)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="testCorsConnection()">
+                            <span>🔗</span>
+                            Test Connection
+                        </button>
+                        <button class="btn btn-warning" onclick="testAllEndpoints()">
+                            <span>📊</span>
+                            Test All Endpoints
+                        </button>
+                        <button class="btn btn-info" onclick="testWithAllProxies()">
+                            <span>🔄</span>
+                            Test All Proxies
+                        </button>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4><span>💡</span> About CORS</h4>
+                        <p>CORS (Cross-Origin Resource Sharing) is a security feature in browsers. When your web app (on GitHub Pages) tries to access your ESP32 (local network), the browser blocks it.</p>
+                        <p><strong>Solutions:</strong></p>
+                        <ul>
+                            <li>Use <strong>MQTT</strong> (recommended)</li>
+                            <li>Add CORS headers to ESP32 code</li>
+                            <li>Use a CORS proxy (temporary solution)</li>
+                            <li>Run web app from same origin as ESP32</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="loading" id="corsLoading">
+                        <div class="spinner"></div>
+                        <p>Testing connection to ESP32...</p>
+                    </div>
+                    
+                    <div class="result-area" id="corsResult">
+                        <!-- Results will appear here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- MQTT Testing Tab -->
+            <div id="mqtt-tab" class="tab-content">
+                <div class="section">
+                    <h3><span>🌐</span> MQTT Connection Testing</h3>
+                    
+                    <div class="status-indicator">
+                        <div class="status-dot" id="mqttStatusDot"></div>
+                        <span id="mqttStatusText">Disconnected</span>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="mqttBroker">MQTT Broker URL:</label>
+                        <input type="text" id="mqttBroker" value="wss://broker.emqx.io:8084/mqtt">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="mqttTopic">Topic to Subscribe:</label>
+                        <input type="text" id="mqttTopic" value="smartclock/status">
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-success" onclick="connectMQTT()" id="connectBtn">
+                            <span>🔌</span>
+                            Connect MQTT
+                        </button>
+                        <button class="btn btn-warning" onclick="sendMQTTTest()" id="sendBtn" disabled>
+                            <span>📤</span>
+                            Send Test Message
+                        </button>
+                        <button class="btn btn-danger" onclick="disconnectMQTT()" id="disconnectBtn" disabled>
+                            <span>🔌</span>
+                            Disconnect
+                        </button>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4><span>📡</span> MQTT Topics for ESP32 Smart Clock</h4>
+                        <ul>
+                            <li><code>smartclock/command</code> - Send commands to ESP32</li>
+                            <li><code>smartclock/status</code> - Receive status updates</li>
+                            <li><code>smartclock/alarm</code> - Alarm state changes</li>
+                            <li><code>smartclock/sensors</code> - Temperature/Humidity data</li>
+                            <li><code>smartclock/#</code> - Subscribe to all topics</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="log-area" id="mqttLog">
+                        <!-- MQTT messages will appear here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- WebSocket Tab -->
+            <div id="websocket-tab" class="tab-content">
+                <div class="section">
+                    <h3><span>🔗</span> WebSocket Testing</h3>
+                    
+                    <div class="status-indicator">
+                        <div class="status-dot" id="wsStatusDot"></div>
+                        <span id="wsStatusText">Disconnected</span>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="wsUrl">WebSocket URL:</label>
+                        <input type="text" id="wsUrl" placeholder="ws://192.168.1.100:81">
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-success" onclick="connectWebSocket()" id="wsConnectBtn">
+                            <span>🔌</span>
+                            Connect WebSocket
+                        </button>
+                        <button class="btn btn-warning" onclick="sendWsMessage()" id="wsSendBtn" disabled>
+                            <span>📤</span>
+                            Send Message
+                        </button>
+                        <button class="btn btn-danger" onclick="disconnectWebSocket()" id="wsDisconnectBtn" disabled>
+                            <span>🔌</span>
+                            Disconnect
+                        </button>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4><span>⚡</span> WebSocket Information</h4>
+                        <p>ESP32 can run a WebSocket server on port 81. This allows real-time bidirectional communication without polling.</p>
+                        <p><strong>Advantages:</strong></p>
+                        <ul>
+                            <li>Real-time updates</li>
+                            <li>Low latency</li>
+                            <li>Efficient communication</li>
+                            <li>Works behind NAT</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="log-area" id="wsLog">
+                        <!-- WebSocket messages will appear here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- HTTP Direct Tab -->
+            <div id="http-tab" class="tab-content">
+                <div class="section">
+                    <h3><span>📡</span> HTTP Direct Testing</h3>
+                    
+                    <div class="endpoint-grid" id="endpointList">
+                        <!-- Endpoints will be loaded dynamically -->
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4><span>⚡</span> HTTP Direct Testing</h4>
+                        <p>This only works if:</p>
+                        <ul>
+                            <li>Your web app and ESP32 are on same network</li>
+                            <li>ESP32 has CORS headers enabled</li>
+                            <li>You're accessing via HTTP (not HTTPS)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="result-area" id="httpResult">
+                        <!-- HTTP results will appear here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- QR Generator Tab -->
+            <div id="qr-tab" class="tab-content">
+                <div class="section">
+                    <h3><span>📱</span> QR Code Generator</h3>
+                    
+                    <div class="input-group">
+                        <label for="qrData">Data for QR Code:</label>
+                        <textarea id="qrData" rows="4" placeholder="Enter text or URL...">http://192.168.1.100</textarea>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="generateQR()">
+                            <span>📱</span>
+                            Generate QR Code
+                        </button>
+                        <button class="btn btn-success" onclick="downloadQR()">
+                            <span>💾</span>
+                            Download QR Code
+                        </button>
+                    </div>
+                    
+                    <div class="qr-container">
+                        <canvas id="qrCode"></canvas>
+                        <p>Scan this QR code with your phone to connect to ESP32</p>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4><span>💡</span> QR Code Uses</h4>
+                        <ul>
+                            <li>Share ESP32 IP address</li>
+                            <li>Quick connection from mobile</li>
+                            <li>Share MQTT configuration</li>
+                            <li>Distribute WiFi credentials</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Diagnostics Tab -->
+            <div id="diagnostics-tab" class="tab-content">
+                <div class="section">
+                    <h3><span>🩺</span> Network Diagnostics</h3>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="runFullDiagnostics()">
+                            <span>🔍</span>
+                            Run Full Diagnostics
+                        </button>
+                        <button class="btn btn-warning" onclick="checkBrowserSupport()">
+                            <span>🌐</span>
+                            Check Browser Support
+                        </button>
+                        <button class="btn btn-info" onclick="checkNetworkInfo()">
+                            <span>📶</span>
+                            Network Information
+                        </button>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4><span>🔧</span> Common Issues & Solutions</h4>
+                        <ul>
+                            <li><strong>CORS Errors:</strong> Use MQTT or WebSocket instead</li>
+                            <li><strong>Connection Refused:</strong> Check ESP32 is running</li>
+                            <li><strong>Timeout:</strong> Verify both devices on same network</li>
+                            <li><strong>MQTT Issues:</strong> Check firewall and broker URL</li>
+                            <li><strong>WebSocket Issues:</strong> Check ESP32 WebSocket server</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="loading" id="diagLoading">
+                        <div class="spinner"></div>
+                        <p>Running diagnostics...</p>
+                    </div>
+                    
+                    <div class="result-area" id="diagnosticsResult">
+                        <!-- Diagnostics results will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     
     <script>
-        // JavaScript code remains the same
-        // ... all your existing JavaScript functions ...
+        // ================= GLOBAL VARIABLES =================
+        let currentTab = 'cors';
+        let mqttClient = null;
+        let wsClient = null;
+        let testInProgress = false;
+        
+        // ================= TAB MANAGEMENT =================
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            currentTab = tabName;
+            
+            // Load content for specific tabs
+            if (tabName === 'http') {
+                loadEndpoints();
+            }
+        }
+        
+        // ================= CORS TESTING =================
+        async function testCorsConnection() {
+            const ip = document.getElementById('espIp').value.trim();
+            const proxyMethod = document.getElementById('proxySelect').value;
+            
+            if (!ip) {
+                showResult('corsResult', 'Please enter ESP32 IP address', 'error');
+                return;
+            }
+            
+            showLoading('corsLoading', true);
+            
+            try {
+                const url = `http://${ip}/`;
+                let testUrl;
+                
+                // Select proxy based on method
+                switch(proxyMethod) {
+                    case 'cors-anywhere':
+                        testUrl = `https://cors-anywhere.herokuapp.com/${url}`;
+                        break;
+                    case 'allorigins':
+                        testUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                        break;
+                    case 'thingproxy':
+                        testUrl = `https://thingproxy.freeboard.io/fetch/${url}`;
+                        break;
+                    case 'corsproxy':
+                        testUrl = `https://corsproxy.org/?${encodeURIComponent(url)}`;
+                        break;
+                    case 'direct':
+                        testUrl = url;
+                        break;
+                }
+                
+                const response = await fetchWithTimeout(testUrl, 10000);
+                
+                if (proxyMethod === 'allorigins') {
+                    const data = await response.json();
+                    showResult('corsResult', `
+                        <h3>✅ Connection Successful via ${proxyMethod}</h3>
+                        <p><strong>ESP32 IP:</strong> ${ip}</p>
+                        <p><strong>Proxy Method:</strong> ${proxyMethod}</p>
+                        <p><strong>Response Length:</strong> ${data.contents?.length || 0} characters</p>
+                        <pre>${escapeHtml(data.contents?.substring(0, 500) || 'No content')}</pre>
+                    `, 'success');
+                } else {
+                    const text = await response.text();
+                    showResult('corsResult', `
+                        <h3>✅ Connection Successful via ${proxyMethod}</h3>
+                        <p><strong>ESP32 IP:</strong> ${ip}</p>
+                        <p><strong>Proxy Method:</strong> ${proxyMethod}</p>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <pre>${escapeHtml(text.substring(0, 500))}</pre>
+                    `, 'success');
+                }
+                
+            } catch (error) {
+                showResult('corsResult', `
+                    <h3>❌ Connection Failed</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>Proxy Method:</strong> ${document.getElementById('proxySelect').value}</p>
+                    <p><strong>Recommendations:</strong></p>
+                    <ul>
+                        <li>Try a different proxy method</li>
+                        <li>Use MQTT instead (recommended)</li>
+                        <li>Verify ESP32 is running and accessible</li>
+                        <li>Check if devices are on same network</li>
+                    </ul>
+                `, 'error');
+            } finally {
+                showLoading('corsLoading', false);
+            }
+        }
+        
+        async function testWithAllProxies() {
+            const ip = document.getElementById('espIp').value.trim();
+            if (!ip) {
+                showResult('corsResult', 'Please enter ESP32 IP address', 'error');
+                return;
+            }
+            
+            showLoading('corsLoading', true);
+            const proxies = [
+                { name: 'CORS Anywhere', value: 'cors-anywhere' },
+                { name: 'All Origins', value: 'allorigins' },
+                { name: 'ThingProxy', value: 'thingproxy' },
+                { name: 'CORS Proxy', value: 'corsproxy' }
+            ];
+            
+            let results = '';
+            
+            for (const proxy of proxies) {
+                try {
+                    document.getElementById('proxySelect').value = proxy.value;
+                    const url = `http://${ip}/`;
+                    let testUrl;
+                    
+                    switch(proxy.value) {
+                        case 'cors-anywhere':
+                            testUrl = `https://cors-anywhere.herokuapp.com/${url}`;
+                            break;
+                        case 'allorigins':
+                            testUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                            break;
+                        case 'thingproxy':
+                            testUrl = `https://thingproxy.freeboard.io/fetch/${url}`;
+                            break;
+                        case 'corsproxy':
+                            testUrl = `https://corsproxy.org/?${encodeURIComponent(url)}`;
+                            break;
+                    }
+                    
+                    const response = await fetch(testUrl, { timeout: 5000 });
+                    results += `<div style="margin: 10px 0; padding: 10px; background: #d4edda; border-radius: 5px;">
+                        ✅ <strong>${proxy.name}:</strong> Working
+                    </div>`;
+                    
+                } catch (error) {
+                    results += `<div style="margin: 10px 0; padding: 10px; background: #f8d7da; border-radius: 5px;">
+                        ❌ <strong>${proxy.name}:</strong> Failed - ${error.message}
+                    </div>`;
+                }
+            }
+            
+            showResult('corsResult', `
+                <h3>📊 Proxy Test Results</h3>
+                ${results}
+                <p><strong>Recommendation:</strong> Use the first working proxy, or switch to MQTT for reliable communication.</p>
+            `, 'info');
+            
+            showLoading('corsLoading', false);
+        }
+        
+        // ================= MQTT FUNCTIONS =================
+        function connectMQTT() {
+            const brokerUrl = document.getElementById('mqttBroker').value;
+            const topic = document.getElementById('mqttTopic').value;
+            
+            updateMQTTStatus('connecting');
+            
+            try {
+                const clientId = 'tester_' + Date.now() + '_' + Math.random().toString(16).substr(2, 6);
+                
+                mqttClient = mqtt.connect(brokerUrl, {
+                    clientId: clientId,
+                    clean: true,
+                    connectTimeout: 4000,
+                    reconnectPeriod: 2000,
+                    username: 'emqx',
+                    password: 'public'
+                });
+                
+                mqttClient.on('connect', () => {
+                    updateMQTTStatus('connected');
+                    addMQTTLog('✅ Connected to MQTT broker', 'success');
+                    
+                    // Subscribe to topic
+                    mqttClient.subscribe(topic, (err) => {
+                        if (!err) {
+                            addMQTTLog(`📡 Subscribed to topic: ${topic}`, 'info');
+                        }
+                    });
+                    
+                    // Subscribe to common ESP32 topics
+                    mqttClient.subscribe('smartclock/#', (err) => {
+                        if (!err) {
+                            addMQTTLog('📡 Subscribed to smartclock/#', 'info');
+                        }
+                    });
+                    
+                    // Update UI
+                    document.getElementById('connectBtn').disabled = true;
+                    document.getElementById('sendBtn').disabled = false;
+                    document.getElementById('disconnectBtn').disabled = false;
+                });
+                
+                mqttClient.on('message', (topic, message) => {
+                    const msg = message.toString();
+                    addMQTTLog(`📨 ${topic}: ${msg}`, 'info');
+                });
+                
+                mqttClient.on('error', (error) => {
+                    updateMQTTStatus('disconnected');
+                    addMQTTLog(`❌ MQTT Error: ${error.message}`, 'error');
+                    resetMQTTButtons();
+                });
+                
+                mqttClient.on('close', () => {
+                    updateMQTTStatus('disconnected');
+                    addMQTTLog('🔌 MQTT Connection closed', 'warning');
+                    resetMQTTButtons();
+                });
+                
+                mqttClient.on('reconnect', () => {
+                    updateMQTTStatus('connecting');
+                    addMQTTLog('🔄 Reconnecting to MQTT...', 'warning');
+                });
+                
+            } catch (error) {
+                addMQTTLog(`❌ Failed to connect: ${error.message}`, 'error');
+                updateMQTTStatus('disconnected');
+            }
+        }
+        
+        function sendMQTTTest() {
+            if (!mqttClient || !mqttClient.connected) {
+                addMQTTLog('Not connected to MQTT', 'error');
+                return;
+            }
+            
+            const testMessage = {
+                type: 'test',
+                message: 'Hello from CORS Proxy Tester',
+                timestamp: Date.now(),
+                client: 'web_tester'
+            };
+            
+            mqttClient.publish('smartclock/test', JSON.stringify(testMessage));
+            addMQTTLog(`📤 Sent test message: ${JSON.stringify(testMessage)}`, 'success');
+        }
+        
+        function disconnectMQTT() {
+            if (mqttClient) {
+                mqttClient.end();
+                mqttClient = null;
+                updateMQTTStatus('disconnected');
+                resetMQTTButtons();
+                addMQTTLog('Disconnected from MQTT', 'info');
+            }
+        }
+        
+        function updateMQTTStatus(status) {
+            const dot = document.getElementById('mqttStatusDot');
+            const text = document.getElementById('mqttStatusText');
+            
+            dot.className = 'status-dot';
+            switch(status) {
+                case 'connected':
+                    dot.classList.add('connected');
+                    text.textContent = 'Connected';
+                    text.style.color = '#4CAF50';
+                    break;
+                case 'connecting':
+                    dot.classList.add('connecting');
+                    text.textContent = 'Connecting...';
+                    text.style.color = '#FF9800';
+                    break;
+                default:
+                    text.textContent = 'Disconnected';
+                    text.style.color = '#F44336';
+            }
+        }
+        
+        function resetMQTTButtons() {
+            document.getElementById('connectBtn').disabled = false;
+            document.getElementById('sendBtn').disabled = true;
+            document.getElementById('disconnectBtn').disabled = true;
+        }
+        
+        // ================= WEBSOCKET FUNCTIONS =================
+        function connectWebSocket() {
+            const wsUrl = document.getElementById('wsUrl').value;
+            
+            if (!wsUrl) {
+                addWSLog('Please enter WebSocket URL', 'error');
+                return;
+            }
+            
+            updateWSStatus('connecting');
+            
+            try {
+                wsClient = new WebSocket(wsUrl);
+                
+                wsClient.onopen = () => {
+                    updateWSStatus('connected');
+                    addWSLog('✅ WebSocket connected', 'success');
+                    document.getElementById('wsConnectBtn').disabled = true;
+                    document.getElementById('wsSendBtn').disabled = false;
+                    document.getElementById('wsDisconnectBtn').disabled = false;
+                };
+                
+                wsClient.onmessage = (event) => {
+                    addWSLog(`📨 Received: ${event.data}`, 'info');
+                };
+                
+                wsClient.onerror = (error) => {
+                    updateWSStatus('disconnected');
+                    addWSLog(`❌ WebSocket error: ${error.message || 'Unknown error'}`, 'error');
+                    resetWSButtons();
+                };
+                
+                wsClient.onclose = () => {
+                    updateWSStatus('disconnected');
+                    addWSLog('🔌 WebSocket closed', 'warning');
+                    resetWSButtons();
+                };
+                
+            } catch (error) {
+                addWSLog(`❌ Failed to connect: ${error.message}`, 'error');
+                updateWSStatus('disconnected');
+            }
+        }
+        
+        function sendWsMessage() {
+            if (!wsClient || wsClient.readyState !== WebSocket.OPEN) {
+                addWSLog('WebSocket not connected', 'error');
+                return;
+            }
+            
+            const message = JSON.stringify({
+                type: 'test',
+                message: 'Hello from WebSocket tester',
+                timestamp: Date.now()
+            });
+            
+            wsClient.send(message);
+            addWSLog(`📤 Sent: ${message}`, 'success');
+        }
+        
+        function disconnectWebSocket() {
+            if (wsClient) {
+                wsClient.close();
+                wsClient = null;
+                updateWSStatus('disconnected');
+                resetWSButtons();
+                addWSLog('Disconnected from WebSocket', 'info');
+            }
+        }
+        
+        function updateWSStatus(status) {
+            const dot = document.getElementById('wsStatusDot');
+            const text = document.getElementById('wsStatusText');
+            
+            dot.className = 'status-dot';
+            switch(status) {
+                case 'connected':
+                    dot.classList.add('connected');
+                    text.textContent = 'Connected';
+                    text.style.color = '#4CAF50';
+                    break;
+                case 'connecting':
+                    dot.classList.add('connecting');
+                    text.textContent = 'Connecting...';
+                    text.style.color = '#FF9800';
+                    break;
+                default:
+                    text.textContent = 'Disconnected';
+                    text.style.color = '#F44336';
+            }
+        }
+        
+        function resetWSButtons() {
+            document.getElementById('wsConnectBtn').disabled = false;
+            document.getElementById('wsSendBtn').disabled = true;
+            document.getElementById('wsDisconnectBtn').disabled = true;
+        }
+        
+        // ================= HTTP DIRECT TESTING =================
+        function loadEndpoints() {
+            const endpoints = [
+                { method: 'GET', path: '/', description: 'Root endpoint' },
+                { method: 'GET', path: '/status', description: 'System status' },
+                { method: 'GET', path: '/info', description: 'Device information' },
+                { method: 'GET', path: '/setAlarm', description: 'Set alarm (requires params)' },
+                { method: 'GET', path: '/button', description: 'Simulate button press' },
+                { method: 'GET', path: '/snooze', description: 'Snooze alarm' },
+                { method: 'GET', path: '/reset', description: 'Reset device' },
+                { method: 'POST', path: '/unlock', description: 'Unlock device' },
+                { method: 'GET', path: '/capture', description: 'Capture image (camera)' },
+                { method: 'GET', path: '/stream', description: 'Video stream (camera)' },
+                { method: 'GET', path: '/control', description: 'Control camera' }
+            ];
+            
+            const container = document.getElementById('endpointList');
+            container.innerHTML = '';
+            
+            endpoints.forEach(endpoint => {
+                const div = document.createElement('div');
+                div.className = 'endpoint-card';
+                div.onclick = () => testHttpEndpoint(endpoint);
+                div.innerHTML = `
+                    <div class="method ${endpoint.method.toLowerCase()}">${endpoint.method}</div>
+                    <div style="font-weight: bold; margin-bottom: 5px;">${endpoint.path}</div>
+                    <div style="font-size: 0.9rem; color: #666;">${endpoint.description}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        async function testHttpEndpoint(endpoint) {
+            const ip = document.getElementById('espIp').value.trim();
+            if (!ip) {
+                showResult('httpResult', 'Please enter ESP32 IP address first', 'error');
+                return;
+            }
+            
+            try {
+                // Try direct connection (may fail due to CORS)
+                const url = `http://${ip}${endpoint.path}`;
+                const response = await fetch(url, { 
+                    mode: 'no-cors',
+                    cache: 'no-cache'
+                });
+                
+                showResult('httpResult', `
+                    <h3>✅ ${endpoint.method} ${endpoint.path}</h3>
+                    <p><strong>Status:</strong> Request sent (CORS prevented response reading)</p>
+                    <p><strong>URL:</strong> ${url}</p>
+                    <p><em>Note: Browser blocked response due to CORS. Use MQTT or add CORS headers to ESP32.</em></p>
+                `, 'info');
+                
+            } catch (error) {
+                showResult('httpResult', `
+                    <h3>❌ ${endpoint.method} ${endpoint.path}</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>CORS Issue:</strong> Direct HTTP requests blocked by browser</p>
+                    <p><strong>Solution:</strong> Use MQTT communication instead</p>
+                `, 'error');
+            }
+        }
+        
+        // ================= QR CODE GENERATOR =================
+        function generateQR() {
+            const data = document.getElementById('qrData').value.trim();
+            if (!data) {
+                alert('Please enter data for QR code');
+                return;
+            }
+            
+            try {
+                const canvas = document.getElementById('qrCode');
+                QRCode.toCanvas(canvas, data, {
+                    width: 200,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                }, function(error) {
+                    if (error) {
+                        console.error('QR generation error:', error);
+                        alert('Failed to generate QR code');
+                    }
+                });
+                
+            } catch (error) {
+                console.error('QR code error:', error);
+                alert('Failed to generate QR code');
+            }
+        }
+        
+        function downloadQR() {
+            const canvas = document.getElementById('qrCode');
+            const data = document.getElementById('qrData').value.trim();
+            
+            if (!data) {
+                alert('Please generate QR code first');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.download = `esp32-qr-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // ================= DIAGNOSTICS =================
+        async function runFullDiagnostics() {
+            showLoading('diagLoading', true);
+            
+            let report = '<h3>🔍 Full Diagnostics Report</h3>';
+            
+            // Test 1: Browser features
+            report += '<h4>1. Browser Capabilities</h4>';
+            report += `<p>✅ WebSocket: ${'WebSocket' in window ? 'Supported' : 'Not Supported'}</p>`;
+            report += `<p>✅ Fetch API: ${'fetch' in window ? 'Supported' : 'Not Supported'}</p>`;
+            report += `<p>✅ LocalStorage: ${'localStorage' in window ? 'Supported' : 'Not Supported'}</p>`;
+            report += `<p>✅ MQTT Library: ${typeof mqtt !== 'undefined' ? 'Loaded' : 'Not Loaded'}</p>`;
+            
+            // Test 2: Network connectivity
+            report += '<h4>2. Network Connectivity</h4>';
+            try {
+                const networkTest = await fetch('https://httpbin.org/ip', { timeout: 5000 });
+                const data = await networkTest.json();
+                report += `<p>✅ Internet: Connected (IP: ${data.origin})</p>`;
+            } catch (error) {
+                report += `<p>❌ Internet: Not connected - ${error.message}</p>`;
+            }
+            
+            // Test 3: CORS proxy availability
+            report += '<h4>3. CORS Proxy Services</h4>';
+            const proxies = [
+                { name: 'CORS Anywhere', url: 'https://cors-anywhere.herokuapp.com/' },
+                { name: 'All Origins', url: 'https://api.allorigins.win/' },
+                { name: 'CORS Proxy', url: 'https://corsproxy.org/' }
+            ];
+            
+            for (const proxy of proxies) {
+                try {
+                    await fetch(proxy.url, { method: 'HEAD', timeout: 3000 });
+                    report += `<p>✅ ${proxy.name}: Available</p>`;
+                } catch (error) {
+                    report += `<p>❌ ${proxy.name}: Unavailable</p>`;
+                }
+            }
+            
+            // Test 4: MQTT broker
+            report += '<h4>4. MQTT Brokers</h4>';
+            const brokers = [
+                { name: 'EMQX Public', url: 'wss://broker.emqx.io:8084/mqtt' },
+                { name: 'HiveMQ', url: 'wss://broker.hivemq.com:8884/mqtt' }
+            ];
+            
+            for (const broker of brokers) {
+                report += `<p>📡 ${broker.name}: ${broker.url}</p>`;
+            }
+            
+            // Recommendations
+            report += '<h4>📋 Recommendations</h4>';
+            report += '<ul>';
+            report += '<li>✅ Use <strong>MQTT</strong> for reliable communication</li>';
+            report += '<li>✅ Consider <strong>WebSocket</strong> for real-time updates</li>';
+            report += '<li>⚠️ HTTP Direct only works on same origin</li>';
+            report += '<li>⚠️ CORS proxies are temporary solutions</li>';
+            report += '</ul>';
+            
+            showResult('diagnosticsResult', report, 'info');
+            showLoading('diagLoading', false);
+        }
+        
+        function checkBrowserSupport() {
+            const features = [
+                { name: 'WebSocket', supported: 'WebSocket' in window },
+                { name: 'Fetch API', supported: 'fetch' in window },
+                { name: 'LocalStorage', supported: 'localStorage' in window },
+                { name: 'SessionStorage', supported: 'sessionStorage' in window },
+                { name: 'Service Workers', supported: 'serviceWorker' in navigator },
+                { name: 'Notifications', supported: 'Notification' in window },
+                { name: 'Geolocation', supported: 'geolocation' in navigator }
+            ];
+            
+            let report = '<h3>🌐 Browser Support Check</h3>';
+            
+            features.forEach(feature => {
+                report += `<p>${feature.supported ? '✅' : '❌'} ${feature.name}: ${feature.supported ? 'Supported' : 'Not Supported'}</p>`;
+            });
+            
+            report += '<p><strong>Note:</strong> All modern browsers should support WebSocket and Fetch API.</p>';
+            
+            showResult('diagnosticsResult', report, 'info');
+        }
+        
+        // ================= UTILITY FUNCTIONS =================
+        function fetchWithTimeout(url, timeout = 10000) {
+            return Promise.race([
+                fetch(url),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error(`Request timeout after ${timeout}ms`)), timeout)
+                )
+            ]);
+        }
+        
+        function showLoading(elementId, show) {
+            const element = document.getElementById(elementId);
+            element.classList.toggle('active', show);
+        }
+        
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = content;
+            element.className = 'result-area ' + type;
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function addMQTTLog(message, type = 'info') {
+            addLog('mqttLog', message, type);
+        }
+        
+        function addWSLog(message, type = 'info') {
+            addLog('wsLog', message, type);
+        }
+        
+        function addLog(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `log-entry ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            
+            // Limit to 50 entries
+            if (container.children.length > 50) {
+                container.removeChild(container.firstChild);
+            }
+        }
+        
+        // ================= INITIALIZATION =================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default IP if on localhost
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                document.getElementById('espIp').value = '192.168.1.100';
+                document.getElementById('wsUrl').value = 'ws://192.168.1.100:81';
+            }
+            
+            // Auto-load endpoints for HTTP tab
+            loadEndpoints();
+            
+            // Generate initial QR code
+            setTimeout(generateQR, 1000);
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                if (mqttClient) {
+                    mqttClient.end();
+                }
+                if (wsClient) {
+                    wsClient.close();
+                }
+            });
+        });
     </script>
 </body>
 </html>
