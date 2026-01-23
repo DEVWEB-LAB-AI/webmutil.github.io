@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+TÔI SẼ GỬI BẠN FLE INDEX CHÍNH NHÁ , BẠN SỬA GIÚP  TÔI NHÁ (<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -6,7 +6,6 @@
     <title>Smart Clock Control - ESP32 MQTT</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
-        /* (Phần CSS giữ nguyên như của bạn) */
         * {
             margin: 0;
             padding: 0;
@@ -24,67 +23,1013 @@
             align-items: center;
         }
         
-        /* ... (CSS giữ nguyên) ... */
+        /* Login Container */
+        .login-container {
+            max-width: 450px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            text-align: center;
+        }
         
+        .login-header {
+            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+            color: white;
+            padding: 30px;
+            position: relative;
+        }
+        
+        .login-header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .login-header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+        
+        .login-form {
+            padding: 35px 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.95rem;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #9C27B0;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.1);
+        }
+        
+        .password-input {
+            padding-right: 50px;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            font-size: 1.2rem;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 15px;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .error-message {
+            color: #f44336;
+            font-size: 0.9rem;
+            margin-top: 8px;
+            text-align: center;
+            min-height: 20px;
+        }
+        
+        .device-id-hint {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            padding: 8px 12px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .device-id-hint:hover {
+            background: #e9e9e9;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid #90caf9;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 25px;
+            text-align: left;
+        }
+        
+        .info-box h3 {
+            color: #1976D2;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-box ul {
+            padding-left: 20px;
+            margin: 0;
+            color: #555;
+            font-size: 0.9rem;
+        }
+        
+        .info-box li {
+            margin-bottom: 5px;
+        }
+        
+        /* Device Info Tag */
+        .device-info-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            font-weight: 500;
+            border: 1px solid #c8e6c9;
+        }
+        
+        /* Main Container (hidden by default) */
+        .main-container {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: none;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+            color: white;
+            padding: 30px;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .device-id-header {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        /* MQTT Connection Panel */
+        .mqtt-panel {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .mqtt-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .mqtt-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff5252;
+        }
+        
+        .status-dot.connected {
+            background: #4CAF50;
+            box-shadow: 0 0 10px #4CAF50;
+        }
+        
+        .mqtt-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .mqtt-btn {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        
+        .mqtt-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        /* Main Content */
+        .content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #4CAF50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Alarm Controls */
+        .time-inputs {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .time-input {
+            width: 80px;
+            padding: 15px;
+            font-size: 1.5rem;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        
+        .time-separator {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #666;
+        }
+        
+        .alarm-sound {
+            width: 100%;
+            padding: 15px;
+            margin: 15px 0;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        /* Alarm Status */
+        .alarm-status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .status-on {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+            border: 2px solid #b1dfbb;
+        }
+        
+        .status-off {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+            border: 2px solid #f1b0b7;
+        }
+        
+        /* Virtual Buttons */
+        .virtual-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .virtual-btn {
+            padding: 20px 10px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        
+        .virtual-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .btn-green {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+        
+        .btn-blue {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+        }
+        
+        .btn-red {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+        }
+        
+        .btn-orange {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+            grid-column: span 3;
+        }
+        
+        /* System Info */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #9C27B0;
+        }
+        
+        .info-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .sensor-value {
+            color: #2196F3;
+        }
+        
+        /* MQTT Info Card */
+        .mqtt-info-card {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            border-left: 4px solid #9C27B0;
+        }
+        
+        .mqtt-info-card h2 {
+            border-bottom: 3px solid #9C27B0;
+        }
+        
+        /* Device ID Badge */
+        .device-id-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 1rem;
+            border: 2px solid #90caf9;
+            margin-left: 10px;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #666;
+            border-top: 1px solid #ddd;
+        }
+        
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s;
+        }
+        
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Loading Overlay */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .loading.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #9C27B0;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+                padding: 15px;
+            }
+            
+            .virtual-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn-orange {
+                grid-column: span 1;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .mqtt-panel {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .login-container {
+                margin: 10px;
+                max-width: 100%;
+            }
+            
+            .login-form {
+                padding: 25px 20px;
+            }
+        }
     </style>
     <!-- Load MQTT.js from CDN -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
 <body>
-    <!-- (Phần HTML giữ nguyên) -->
+    <!-- Login Screen -->
+    <div class="login-container" id="loginScreen">
+        <div class="login-header">
+            <h1>
+                <span>🔒</span>
+                Smart Clock Control
+                <span>🔒</span>
+            </h1>
+            <p>Nhập thông tin để kết nối với thiết bị</p>
+        </div>
+        
+        <div class="login-form">
+            <div class="input-group">
+                <label for="deviceId">
+                    <span>🆔</span> ID Thiết bị (Device ID):
+                </label>
+                <input 
+                    type="text" 
+                    id="deviceId" 
+                    class="input-field" 
+                    placeholder="VD: ESP32_CLOCK_001, HOME_BEDROOM, ..."
+                    autocomplete="off"
+                    maxlength="50"
+                >
+                <div class="device-id-hint" onclick="showDeviceIdInfo()">
+                    <span>💡</span>
+                    <span>ID này được lập trình sẵn trong ESP32 (thường là tên thiết bị)</span>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label for="password">
+                    <span>🔑</span> Mật khẩu thiết bị:
+                </label>
+                <div class="input-wrapper">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        class="input-field password-input" 
+                        placeholder="Nhập mật khẩu..."
+                        autocomplete="current-password"
+                    >
+                    <button type="button" class="password-toggle" onclick="togglePassword()">
+                        👁️
+                    </button>
+                </div>
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+            
+            <button class="btn-login" onclick="checkCredentials()">
+                🔓 Kết nối thiết bị
+            </button>
+            
+            <div class="info-box">
+                <h3>
+                    <span>🔍</span>
+                    Cách tìm Device ID:
+                </h3>
+                <ul>
+                    <li>Được lập trình sẵn trong code ESP32</li>
+                    <li>Thường là tên duy nhất của từng thiết bị</li>
+                    <li>Ví dụ: ESP32_CLOCK_001, ESP32_CLOCK_002, ...</li>
+                    <li>Hoặc theo vị trí: LIVING_ROOM, BEDROOM, KITCHEN</li>
+                </ul>
+            </div>
+            
+            <!-- Sample Device IDs for demo -->
+            <div id="sampleDevices" style="display: none; margin-top: 15px;">
+                <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
+                    <strong>💡 Thiết bị mẫu (cho demo):</strong>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <button class="device-info-tag" onclick="fillSampleDevice('ESP32_CLOCK_001', '123456')">
+                        ESP32_CLOCK_001 (mật khẩu: 123456)
+                    </button>
+                    <button class="device-info-tag" onclick="fillSampleDevice('BEDROOM_CLOCK', '789012')">
+                        BEDROOM_CLOCK (mật khẩu: 789012)
+                    </button>
+                    <button class="device-info-tag" onclick="fillSampleDevice('LIVING_ROOM_CLOCK', 'abcdef')">
+                        LIVING_ROOM_CLOCK (mật khẩu: abcdef)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Interface (Hidden until login) -->
+    <div class="main-container" id="mainInterface">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <span>🌐</span>
+                ESP32 Smart Clock Control
+                <span>🌐</span>
+            </h1>
+            <div class="device-id-header">
+                <span>📱 Đang điều khiển:</span>
+                <span class="device-id-badge" id="currentDeviceId">--</span>
+            </div>
+            <p>Điều khiển từ xa qua Internet sử dụng MQTT</p>
+            <button class="logout-btn" onclick="logout()">
+                🚪 Đăng xuất
+            </button>
+        </div>
+        
+        <!-- MQTT Connection Panel -->
+        <div class="mqtt-panel">
+            <div class="mqtt-status">
+                <div class="mqtt-indicator">
+                    <div class="status-dot" id="mqttStatusDot"></div>
+                    <span id="mqttStatusText">Chưa kết nối</span>
+                </div>
+                <div id="mqttDetails" style="font-size: 0.9rem; opacity: 0.9;">
+                    <span>Thiết bị: </span>
+                    <span id="deviceIdDisplay">--</span>
+                </div>
+            </div>
+            
+            <div class="mqtt-controls">
+                <button class="mqtt-btn" id="connectBtn" onclick="connectMQTT()">
+                    🔗 Kết nối MQTT
+                </button>
+                <button class="mqtt-btn" onclick="disconnectMQTT()" id="disconnectBtn" style="display: none;">
+                    ✋ Ngắt kết nối
+                </button>
+                <button class="mqtt-btn" onclick="testMQTT()">
+                    📡 Test MQTT
+                </button>
+                <button class="mqtt-btn" onclick="switchDevice()" style="background: rgba(255, 255, 255, 0.1);">
+                    🔄 Đổi thiết bị
+                </button>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Alarm Control Card -->
+            <div class="card">
+                <h2>⏰ Điều Khiển Báo Thức</h2>
+                
+                <div class="time-inputs">
+                    <input 
+                        type="number" 
+                        class="time-input" 
+                        id="alarmHour" 
+                        min="0" 
+                        max="23" 
+                        value="7"
+                    >
+                    <span class="time-separator">:</span>
+                    <input 
+                        type="number" 
+                        class="time-input" 
+                        id="alarmMinute" 
+                        min="0" 
+                        max="59" 
+                        value="30"
+                    >
+                </div>
+                
+                <select class="alarm-sound" id="alarmSound">
+                    <option value="0">🔔 Beep (Tiếng bip)</option>
+                    <option value="1">🎵 Melody 1 (Giai điệu 1)</option>
+                    <option value="2">🎶 Melody 2 (Giai điệu 2)</option>
+                </select>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="setAlarmMQTT(true)">
+                        ✅ BẬT BÁO THỨC
+                    </button>
+                    <button class="btn btn-danger" onclick="setAlarmMQTT(false)">
+                        ❌ TẮT BÁO THỨC
+                    </button>
+                </div>
+                
+                <div class="alarm-status status-off" id="alarmStatus">
+                    Trạng thái: CHƯA CÓ DỮ LIỆU
+                </div>
+            </div>
+            
+            <!-- Virtual Buttons Card -->
+            <div class="card">
+                <h2>🎮 Nút Điều Khiển Ảo</h2>
+                <p style="color: #666; margin-bottom: 20px;">Gửi lệnh qua MQTT đến ESP32</p>
+                
+                <div class="virtual-buttons">
+                    <button class="virtual-btn btn-green" onclick="sendButtonMQTT(1)">
+                        <span style="font-size: 1.5rem;">🟢</span>
+                        NÚT 1
+                        <small>Chọn / Enter</small>
+                    </button>
+                    
+                    <button class="virtual-btn btn-blue" onclick="sendButtonMQTT(2)">
+                        <span style="font-size: 1.5rem;">🔵</span>
+                        NÚT 2
+                        <small>Tăng giá trị</small>
+                    </button>
+                    
+                    <button class="virtual-btn btn-red" onclick="sendButtonMQTT(3)">
+                        <span style="font-size: 1.5rem;">🔴</span>
+                        NÚT 3
+                        <small>Giảm giá trị</small>
+                    </button>
+                    
+                    <button class="virtual-btn btn-orange" onclick="snoozeAlarmMQTT()">
+                        <span style="font-size: 1.5rem;">⏸️</span>
+                        TẮT CHUÔNG BÁO THỨC
+                        <small>Snooze / Dừng tạm thời</small>
+                    </button>
+                </div>
+                
+                <div style="margin-top: 20px; text-align: center;">
+                    <button class="btn btn-warning" onclick="resetESP32MQTT()" style="width: 100%;">
+                        🔄 KHỞI ĐỘNG LẠI ESP32
+                    </button>
+                </div>
+            </div>
+            
+            <!-- System Info Card -->
+            <div class="card">
+                <h2>📊 Thông Tin Hệ Thống</h2>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">📡 Trạng thái MQTT</div>
+                        <div class="info-value" id="connectionStatus">Chưa kết nối</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">🆔 Device ID</div>
+                        <div class="info-value" id="systemDeviceId">--</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">🕐 Thời gian hiện tại</div>
+                        <div class="info-value" id="currentTime">--:--:--</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">🌡️ Nhiệt độ</div>
+                        <div class="info-value sensor-value" id="temperature">-- °C</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">💧 Độ ẩm</div>
+                        <div class="info-value sensor-value" id="humidity">-- %</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">📶 Cường độ WiFi</div>
+                        <div class="info-value" id="wifiRSSI">-- dBm</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">💾 Bộ nhớ trống</div>
+                        <div class="info-value" id="freeHeap">-- KB</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">📍 Địa chỉ IP</div>
+                        <div class="info-value" id="deviceIP">--.--.--.--</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <button class="btn" onclick="requestStatusUpdate()" style="background: #9C27B0; color: white; width: 100%;">
+                        🔄 Yêu cầu cập nhật
+                    </button>
+                </div>
+            </div>
+            
+            <!-- MQTT Info Card -->
+            <div class="card mqtt-info-card">
+                <h2>🌐 Thông Tin MQTT</h2>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Broker Server</div>
+                        <div class="info-value">broker.emqx.io</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">WebSocket Port</div>
+                        <div class="info-value">8084 (WSS)</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Topic Command</div>
+                        <div class="info-value" id="commandTopicDisplay">--</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Topic Status</div>
+                        <div class="info-value" id="statusTopicDisplay">--</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Topic Alarm</div>
+                        <div class="info-value" id="alarmTopicDisplay">--</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Topic Sensors</div>
+                        <div class="info-value" id="sensorTopicDisplay">--</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Client ID</div>
+                        <div class="info-value" id="clientId">web_xxxxxx</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Device ID</div>
+                        <div class="info-value" id="mqttDeviceId">--</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: rgba(156, 39, 176, 0.1); border-radius: 10px;">
+                    <p style="color: #666; font-size: 0.9rem; text-align: center;">
+                        💡 <strong>Bảo mật đa thiết bị:</strong> Mỗi thiết bị có Device ID duy nhất và mật khẩu riêng.<br>
+                        Mọi lệnh đều được gửi kèm Device ID để tránh xung đột.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>© 2024 ESP32 Smart Clock - MQTT Control Panel | Hỗ trợ đa thiết bị - Không xung đột</p>
+            <p style="font-size: 0.9rem; margin-top: 5px;">
+                Device ID: <span id="footerDeviceId">Chưa chọn thiết bị</span> | 
+                MQTT Broker công cộng | Xác thực bảo mật qua ESP32
+            </p>
+        </div>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+    
+    <!-- Loading Overlay -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
     
     <script>
-        // ================================
-        // CONFIGURATION - THÊM KEEPALIVE
-        // ================================
+        // Configuration với Device ID
         const CONFIG = {
-            // MQTT Configuration - THÊM KEEPALIVE
+            // MQTT Configuration
             MQTT: {
                 broker: 'wss://broker.emqx.io:8084/mqtt',
-                // THỬ BROKER KHÁC NẾU CẦN:
-                // broker: 'wss://test.mosquitto.org:8081',  // Port 8081 cho WSS
-                // broker: 'wss://broker.hivemq.com:8884/mqtt',
-                topicPrefix: 'smartclock/',
+                topicPrefix: 'smartclock/',  // Base prefix
                 options: {
                     clean: true,
                     connectTimeout: 4000,
-                    reconnectPeriod: 2000,
-                    keepalive: 25, // ⭐ QUAN TRỌNG: Gửi ping mỗi 25s
-                    clientId: 'web_' + Math.random().toString(16).substr(2, 8)
+                    reconnectPeriod: 2000
                 }
             },
             
-            // Keep-Alive settings
-            KEEP_ALIVE: {
-                interval: 8000,    // Gửi ping mỗi 8s
-                topicSuffix: '/ping',
-                maxReconnectAttempts: 10,
-                reconnectDelay: 3000
-            },
-            
-            // Local Storage keys
+            // Local Storage keys (lưu theo Device ID)
             STORAGE_KEYS: {
                 LAST_DEVICE_ID: 'smartclock_last_device_id',
-                AUTH_TOKENS: 'smartclock_auth_tokens',
+                AUTH_TOKENS: 'smartclock_auth_tokens',  // Lưu nhiều token theo device
                 SESSION_EXPIRIES: 'smartclock_session_expiries'
             }
         };
         
-        // ================================
-        // BIẾN TOÀN CỤC - THÊM BIẾN MỚI
-        // ================================
+        // Global variables với Device ID
         let mqttClient = null;
         let isMQTTConnected = false;
-        let clientId = CONFIG.MQTT.options.clientId;
+        let clientId = '';
         let currentDeviceId = '';
         let authToken = null;
         let sessionExpiry = null;
-        
-        // ⭐ BIẾN MỚI ĐỂ FIX TIMEOUT
-        let keepAliveInterval = null;
-        let mqttReconnectAttempts = 0;
-        let useHTTPMode = false; // Fallback mode
-        let lastMQTTActivity = Date.now();
         
         // DOM Elements
         const loginScreen = document.getElementById('loginScreen');
@@ -101,26 +1046,30 @@
         const disconnectBtn = document.getElementById('disconnectBtn');
         const sampleDevices = document.getElementById('sampleDevices');
         
-        // ================================
-        // KHỞI TẠO
-        // ================================
+        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            // Generate unique client ID
+            clientId = 'web_' + Math.random().toString(16).substr(2, 8);
             document.getElementById('clientId').textContent = clientId;
             
+            // Check if user has valid session for any device
             checkExistingSession();
+            
+            // Start clock
             updateClock();
             setInterval(updateClock, 1000);
             
-            // Thêm timer check MQTT activity
-            setInterval(checkMQTTActivity, 5000);
-            
             // Enter key for login form
             deviceIdInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') passwordInput.focus();
+                if (e.key === 'Enter') {
+                    passwordInput.focus();
+                }
             });
             
             passwordInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') checkCredentials();
+                if (e.key === 'Enter') {
+                    checkCredentials();
+                }
             });
             
             // Auto-clear sensitive data
@@ -136,301 +1085,12 @@
             }, 1000);
         });
         
-        // ================================
-        // HÀM MỚI: KIỂM TRA MQTT ACTIVITY
-        // ================================
-        function checkMQTTActivity() {
-            if (!mqttClient || !isMQTTConnected) return;
-            
-            const now = Date.now();
-            const inactiveTime = now - lastMQTTActivity;
-            
-            // Nếu không có activity trong 15s, gửi keep-alive
-            if (inactiveTime > 15000) {
-                sendKeepAlivePing();
-            }
-            
-            // Log để debug
-            if (inactiveTime > 30000) {
-                console.log(`⚠️ MQTT inactive for ${Math.floor(inactiveTime/1000)}s`);
-            }
-        }
-        
-        // ================================
-        // HÀM MỚI: GỬI KEEP-ALIVE PING
-        // ================================
-        function sendKeepAlivePing() {
-            if (!mqttClient || !isMQTTConnected || !currentDeviceId) return;
-            
-            try {
-                const deviceKey = currentDeviceId.toLowerCase().replace(/[^a-z0-9]/g, '_');
-                const pingTopic = `${CONFIG.MQTT.topicPrefix}${deviceKey}/ping`;
-                const pingMsg = JSON.stringify({
-                    type: 'keepalive',
-                    clientId: clientId,
-                    deviceId: currentDeviceId,
-                    timestamp: Date.now()
-                });
-                
-                mqttClient.publish(pingTopic, pingMsg, { qos: 0, retain: false }, (err) => {
-                    if (err) {
-                        console.error('❌ Keep-alive ping failed:', err);
-                    } else {
-                        console.log('📡 [Keep-Alive] Ping sent');
-                        lastMQTTActivity = Date.now();
-                    }
-                });
-            } catch (error) {
-                console.error('Error sending keep-alive:', error);
-            }
-        }
-        
-        // ================================
-        // HÀM MỚI: SETUP KEEP-ALIVE INTERVAL
-        // ================================
-        function setupKeepAliveInterval() {
-            // Xóa interval cũ nếu có
-            if (keepAliveInterval) {
-                clearInterval(keepAliveInterval);
-                keepAliveInterval = null;
-            }
-            
-            // Tạo interval mới
-            keepAliveInterval = setInterval(() => {
-                if (mqttClient && mqttClient.connected && currentDeviceId) {
-                    sendKeepAlivePing();
-                }
-            }, CONFIG.KEEP_ALIVE.interval);
-            
-            console.log(`✅ Keep-alive interval set to ${CONFIG.KEEP_ALIVE.interval}ms`);
-        }
-        
-        // ================================
-        // HÀM MỚI: CLEANUP KEEP-ALIVE
-        // ================================
-        function cleanupKeepAlive() {
-            if (keepAliveInterval) {
-                clearInterval(keepAliveInterval);
-                keepAliveInterval = null;
-                console.log('🧹 Keep-alive interval cleared');
-            }
-        }
-        
-        // ================================
-        // CẬP NHẬT HÀM CONNECT MQTT
-        // ================================
-        function connectMQTT() {
-            if (!authToken || !currentDeviceId) {
-                showToast('Vui lòng đăng nhập vào thiết bị trước!', 'error');
-                return;
-            }
-            
-            if (mqttClient && mqttClient.connected) {
-                showToast(`✅ Đã kết nối MQTT với ${currentDeviceId}!`, 'success');
-                return;
-            }
-            
-            // Check max reconnect attempts
-            if (mqttReconnectAttempts >= CONFIG.KEEP_ALIVE.maxReconnectAttempts) {
-                showToast(`Đã thử kết nối ${mqttReconnectAttempts} lần. Chuyển sang chế độ HTTP?`, 'warning');
-                useHTTPMode = true;
-                return;
-            }
-            
-            mqttReconnectAttempts++;
-            console.log(`🔄 MQTT reconnect attempt ${mqttReconnectAttempts}/${CONFIG.KEEP_ALIVE.maxReconnectAttempts}`);
-            
-            showLoading(true);
-            updateMQTTStatus('Đang kết nối...', false);
-            
-            // Tạo client options với keepalive
-            const options = {
-                ...CONFIG.MQTT.options,
-                clientId: clientId + '_' + currentDeviceId + '_' + Date.now(),
-                username: 'emqx',
-                password: 'public',
-                keepalive: 30, // ⭐ GIỮ KẾT NỐI
-                reconnectPeriod: CONFIG.KEEP_ALIVE.reconnectDelay
-            };
-            
-            try {
-                // Đổi broker nếu cần (bỏ comment 1 trong các dòng dưới)
-                const brokerUrl = CONFIG.MQTT.broker;
-                // const brokerUrl = 'wss://test.mosquitto.org:8081'; // ⭐ THỬ BROKER KHÁC
-                // const brokerUrl = 'wss://broker.emqx.io:8083/mqtt'; // Port 8083
-                
-                mqttClient = mqtt.connect(brokerUrl, options);
-                
-                // ⭐ EVENT HANDLERS VỚI KEEP-ALIVE
-                mqttClient.on('connect', () => {
-                    console.log('✅ MQTT WebSocket Connected!');
-                    isMQTTConnected = true;
-                    mqttReconnectAttempts = 0; // Reset counter
-                    useHTTPMode = false;
-                    lastMQTTActivity = Date.now();
-                    
-                    updateMQTTStatus('Đã kết nối', true);
-                    
-                    // ⭐ SETUP KEEP-ALIVE INTERVAL
-                    setupKeepAliveInterval();
-                    
-                    // Subscribe to topics
-                    subscribeToTopics();
-                    
-                    showToast(`✅ Đã kết nối MQTT với ${currentDeviceId} thành công!`, 'success');
-                    
-                    connectBtn.style.display = 'none';
-                    disconnectBtn.style.display = 'block';
-                    
-                    setTimeout(requestStatusUpdate, 1000);
-                });
-                
-                mqttClient.on('message', (topic, message) => {
-                    lastMQTTActivity = Date.now(); // ⭐ UPDATE ACTIVITY
-                    handleMQTTMessage(topic, message.toString());
-                });
-                
-                mqttClient.on('packetsend', () => {
-                    lastMQTTActivity = Date.now(); // ⭐ UPDATE ACTIVITY
-                });
-                
-                mqttClient.on('packetreceive', () => {
-                    lastMQTTActivity = Date.now(); // ⭐ UPDATE ACTIVITY
-                });
-                
-                mqttClient.on('error', (error) => {
-                    console.error('MQTT Error:', error);
-                    updateMQTTStatus('Lỗi kết nối', false);
-                    showToast('❌ Lỗi MQTT: ' + error.message, 'error');
-                    cleanupKeepAlive();
-                });
-                
-                mqttClient.on('close', () => {
-                    console.log('🔌 MQTT Connection Closed');
-                    isMQTTConnected = false;
-                    updateMQTTStatus('Mất kết nối', false);
-                    cleanupKeepAlive();
-                    
-                    connectBtn.style.display = 'block';
-                    disconnectBtn.style.display = 'none';
-                    
-                    // Tự động reconnect với delay
-                    if (mqttReconnectAttempts < CONFIG.KEEP_ALIVE.maxReconnectAttempts) {
-                        const delay = Math.min(3000 * Math.pow(1.5, mqttReconnectAttempts), 30000);
-                        console.log(`⏳ Will try to reconnect in ${delay/1000}s...`);
-                        setTimeout(connectMQTT, delay);
-                    }
-                });
-                
-                mqttClient.on('offline', () => {
-                    console.log('📴 MQTT Client Offline');
-                    isMQTTConnected = false;
-                    updateMQTTStatus('Offline', false);
-                    cleanupKeepAlive();
-                });
-                
-                mqttClient.on('reconnect', () => {
-                    console.log('🔄 MQTT Reconnecting...');
-                    updateMQTTStatus('Đang kết nối lại...', false);
-                });
-                
-            } catch (error) {
-                console.error('Failed to connect to MQTT:', error);
-                showToast('❌ Không thể kết nối MQTT', 'error');
-                updateMQTTStatus('Kết nối thất bại', false);
-                cleanupKeepAlive();
-            } finally {
-                showLoading(false);
-            }
-        }
-        
-        // ================================
-        // CẬP NHẬT HÀM DISCONNECT MQTT
-        // ================================
-        function disconnectMQTT() {
-            if (mqttClient) {
-                cleanupKeepAlive(); // ⭐ CLEANUP KEEP-ALIVE
-                mqttClient.end();
-                mqttClient = null;
-                isMQTTConnected = false;
-                mqttReconnectAttempts = 0;
-                
-                updateMQTTStatus('Đã ngắt kết nối', false);
-                
-                connectBtn.style.display = 'block';
-                disconnectBtn.style.display = 'none';
-                
-                showToast(`✋ Đã ngắt kết nối MQTT khỏi ${currentDeviceId}`, 'info');
-            }
-        }
-        
-        // ================================
-        // CẬP NHẬT HÀM SEND MQTT COMMAND
-        // ================================
-        function sendMQTTCommand(command, data = {}) {
-            if (!authToken || !currentDeviceId) {
-                showToast('Phiên đăng nhập đã hết hạn!', 'error');
-                logout();
-                return false;
-            }
-            
-            if (useHTTPMode) {
-                console.log('📡 Using HTTP fallback mode');
-                // Gọi hàm HTTP fallback của bạn ở đây
-                // return sendHTTPCommand(command, data);
-                showToast('Đang dùng HTTP fallback (MQTT thất bại)', 'warning');
-                return false;
-            }
-            
-            if (!mqttClient || !isMQTTConnected) {
-                showToast('❌ Chưa kết nối MQTT! Đang thử kết nối...', 'warning');
-                connectMQTT();
-                return false;
-            }
-            
-            const topics = getDeviceTopics();
-            const message = {
-                command: command,
-                data: data,
-                auth: {
-                    token: authToken,
-                    deviceId: currentDeviceId,
-                    clientId: clientId
-                },
-                timestamp: Date.now()
-            };
-            
-            try {
-                mqttClient.publish(topics.command, JSON.stringify(message), { qos: 1 }, (err) => {
-                    if (err) {
-                        console.error('❌ MQTT Publish Error:', err);
-                        // Chuyển sang HTTP mode nếu MQTT fail
-                        if (mqttReconnectAttempts >= 3) {
-                            useHTTPMode = true;
-                            showToast('Chuyển sang chế độ HTTP (MQTT thất bại)', 'warning');
-                        }
-                    } else {
-                        lastMQTTActivity = Date.now(); // ⭐ UPDATE ACTIVITY
-                        console.log(`📤 Sent MQTT command to ${currentDeviceId}: ${command}`, data);
-                    }
-                });
-                return true;
-            } catch (error) {
-                console.error('Error sending MQTT command:', error);
-                showToast('❌ Lỗi khi gửi lệnh MQTT', 'error');
-                return false;
-            }
-        }
-        
-        // ================================
-        // CÁC HÀM KHÁC GIỮ NGUYÊN (nhưng đã có trong code gốc)
-        // ================================
-        
         // Check existing session
         function checkExistingSession() {
             const lastDeviceId = localStorage.getItem(CONFIG.STORAGE_KEYS.LAST_DEVICE_ID);
             
             if (lastDeviceId) {
+                // Load saved token and expiry for this device
                 const authTokens = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS) || '{}');
                 const sessionExpiries = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES) || '{}');
                 
@@ -440,11 +1100,13 @@
                 if (authToken && sessionExpiry) {
                     const now = Date.now();
                     if (now < sessionExpiry) {
+                        // Session still valid
                         currentDeviceId = lastDeviceId;
                         deviceIdInput.value = lastDeviceId;
                         passwordInput.placeholder = 'Mật khẩu đã lưu, nhập mới nếu cần';
                         showToast(`🔍 Phát hiện phiên cũ cho ${lastDeviceId}`, 'info');
                     } else {
+                        // Session expired
                         clearDeviceSession(lastDeviceId);
                     }
                 }
@@ -463,19 +1125,353 @@
             };
         }
         
-        // ... (Các hàm khác giữ nguyên từ code gốc của bạn) ...
+        // Update topic displays
+        function updateTopicDisplays() {
+            const topics = getDeviceTopics();
+            document.getElementById('commandTopicDisplay').textContent = topics.command;
+            document.getElementById('statusTopicDisplay').textContent = topics.status;
+            document.getElementById('alarmTopicDisplay').textContent = topics.alarm;
+            document.getElementById('sensorTopicDisplay').textContent = topics.sensors;
+        }
         
-        // Update MQTT status display
-        function updateMQTTStatus(text, connected) {
-            mqttStatusText.textContent = text;
-            connectionStatus.textContent = text;
+        // Save device session
+        function saveDeviceSession(deviceId, token, expiry) {
+            // Save as last used device
+            localStorage.setItem(CONFIG.STORAGE_KEYS.LAST_DEVICE_ID, deviceId);
             
-            if (connected) {
-                mqttStatusDot.classList.add('connected');
-                connectionStatus.style.color = '#4CAF50';
-            } else {
-                mqttStatusDot.classList.remove('connected');
-                connectionStatus.style.color = '#f44336';
+            // Save token
+            const authTokens = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS) || '{}');
+            authTokens[deviceId] = token;
+            localStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS, JSON.stringify(authTokens));
+            
+            // Save expiry
+            const sessionExpiries = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES) || '{}');
+            sessionExpiries[deviceId] = expiry;
+            localStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES, JSON.stringify(sessionExpiries));
+        }
+        
+        // Clear device session
+        function clearDeviceSession(deviceId) {
+            // Remove token
+            const authTokens = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS) || '{}');
+            delete authTokens[deviceId];
+            localStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS, JSON.stringify(authTokens));
+            
+            // Remove expiry
+            const sessionExpiries = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES) || '{}');
+            delete sessionExpiries[deviceId];
+            localStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES, JSON.stringify(sessionExpiries));
+        }
+        
+        // Clear all sessions
+        function clearAllSessions() {
+            localStorage.removeItem(CONFIG.STORAGE_KEYS.LAST_DEVICE_ID);
+            localStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS);
+            localStorage.removeItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES);
+            authToken = null;
+            sessionExpiry = null;
+            currentDeviceId = '';
+        }
+        
+        // Show login screen
+        function showLoginScreen() {
+            loginScreen.style.display = 'block';
+            mainInterface.style.display = 'none';
+            passwordInput.value = '';
+            errorMessage.textContent = '';
+        }
+        
+        // Show main interface
+        function showMainInterface() {
+            loginScreen.style.display = 'none';
+            mainInterface.style.display = 'block';
+            
+            // Update UI with device info
+            document.getElementById('currentDeviceId').textContent = currentDeviceId;
+            document.getElementById('deviceIdDisplay').textContent = currentDeviceId;
+            document.getElementById('systemDeviceId').textContent = currentDeviceId;
+            document.getElementById('mqttDeviceId').textContent = currentDeviceId;
+            document.getElementById('footerDeviceId').textContent = currentDeviceId;
+            
+            // Update topic displays
+            updateTopicDisplays();
+        }
+        
+        // Check credentials via MQTT authentication
+        function checkCredentials() {
+            currentDeviceId = deviceIdInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            if (!currentDeviceId) {
+                showError('Vui lòng nhập Device ID');
+                deviceIdInput.focus();
+                return;
+            }
+            
+            if (!password) {
+                showError('Vui lòng nhập mật khẩu');
+                passwordInput.focus();
+                return;
+            }
+            
+            // Validate Device ID format
+            if (currentDeviceId.length > 50) {
+                showError('Device ID quá dài (tối đa 50 ký tự)');
+                return;
+            }
+            
+            showLoading(true);
+            
+            // Generate authentication request with Device ID
+            const authRequest = {
+                type: 'auth_request',
+                deviceId: currentDeviceId,
+                password: password,
+                clientId: clientId,
+                timestamp: Date.now()
+            };
+            
+            // Send auth request via MQTT
+            sendAuthRequest(authRequest)
+                .then(response => {
+                    if (response.success) {
+                        // Authentication successful
+                        authToken = response.token;
+                        sessionExpiry = Date.now() + (response.expiry || 3600000); // 1 hour default
+                        
+                        // Save device session
+                        saveDeviceSession(currentDeviceId, authToken, sessionExpiry);
+                        
+                        showMainInterface();
+                        showToast(`✅ Đã kết nối với ${currentDeviceId}`, 'success');
+                        
+                        // Connect to MQTT
+                        setTimeout(connectMQTT, 500);
+                    } else {
+                        showError(response.message || 'Device ID hoặc mật khẩu không đúng');
+                        passwordInput.value = '';
+                        passwordInput.focus();
+                    }
+                })
+                .catch(error => {
+                    showError('Lỗi xác thực: ' + error.message);
+                    console.error('Auth error:', error);
+                })
+                .finally(() => {
+                    showLoading(false);
+                });
+        }
+        
+        // Send authentication request via MQTT
+        function sendAuthRequest(authData) {
+            return new Promise((resolve, reject) => {
+                // Get auth topic for this device
+                const topics = getDeviceTopics();
+                const authTopic = topics.auth;
+                const responseTopic = authTopic + '/response/' + authData.clientId;
+                
+                // Create temporary MQTT connection for authentication
+                const tempClient = mqtt.connect(CONFIG.MQTT.broker, {
+                    clientId: 'auth_' + Math.random().toString(16).substr(2, 8),
+                    clean: true,
+                    connectTimeout: 5000
+                });
+                
+                let timeoutId;
+                
+                tempClient.on('connect', () => {
+                    // Subscribe to response topic
+                    tempClient.subscribe(responseTopic, (err) => {
+                        if (err) {
+                            reject(new Error('Không thể subscribe: ' + err.message));
+                            tempClient.end();
+                            return;
+                        }
+                        
+                        // Send authentication request
+                        tempClient.publish(authTopic, JSON.stringify(authData));
+                        
+                        // Set timeout
+                        timeoutId = setTimeout(() => {
+                            tempClient.end();
+                            reject(new Error('Timeout: Thiết bị không phản hồi. Kiểm tra Device ID và kết nối mạng.'));
+                        }, 10000);
+                    });
+                });
+                
+                tempClient.on('message', (topic, message) => {
+                    if (topic === responseTopic) {
+                        clearTimeout(timeoutId);
+                        tempClient.end();
+                        
+                        try {
+                            const response = JSON.parse(message.toString());
+                            resolve(response);
+                        } catch (error) {
+                            reject(new Error('Lỗi phân tích phản hồi từ thiết bị'));
+                        }
+                    }
+                });
+                
+                tempClient.on('error', (error) => {
+                    clearTimeout(timeoutId);
+                    tempClient.end();
+                    reject(error);
+                });
+            });
+        }
+        
+        // Logout
+        function logout() {
+            if (confirm('Bạn có chắc muốn đăng xuất khỏi thiết bị này?')) {
+                clearDeviceSession(currentDeviceId);
+                showLoginScreen();
+                showToast(`👋 Đã đăng xuất khỏi ${currentDeviceId}`, 'info');
+                
+                // Disconnect MQTT if connected
+                if (mqttClient && isMQTTConnected) {
+                    disconnectMQTT();
+                }
+            }
+        }
+        
+        // Switch to another device
+        function switchDevice() {
+            if (confirm('Bạn có muốn chuyển sang thiết bị khác?')) {
+                clearDeviceSession(currentDeviceId);
+                
+                // Disconnect MQTT if connected
+                if (mqttClient && isMQTTConnected) {
+                    disconnectMQTT();
+                }
+                
+                showLoginScreen();
+                showToast('🔀 Chọn thiết bị mới để kết nối', 'info');
+            }
+        }
+        
+        // Toggle password visibility
+        function togglePassword() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+        }
+        
+        // Show error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.color = '#f44336';
+            
+            // Clear error after 5 seconds
+            setTimeout(() => {
+                errorMessage.textContent = '';
+            }, 5000);
+        }
+        
+        // Show device ID info
+        function showDeviceIdInfo() {
+            showToast('Device ID là mã duy nhất để phân biệt các thiết bị ESP32', 'info');
+        }
+        
+        // Fill sample device info (for demo)
+        function fillSampleDevice(deviceId, password) {
+            deviceIdInput.value = deviceId;
+            passwordInput.value = password;
+            showToast(`Đã điền thông tin thiết bị ${deviceId}`, 'success');
+        }
+        
+        // ============================
+        // MQTT FUNCTIONS với Device ID
+        // ============================
+        
+        // Connect to MQTT Broker
+        function connectMQTT() {
+            if (!authToken || !currentDeviceId) {
+                showToast('Vui lòng đăng nhập vào thiết bị trước!', 'error');
+                return;
+            }
+            
+            if (mqttClient && mqttClient.connected) {
+                showToast(`✅ Đã kết nối MQTT với ${currentDeviceId}!`, 'success');
+                return;
+            }
+            
+            showLoading(true);
+            updateMQTTStatus('Đang kết nối...', false);
+            
+            // Create client options
+            const options = {
+                ...CONFIG.MQTT.options,
+                clientId: clientId + '_' + currentDeviceId + '_' + Date.now(),
+                username: 'emqx',
+                password: 'public'
+            };
+            
+            try {
+                // Connect to MQTT broker
+                mqttClient = mqtt.connect(CONFIG.MQTT.broker, options);
+                
+                // Setup event handlers
+                mqttClient.on('connect', () => {
+                    isMQTTConnected = true;
+                    updateMQTTStatus('Đã kết nối', true);
+                    
+                    // Subscribe to device-specific topics
+                    subscribeToTopics();
+                    
+                    showToast(`✅ Đã kết nối MQTT với ${currentDeviceId} thành công!`, 'success');
+                    
+                    // Show disconnect button
+                    connectBtn.style.display = 'none';
+                    disconnectBtn.style.display = 'block';
+                    
+                    // Request initial status
+                    setTimeout(requestStatusUpdate, 1000);
+                });
+                
+                mqttClient.on('message', (topic, message) => {
+                    handleMQTTMessage(topic, message.toString());
+                });
+                
+                mqttClient.on('error', (error) => {
+                    console.error('MQTT Error:', error);
+                    updateMQTTStatus('Lỗi kết nối', false);
+                    showToast('❌ Lỗi MQTT: ' + error.message, 'error');
+                });
+                
+                mqttClient.on('close', () => {
+                    isMQTTConnected = false;
+                    updateMQTTStatus('Mất kết nối', false);
+                    
+                    // Show connect button
+                    connectBtn.style.display = 'block';
+                    disconnectBtn.style.display = 'none';
+                });
+                
+                mqttClient.on('reconnect', () => {
+                    updateMQTTStatus('Đang kết nối lại...', false);
+                });
+                
+            } catch (error) {
+                console.error('Failed to connect to MQTT:', error);
+                showToast('❌ Không thể kết nối MQTT', 'error');
+                updateMQTTStatus('Kết nối thất bại', false);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Disconnect from MQTT
+        function disconnectMQTT() {
+            if (mqttClient) {
+                mqttClient.end();
+                mqttClient = null;
+                isMQTTConnected = false;
+                updateMQTTStatus('Đã ngắt kết nối', false);
+                
+                connectBtn.style.display = 'block';
+                disconnectBtn.style.display = 'none';
+                
+                showToast(`✋ Đã ngắt kết nối MQTT khỏi ${currentDeviceId}`, 'info');
             }
         }
         
@@ -484,6 +1480,8 @@
             if (!mqttClient || !isMQTTConnected) return;
             
             const topics = getDeviceTopics();
+            
+            // Subscribe to device-specific topics
             const topicsToSubscribe = [
                 topics.status,
                 topics.alarm,
@@ -507,21 +1505,126 @@
             
             try {
                 const data = JSON.parse(message);
+                
+                // Extract topics
                 const topics = getDeviceTopics();
                 
                 switch(topic) {
                     case topics.status:
                         updateSystemInfo(data);
                         break;
+                        
                     case topics.alarm:
                         updateAlarmInfo(data);
                         break;
+                        
                     case topics.sensors:
                         updateSensorInfo(data);
                         break;
                 }
+                
             } catch (error) {
                 console.error('Error parsing MQTT message:', error);
+            }
+        }
+        
+        // Send authenticated MQTT command với Device ID
+        function sendMQTTCommand(command, data = {}) {
+            if (!authToken || !currentDeviceId) {
+                showToast('Phiên đăng nhập đã hết hạn!', 'error');
+                logout();
+                return false;
+            }
+            
+            if (!mqttClient || !isMQTTConnected) {
+                showToast('❌ Chưa kết nối MQTT! Vui lòng kết nối trước.', 'error');
+                return false;
+            }
+            
+            const topics = getDeviceTopics();
+            const message = {
+                command: command,
+                data: data,
+                auth: {
+                    token: authToken,
+                    deviceId: currentDeviceId,
+                    clientId: clientId
+                },
+                timestamp: Date.now()
+            };
+            
+            try {
+                mqttClient.publish(topics.command, JSON.stringify(message));
+                console.log(`📤 Sent authenticated MQTT command to ${currentDeviceId}: ${command}`, data);
+                return true;
+            } catch (error) {
+                console.error('Error sending MQTT command:', error);
+                showToast('❌ Lỗi khi gửi lệnh MQTT', 'error');
+                return false;
+            }
+        }
+        
+        // Update MQTT status display
+        function updateMQTTStatus(text, connected) {
+            mqttStatusText.textContent = text;
+            connectionStatus.textContent = text;
+            
+            if (connected) {
+                mqttStatusDot.classList.add('connected');
+                connectionStatus.style.color = '#4CAF50';
+            } else {
+                mqttStatusDot.classList.remove('connected');
+                connectionStatus.style.color = '#f44336';
+            }
+        }
+        
+        // Update system information from MQTT
+        function updateSystemInfo(data) {
+            if (data.deviceId) {
+                document.getElementById('systemDeviceId').textContent = data.deviceId;
+            }
+            if (data.ipAddress) {
+                document.getElementById('deviceIP').textContent = data.ipAddress;
+            }
+            if (data.uptime !== undefined) {
+                document.getElementById('uptime').textContent = Math.floor(data.uptime / 60) + ' phút';
+            }
+            if (data.freeHeap !== undefined) {
+                document.getElementById('freeHeap').textContent = Math.floor(data.freeHeap / 1024) + ' KB';
+            }
+            if (data.rssi !== undefined) {
+                document.getElementById('wifiRSSI').textContent = data.rssi + ' dBm';
+            }
+        }
+        
+        // Update alarm information from MQTT
+        function updateAlarmInfo(data) {
+            if (data.hour !== undefined) {
+                document.getElementById('alarmHour').value = data.hour;
+            }
+            if (data.minute !== undefined) {
+                document.getElementById('alarmMinute').value = data.minute;
+            }
+            if (data.sound !== undefined) {
+                document.getElementById('alarmSound').value = data.sound;
+            }
+            if (data.enabled !== undefined) {
+                const statusDiv = document.getElementById('alarmStatus');
+                statusDiv.textContent = `Trạng thái: ${data.enabled ? 'ĐANG BẬT' : 'ĐANG TẮT'}`;
+                statusDiv.className = `alarm-status ${data.enabled ? 'status-on' : 'status-off'}`;
+            }
+            if (data.triggered) {
+                showToast(`🚨 ${currentDeviceId}: Báo thức đang kêu!`, 'warning');
+            }
+        }
+        
+        // Update sensor information from MQTT
+        function updateSensorInfo(data) {
+            if (data.temperature !== undefined) {
+                document.getElementById('temperature').textContent = data.temperature.toFixed(1) + ' °C';
+            }
+            if (data.humidity !== undefined) {
+                document.getElementById('humidity').textContent = data.humidity.toFixed(1) + ' %';
             }
         }
         
@@ -553,8 +1656,6 @@
                 showToast(enable ? `✅ Đã bật báo thức ${currentDeviceId}!` : `❌ Đã tắt báo thức ${currentDeviceId}!`, 'success');
             }
         }
-        
-        // ... (Các hàm command khác giữ nguyên) ...
         
         function sendButtonMQTT(buttonNumber) {
             if (!authToken) {
@@ -589,7 +1690,7 @@
                 return;
             }
             
-            if (confirm(`Bạn có chắc muốn khởi động lại ${currentDeviceId}?`)) {
+            if (confirm(`Bạn có chắc muốn khởi động lại ${currentDeviceId}? Thiết bị sẽ mất kết nối trong vài giây.`)) {
                 const success = sendMQTTCommand('reset', {});
                 if (success) {
                     showToast(`🔄 Đang khởi động lại ${currentDeviceId}...`, 'info');
@@ -639,13 +1740,49 @@
             }
         }
         
-        // Cleanup khi đóng trang
-        window.addEventListener('beforeunload', () => {
-            cleanupKeepAlive();
-            if (mqttClient) {
-                mqttClient.end();
+        // Update clock
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('vi-VN');
+            document.getElementById('currentTime').textContent = timeStr;
+            
+            // Check session expiry every minute
+            if (authToken && sessionExpiry && Date.now() > sessionExpiry) {
+                showToast(`Phiên đăng nhập ${currentDeviceId} đã hết hạn!`, 'warning');
+                logout();
             }
-        });
+        }
+        
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            toast.textContent = message;
+            
+            // Set color based on type
+            const colors = {
+                error: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
+                success: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
+                info: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
+                warning: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)'
+            };
+            
+            toast.style.background = colors[type] || colors.info;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Show/hide loading overlay
+        function showLoading(show) {
+            if (show) {
+                loading.classList.add('active');
+            } else {
+                setTimeout(() => {
+                    loading.classList.remove('active');
+                }, 500);
+            }
+        }
         
         // Export functions to global scope
         window.connectMQTT = connectMQTT;
@@ -662,35 +1799,7 @@
         window.switchDevice = switchDevice;
         window.showDeviceIdInfo = showDeviceIdInfo;
         window.fillSampleDevice = fillSampleDevice;
-        
-        // Hàm showToast, showLoading, updateClock giữ nguyên
-        function showToast(message, type = 'info') {
-            toast.textContent = message;
-            const colors = {
-                error: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
-                success: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
-                info: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
-                warning: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)'
-            };
-            toast.style.background = colors[type] || colors.info;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        }
-        
-        function showLoading(show) {
-            if (show) loading.classList.add('active');
-            else setTimeout(() => loading.classList.remove('active'), 500);
-        }
-        
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('currentTime').textContent = now.toLocaleTimeString('vi-VN');
-            
-            if (authToken && sessionExpiry && Date.now() > sessionExpiry) {
-                showToast(`Phiên đăng nhập ${currentDeviceId} đã hết hạn!`, 'warning');
-                logout();
-            }
-        }
     </script>
 </body>
 </html>
+)
