@@ -13,14 +13,17 @@ const CONFIG = {
             reconnectPeriod: 2000,
             clientId: 'web_client_' + Math.random().toString(16).substr(2, 8),
             username: 'emqx',
-            password: 'public'
+            password: 'public',
+            keepalive: 60
         },
         TOPICS: {
             COMMAND: 'smartclock/command',
             STATUS: 'smartclock/status',
             ALARM: 'smartclock/alarm',
             SENSORS: 'smartclock/sensors',
-            TEST: 'smartclock/test'
+            TEST: 'smartclock/test',
+            DISPLAY: 'smartclock/display',
+            CONFIG: 'smartclock/config'
         }
     },
     
@@ -28,7 +31,8 @@ const CONFIG = {
     WEBSOCKET: {
         PORT: 81,
         RECONNECT_DELAY: 3000,
-        PING_INTERVAL: 30000
+        PING_INTERVAL: 30000,
+        TIMEOUT: 5000
     },
     
     // HTTP Fallback Configuration (if direct connection is possible)
@@ -43,10 +47,18 @@ const CONFIG = {
             RESET_SLEEP: '/resetSleepTimer',
             UNLOCK: '/unlock',
             MANIFEST: '/manifest.json',
-            SERVICE_WORKER: '/sw.js'
+            SERVICE_WORKER: '/sw.js',
+            INFO: '/info',
+            STATUS: '/status',
+            SENSORS: '/sensors'
         },
         TIMEOUT: 5000,
-        RETRY_COUNT: 3
+        RETRY_COUNT: 3,
+        CORS_PROXIES: [
+            'https://cors-anywhere.herokuapp.com/',
+            'https://api.allorigins.win/get?url=',
+            'https://corsproxy.org/?'
+        ]
     },
     
     // UI Configuration
@@ -56,7 +68,23 @@ const CONFIG = {
         CONNECTION_TIMEOUT: 5000,
         AUTO_CONNECT_DELAY: 1000,
         DEBOUNCE_DELAY: 300,
-        ANIMATION_DURATION: 300
+        ANIMATION_DURATION: 300,
+        THEMES: {
+            LIGHT: {
+                primary: '#4361ee',
+                secondary: '#3a0ca3',
+                background: '#ffffff',
+                text: '#2c3e50',
+                card: '#f8f9fa'
+            },
+            DARK: {
+                primary: '#7209b7',
+                secondary: '#3a0ca3',
+                background: '#121212',
+                text: '#ffffff',
+                card: '#1e1e1e'
+            }
+        }
     },
     
     // Alarm Configuration
@@ -72,14 +100,15 @@ const CONFIG = {
         MAX_HOUR: 23,
         MIN_MINUTE: 0,
         MAX_MINUTE: 59,
-        SNOOZE_MINUTES: 5
+        SNOOZE_MINUTES: 5,
+        DAYS: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
     },
     
     // Button Mappings
     BUTTONS: {
-        1: { name: 'Nút 1', color: 'green', action: 'Chọn/Enter', icon: '🟢' },
-        2: { name: 'Nút 2', color: 'blue', action: 'Tăng giá trị', icon: '🔵' },
-        3: { name: 'Nút 3', color: 'red', action: 'Giảm giá trị', icon: '🔴' }
+        1: { name: 'Nút 1', color: 'green', action: 'Chọn/Enter', icon: '🟢', command: 'button1' },
+        2: { name: 'Nút 2', color: 'blue', action: 'Tăng giá trị', icon: '🔵', command: 'button2' },
+        3: { name: 'Nút 3', color: 'red', action: 'Giảm giá trị', icon: '🔴', command: 'button3' }
     },
     
     // System Configuration
@@ -89,65 +118,112 @@ const CONFIG = {
         STORAGE_PREFIX: 'esp32_',
         LOG_LEVEL: 'info', // 'debug', 'info', 'warn', 'error'
         MAX_LOG_ENTRIES: 100,
-        VERSION: '1.0.0'
+        VERSION: '2.0.0',
+        SUPPORTED_BROWSERS: ['chrome', 'firefox', 'safari', 'edge'],
+        MIN_BROWSER_VERSION: 80
     },
     
-    // MQTT Command Templates
+    // MQTT Command Templates (Factory functions)
     COMMANDS: {
-        SET_ALARM: (hour, minute, sound, enabled) => ({
-            command: 'setAlarm',
-            data: {
-                hour: parseInt(hour) || 0,
-                minute: parseInt(minute) || 0,
-                sound: parseInt(sound) || 0,
-                enable: enabled ? 1 : 0
-            },
-            timestamp: Date.now()
-        }),
+        SET_ALARM: function(hour, minute, sound, enabled, label = 'Alarm', days = [1,1,1,1,1,1,1]) {
+            return {
+                command: 'set_alarm',
+                data: {
+                    hour: parseInt(hour) || 0,
+                    minute: parseInt(minute) || 0,
+                    sound: parseInt(sound) || 0,
+                    enable: enabled ? 1 : 0,
+                    label: label,
+                    days: Array.isArray(days) ? days : [1,1,1,1,1,1,1]
+                },
+                timestamp: Date.now()
+            };
+        },
         
-        BUTTON: (button) => ({
-            command: 'button',
-            data: { 
-                btn: parseInt(button) || 1 
-            },
-            timestamp: Date.now()
-        }),
+        BUTTON: function(button) {
+            return {
+                command: 'button',
+                data: { 
+                    btn: parseInt(button) || 1 
+                },
+                timestamp: Date.now()
+            };
+        },
         
-        SNOOZE: () => ({
-            command: 'snooze',
-            data: {},
-            timestamp: Date.now()
-        }),
+        SNOOZE: function() {
+            return {
+                command: 'snooze',
+                data: {},
+                timestamp: Date.now()
+            };
+        },
         
-        RESET: () => ({
-            command: 'reset',
-            data: {},
-            timestamp: Date.now()
-        }),
+        RESET: function() {
+            return {
+                command: 'reset',
+                data: {},
+                timestamp: Date.now()
+            };
+        },
         
-        GET_STATUS: () => ({
-            command: 'get_status',
-            data: {},
-            timestamp: Date.now()
-        }),
+        GET_STATUS: function() {
+            return {
+                command: 'get_status',
+                data: {},
+                timestamp: Date.now()
+            };
+        },
         
-        TEST: (message) => ({
-            command: 'test',
-            data: { 
-                message: message || 'Test from web client' 
-            },
-            timestamp: Date.now()
-        }),
+        GET_SENSORS: function() {
+            return {
+                command: 'get_sensors',
+                data: {},
+                timestamp: Date.now()
+            };
+        },
         
-        SET_TIME: (hour, minute, second) => ({
-            command: 'set_time',
-            data: {
-                hour: parseInt(hour) || 0,
-                minute: parseInt(minute) || 0,
-                second: parseInt(second) || 0
-            },
-            timestamp: Date.now()
-        })
+        SET_BRIGHTNESS: function(brightness) {
+            return {
+                command: 'set_brightness',
+                data: {
+                    brightness: Math.min(100, Math.max(0, parseInt(brightness) || 50))
+                },
+                timestamp: Date.now()
+            };
+        },
+        
+        SET_TIME: function(hour, minute, second) {
+            return {
+                command: 'set_time',
+                data: {
+                    hour: parseInt(hour) || 0,
+                    minute: parseInt(minute) || 0,
+                    second: parseInt(second) || 0
+                },
+                timestamp: Date.now()
+            };
+        },
+        
+        SET_TIMEZONE: function(timezone) {
+            return {
+                command: 'set_timezone',
+                data: {
+                    timezone: timezone || 'Asia/Ho_Chi_Minh'
+                },
+                timestamp: Date.now()
+            };
+        },
+        
+        TEST: function(message) {
+            return {
+                command: 'test',
+                data: { 
+                    message: message || 'Test from web client',
+                    version: CONFIG.SYSTEM.VERSION
+                },
+                timestamp: Date.now()
+            };
+        }
     },
     
     // Connection Modes
@@ -162,6 +238,7 @@ const CONFIG = {
     // User Settings (Will be loaded from storage)
     SETTINGS: {
         connectionMode: 'mqtt',
+        preferredBroker: 'wss://broker.emqx.io:8084/mqtt',
         alarmEnabled: false,
         theme: 'light', // 'light', 'dark', 'auto'
         language: 'vi',
@@ -171,18 +248,27 @@ const CONFIG = {
         lastConnectedIP: '',
         alarmHour: 7,
         alarmMinute: 30,
-        alarmSound: 0
+        alarmSound: 0,
+        displayBrightness: 70,
+        timezone: 'Asia/Ho_Chi_Minh',
+        debugMode: false,
+        reconnectAttempts: 5
     },
     
     // Default Values (Fallback if settings not found)
     DEFAULTS: {
         CONNECTION_MODE: 'mqtt',
+        PREFERRED_BROKER: 'wss://broker.emqx.io:8084/mqtt',
         ALARM_ENABLED: false,
         THEME: 'light',
         LANGUAGE: 'vi',
         NOTIFICATIONS: true,
         AUTO_CONNECT: true,
-        SOUND_VOLUME: 80
+        SOUND_VOLUME: 80,
+        DISPLAY_BRIGHTNESS: 70,
+        TIMEZONE: 'Asia/Ho_Chi_Minh',
+        DEBUG_MODE: false,
+        RECONNECT_ATTEMPTS: 5
     },
     
     // Utility Functions
@@ -249,7 +335,7 @@ const CONFIG = {
                     console.warn('Storage quota exceeded, attempting to clear old data...');
                     try {
                         // Clear old items
-                        const keysToKeep = [CONFIG.SYSTEM.STORAGE_KEY];
+                        const keysToKeep = [`${CONFIG.SYSTEM.STORAGE_PREFIX}${CONFIG.SYSTEM.STORAGE_KEY}`];
                         for (let i = 0; i < localStorage.length; i++) {
                             const key = localStorage.key(i);
                             if (key && !keysToKeep.includes(key) && key.startsWith(CONFIG.SYSTEM.STORAGE_PREFIX)) {
@@ -257,7 +343,10 @@ const CONFIG = {
                             }
                         }
                         // Try again
-                        return CONFIG.UTILS.saveToStorage(key, value);
+                        const storageKey = `${CONFIG.SYSTEM.STORAGE_PREFIX}${key}`;
+                        const stringValue = JSON.stringify(value);
+                        localStorage.setItem(storageKey, stringValue);
+                        return true;
                     } catch (e) {
                         console.error('Failed to clear storage:', e);
                     }
@@ -346,6 +435,7 @@ const CONFIG = {
                     new Notification(title, {
                         icon: options.icon || '/favicon.ico',
                         body: options.body || '',
+                        tag: options.tag || 'esp32-notification',
                         ...options
                     });
                     return true;
@@ -358,6 +448,7 @@ const CONFIG = {
                             new Notification(title, {
                                 icon: options.icon || '/favicon.ico',
                                 body: options.body || '',
+                                tag: options.tag || 'esp32-notification',
                                 ...options
                             });
                         }
@@ -411,13 +502,13 @@ const CONFIG = {
         deepMerge: (target, source) => {
             const output = Object.assign({}, target);
             
-            if (this.isObject(target) && this.isObject(source)) {
+            if (CONFIG.UTILS.isObject(target) && CONFIG.UTILS.isObject(source)) {
                 Object.keys(source).forEach(key => {
-                    if (this.isObject(source[key])) {
+                    if (CONFIG.UTILS.isObject(source[key])) {
                         if (!(key in target)) {
                             Object.assign(output, { [key]: source[key] });
                         } else {
-                            output[key] = this.deepMerge(target[key], source[key]);
+                            output[key] = CONFIG.UTILS.deepMerge(target[key], source[key]);
                         }
                     } else {
                         Object.assign(output, { [key]: source[key] });
@@ -462,6 +553,91 @@ const CONFIG = {
             if (isNaN(s) || s < 0 || s > CONFIG.ALARM.SOUNDS.length - 1) return false;
             
             return true;
+        },
+        
+        // Get browser info
+        getBrowserInfo: () => {
+            const ua = navigator.userAgent;
+            let browser = 'unknown';
+            let version = 'unknown';
+            
+            if (ua.includes('Chrome') && !ua.includes('Edge')) {
+                browser = 'chrome';
+                const match = ua.match(/Chrome\/(\d+)/);
+                version = match ? match[1] : 'unknown';
+            } else if (ua.includes('Firefox')) {
+                browser = 'firefox';
+                const match = ua.match(/Firefox\/(\d+)/);
+                version = match ? match[1] : 'unknown';
+            } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
+                browser = 'safari';
+                const match = ua.match(/Version\/(\d+)/);
+                version = match ? match[1] : 'unknown';
+            } else if (ua.includes('Edge')) {
+                browser = 'edge';
+                const match = ua.match(/Edge\/(\d+)/);
+                version = match ? match[1] : 'unknown';
+            }
+            
+            return { browser, version, userAgent: ua };
+        },
+        
+        // Check if browser is supported
+        isBrowserSupported: () => {
+            const info = CONFIG.UTILS.getBrowserInfo();
+            if (!CONFIG.SYSTEM.SUPPORTED_BROWSERS.includes(info.browser)) {
+                return false;
+            }
+            
+            const versionNum = parseInt(info.version);
+            return !isNaN(versionNum) && versionNum >= CONFIG.SYSTEM.MIN_BROWSER_VERSION;
+        },
+        
+        // Get client IP address (async)
+        getClientIP: async () => {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                return data.ip;
+            } catch (error) {
+                console.warn('Could not get public IP:', error);
+                return 'unknown';
+            }
+        },
+        
+        // Generate QR code data URL
+        generateQRCodeData: (text) => {
+            try {
+                // This would use a QR code library in practice
+                // For now, return a placeholder
+                return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}`;
+            } catch (error) {
+                console.error('Error generating QR code:', error);
+                return null;
+            }
+        },
+        
+        // Parse MQTT message
+        parseMQTTMessage: (message) => {
+            try {
+                if (typeof message === 'string') {
+                    return JSON.parse(message);
+                } else if (message instanceof ArrayBuffer || message instanceof Buffer) {
+                    const text = new TextDecoder().decode(message);
+                    return JSON.parse(text);
+                } else {
+                    return message;
+                }
+            } catch (error) {
+                // If not JSON, return as string
+                if (typeof message === 'string') {
+                    return message;
+                } else if (message instanceof ArrayBuffer || message instanceof Buffer) {
+                    return new TextDecoder().decode(message);
+                } else {
+                    return String(message);
+                }
+            }
         }
     }
 };
@@ -487,12 +663,16 @@ function initializeConfig() {
         );
         
         // Ensure required settings exist
-        if (!CONFIG.SETTINGS.connectionMode) {
-            CONFIG.SETTINGS.connectionMode = CONFIG.DEFAULTS.CONNECTION_MODE;
-        }
+        const requiredSettings = ['connectionMode', 'alarmEnabled', 'theme'];
+        requiredSettings.forEach(setting => {
+            if (!(setting in CONFIG.SETTINGS)) {
+                CONFIG.SETTINGS[setting] = CONFIG.DEFAULTS[setting.toUpperCase()];
+            }
+        });
         
-        if (typeof CONFIG.SETTINGS.alarmEnabled === 'undefined') {
-            CONFIG.SETTINGS.alarmEnabled = CONFIG.DEFAULTS.ALARM_ENABLED;
+        // Update MQTT broker if user has a preferred one
+        if (CONFIG.SETTINGS.preferredBroker && CONFIG.SETTINGS.preferredBroker !== CONFIG.MQTT.BROKER) {
+            CONFIG.MQTT.BROKER = CONFIG.SETTINGS.preferredBroker;
         }
         
         // Set up auto-save if enabled
@@ -510,7 +690,12 @@ function initializeConfig() {
         }
         
         console.log('✅ Configuration initialized successfully');
-        console.log('📱 Settings:', CONFIG.SETTINGS);
+        console.log('📱 Settings loaded:', Object.keys(CONFIG.SETTINGS).length, 'items');
+        
+        // Log browser compatibility
+        const browserInfo = CONFIG.UTILS.getBrowserInfo();
+        const supported = CONFIG.UTILS.isBrowserSupported();
+        console.log(`🌐 Browser: ${browserInfo.browser} ${browserInfo.version} (${supported ? '✅ Supported' : '⚠️ Not fully supported'})`);
         
         return true;
         
@@ -519,6 +704,13 @@ function initializeConfig() {
         
         // Fallback to defaults on error
         CONFIG.SETTINGS = CONFIG.UTILS.deepClone(CONFIG.DEFAULTS);
+        
+        // Try to save defaults
+        try {
+            CONFIG.UTILS.saveToStorage(CONFIG.SYSTEM.STORAGE_KEY, CONFIG.SETTINGS);
+        } catch (e) {
+            console.error('Could not save default settings:', e);
+        }
         
         return false;
     }
@@ -534,10 +726,8 @@ function saveCurrentSettings() {
             CONFIG.SETTINGS
         );
         
-        if (success) {
+        if (success && CONFIG.SYSTEM.LOG_LEVEL === 'debug') {
             console.log('💾 Settings saved successfully');
-        } else {
-            console.warn('⚠️ Failed to save settings');
         }
         
         return success;
@@ -556,7 +746,17 @@ function resetSettings() {
         CONFIG.SETTINGS = CONFIG.UTILS.deepClone(CONFIG.DEFAULTS);
         CONFIG.UTILS.clearStorage(CONFIG.SYSTEM.STORAGE_KEY);
         
+        // Update MQTT broker back to default
+        CONFIG.MQTT.BROKER = CONFIG.DEFAULTS.PREFERRED_BROKER;
+        
         console.log('🔄 Settings reset to defaults');
+        
+        // Show notification
+        CONFIG.UTILS.showNotification('ESP32 Smart Clock', {
+            body: 'Settings have been reset to defaults',
+            icon: '/favicon.ico'
+        });
+        
         return true;
         
     } catch (error) {
@@ -574,6 +774,11 @@ function updateSetting(key, value) {
             throw new Error('Invalid setting key');
         }
         
+        // Special handling for broker change
+        if (key === 'preferredBroker' && value) {
+            CONFIG.MQTT.BROKER = value;
+        }
+        
         // Deep merge for nested objects
         if (CONFIG.UTILS.isObject(value) && CONFIG.UTILS.isObject(CONFIG.SETTINGS[key])) {
             CONFIG.SETTINGS[key] = CONFIG.UTILS.deepMerge(CONFIG.SETTINGS[key], value);
@@ -586,7 +791,10 @@ function updateSetting(key, value) {
             saveCurrentSettings();
         }
         
-        console.log(`⚙️ Setting updated: ${key} =`, value);
+        if (CONFIG.SYSTEM.LOG_LEVEL === 'debug') {
+            console.log(`⚙️ Setting updated: ${key} =`, value);
+        }
+        
         return true;
         
     } catch (error) {
@@ -647,7 +855,26 @@ function exportConfig() {
         save: saveCurrentSettings,
         reset: resetSettings,
         update: updateSetting,
-        get: getSetting
+        get: getSetting,
+        
+        // Quick access helpers
+        getAlarmTime: () => {
+            return {
+                hour: getSetting('alarmHour', CONFIG.ALARM.DEFAULT_HOUR),
+                minute: getSetting('alarmMinute', CONFIG.ALARM.DEFAULT_MINUTE),
+                sound: getSetting('alarmSound', 0),
+                enabled: getSetting('alarmEnabled', false)
+            };
+        },
+        
+        getConnectionInfo: () => {
+            return {
+                mode: getSetting('connectionMode', 'mqtt'),
+                broker: getSetting('preferredBroker', CONFIG.MQTT.BROKER),
+                lastIP: getSetting('lastConnectedIP', ''),
+                autoConnect: getSetting('autoConnect', true)
+            };
+        }
     };
 }
 
@@ -662,7 +889,7 @@ if (typeof window !== 'undefined') {
     
     // Export to global scope
     window.ESP32_CONFIG = exportConfig();
-    console.log('🌐 ESP32 Configuration loaded');
+    console.log('🌐 ESP32 Configuration Module loaded');
 }
 
 // Export for Node.js/ES6 modules
@@ -676,17 +903,24 @@ if (typeof module !== 'undefined' && module.exports) {
 console.log('MQTT Broker:', ESP32_CONFIG.MQTT.BROKER);
 console.log('Current theme:', ESP32_CONFIG.get('theme'));
 
-// 2. Update settings
+// 2. Create commands
+const alarmCommand = ESP32_CONFIG.COMMANDS.SET_ALARM(7, 30, 0, true);
+console.log('Alarm command:', alarmCommand);
+
+// 3. Update settings
 ESP32_CONFIG.update('theme', 'dark');
 ESP32_CONFIG.update('alarmHour', 8);
 
-// 3. Save manually (auto-save is enabled by default)
-ESP32_CONFIG.save();
+// 4. Quick access
+const alarmTime = ESP32_CONFIG.getAlarmTime();
+console.log('Alarm set for:', alarmTime.hour + ':' + alarmTime.minute);
 
-// 4. Reset to defaults
-ESP32_CONFIG.reset();
+// 5. Use utilities
+const ip = await ESP32_CONFIG.UTILS.getClientIP();
+console.log('Client IP:', ip);
 
-// 5. Use utility functions
-const clientId = ESP32_CONFIG.UTILS.generateClientId();
-const formattedTime = ESP32_CONFIG.UTILS.formatTime(9, 5);
+// 6. Browser check
+if (!ESP32_CONFIG.UTILS.isBrowserSupported()) {
+    alert('Please update your browser for best experience');
+}
 */
