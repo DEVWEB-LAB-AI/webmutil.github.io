@@ -173,7 +173,6 @@
             display: none;
         }
         
-        /* Rest of your existing styles for main interface... */
         .header {
             background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
             color: white;
@@ -627,12 +626,12 @@
             </button>
             
             <div class="info-box">
-                <h3>💡 Thông tin:</h3>
+                <h3>💡 Thông tin bảo mật:</h3>
                 <ul>
-                    <li>Mật khẩu mặc định: <strong>123456</strong></li>
-                    <li>Mật khẩu được lưu trong bộ nhớ trình duyệt</li>
-                    <li>Để đổi mật khẩu, cập nhật trong code ESP32</li>
-                    <li>Trang web hoạt động qua MQTT, không cần IP cục bộ</li>
+                    <li>Mật khẩu chỉ được xác thực bởi ESP32</li>
+                    <li>Không lưu mật khẩu trong trình duyệt</li>
+                    <li>Mọi lệnh đều qua MQTT có xác thực</li>
+                    <li>Web chỉ là giao diện, xác thực ở ESP32</li>
                 </ul>
             </div>
         </div>
@@ -658,7 +657,7 @@
             <div class="mqtt-status">
                 <div class="mqtt-indicator">
                     <div class="status-dot" id="mqttStatusDot"></div>
-                    <span id="mqttStatusText">Đang kết nối MQTT...</span>
+                    <span id="mqttStatusText">Chưa kết nối</span>
                 </div>
                 <div id="mqttDetails" style="font-size: 0.9rem; opacity: 0.9;">
                     Broker: broker.emqx.io
@@ -769,7 +768,7 @@
                 <div class="info-grid">
                     <div class="info-item">
                         <div class="info-label">📡 Trạng thái MQTT</div>
-                        <div class="info-value" id="connectionStatus">Đang chờ...</div>
+                        <div class="info-value" id="connectionStatus">Chưa kết nối</div>
                     </div>
                     
                     <div class="info-item">
@@ -863,8 +862,8 @@
                 
                 <div style="margin-top: 20px; padding: 15px; background: rgba(156, 39, 176, 0.1); border-radius: 10px;">
                     <p style="color: #666; font-size: 0.9rem; text-align: center;">
-                        💡 <strong>Lưu ý:</strong> Trang web này sử dụng MQTT qua WebSocket, không cần truy cập IP cục bộ của ESP32. 
-                        Chỉ cần ESP32 và trang web này cùng kết nối đến broker MQTT công cộng.
+                        💡 <strong>Bảo mật:</strong> Mật khẩu chỉ được xác thực bởi ESP32, không lưu trong web.<br>
+                        Mọi lệnh đều gửi kèm token xác thực qua MQTT.
                     </p>
                 </div>
             </div>
@@ -874,7 +873,7 @@
         <div class="footer">
             <p>© 2024 ESP32 Smart Clock - MQTT Control Panel | Điều khiển từ bất kỳ đâu qua Internet</p>
             <p style="font-size: 0.9rem; margin-top: 5px;">
-                Sử dụng MQTT broker công cộng | Không cần port forwarding | Hoạt động trên mọi mạng
+                Sử dụng MQTT broker công cộng | Xác thực bảo mật qua ESP32 | Hoạt động trên mọi mạng
             </p>
         </div>
     </div>
@@ -888,11 +887,8 @@
     </div>
     
     <script>
-        // Configuration
+        // Configuration - KHÔNG LƯU MẬT KHẨU Ở ĐÂY
         const CONFIG = {
-            // Password từ file Arduino (phải khớp với webPassword trong code ESP32)
-            DEFAULT_PASSWORD: "123456",
-            
             // MQTT Configuration
             MQTT: {
                 broker: 'wss://broker.emqx.io:8084/mqtt',
@@ -900,7 +896,8 @@
                     command: 'smartclock/command',
                     status: 'smartclock/status',
                     alarm: 'smartclock/alarm',
-                    sensors: 'smartclock/sensors'
+                    sensors: 'smartclock/sensors',
+                    auth: 'smartclock/auth'
                 },
                 options: {
                     clean: true,
@@ -909,10 +906,11 @@
                 }
             },
             
-            // Local Storage keys
+            // Local Storage keys (chỉ lưu trạng thái, không lưu mật khẩu)
             STORAGE_KEYS: {
-                PASSWORD: 'smartclock_password',
-                LOGGED_IN: 'smartclock_logged_in'
+                AUTH_TOKEN: 'smartclock_auth_token',
+                LOGGED_IN: 'smartclock_logged_in',
+                SESSION_EXPIRY: 'smartclock_session_expiry'
             }
         };
         
@@ -920,7 +918,8 @@
         let mqttClient = null;
         let isMQTTConnected = false;
         let clientId = '';
-        let isAuthenticated = false;
+        let authToken = null;
+        let sessionExpiry = null;
         
         // DOM Elements
         const loginScreen = document.getElementById('loginScreen');
@@ -937,8 +936,8 @@
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Check if user is already logged in
-            checkLoginStatus();
+            // Check if user has valid session
+            checkSession();
             
             // Generate unique client ID
             clientId = 'web_' + Math.random().toString(16).substr(2, 8);
@@ -948,33 +947,51 @@
             updateClock();
             setInterval(updateClock, 1000);
             
-            // Detect connection source
-            const isGithub = window.location.hostname.includes('github.io');
-            document.getElementById('connectionSource').textContent = 
-                isGithub ? 'GitHub Pages' : window.location.hostname;
-                
             // Enter key for password input
             passwordInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     checkPassword();
                 }
             });
+            
+            // Auto-clear password after 30 seconds of inactivity
+            setInterval(() => {
+                if (document.activeElement !== passwordInput && passwordInput.value) {
+                    passwordInput.value = '';
+                }
+            }, 30000);
         });
         
-        // Check login status
-        function checkLoginStatus() {
+        // Check session validity
+        function checkSession() {
             const loggedIn = localStorage.getItem(CONFIG.STORAGE_KEYS.LOGGED_IN);
-            const savedPassword = localStorage.getItem(CONFIG.STORAGE_KEYS.PASSWORD);
+            const token = localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN);
+            const expiry = localStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRY);
             
-            if (loggedIn === 'true' && savedPassword === CONFIG.DEFAULT_PASSWORD) {
-                isAuthenticated = true;
-                showMainInterface();
-                
-                // Auto-connect to MQTT after login
-                setTimeout(connectMQTT, 1000);
-            } else {
-                showLoginScreen();
+            if (loggedIn === 'true' && token && expiry) {
+                const now = Date.now();
+                if (now < parseInt(expiry)) {
+                    // Session still valid
+                    authToken = token;
+                    showMainInterface();
+                    setTimeout(connectMQTT, 1000);
+                    return;
+                } else {
+                    // Session expired
+                    clearAuthData();
+                }
             }
+            
+            showLoginScreen();
+        }
+        
+        // Clear authentication data
+        function clearAuthData() {
+            localStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN);
+            localStorage.removeItem(CONFIG.STORAGE_KEYS.LOGGED_IN);
+            localStorage.removeItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRY);
+            authToken = null;
+            sessionExpiry = null;
         }
         
         // Show login screen
@@ -983,17 +1000,15 @@
             mainInterface.style.display = 'none';
             passwordInput.value = '';
             errorMessage.textContent = '';
-            isAuthenticated = false;
         }
         
         // Show main interface
         function showMainInterface() {
             loginScreen.style.display = 'none';
             mainInterface.style.display = 'block';
-            isAuthenticated = true;
         }
         
-        // Check password
+        // Check password via MQTT authentication
         function checkPassword() {
             const password = passwordInput.value.trim();
             
@@ -1003,27 +1018,109 @@
                 return;
             }
             
-            if (password === CONFIG.DEFAULT_PASSWORD) {
-                // Password correct
-                localStorage.setItem(CONFIG.STORAGE_KEYS.PASSWORD, password);
-                localStorage.setItem(CONFIG.STORAGE_KEYS.LOGGED_IN, 'true');
+            showLoading(true);
+            
+            // Generate authentication request
+            const authRequest = {
+                type: 'auth_request',
+                password: password,
+                clientId: clientId,
+                timestamp: Date.now()
+            };
+            
+            // Send auth request via MQTT
+            sendAuthRequest(authRequest)
+                .then(response => {
+                    if (response.success) {
+                        // Authentication successful
+                        authToken = response.token;
+                        sessionExpiry = Date.now() + (response.expiry || 3600000); // 1 hour default
+                        
+                        // Save to localStorage
+                        localStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN, authToken);
+                        localStorage.setItem(CONFIG.STORAGE_KEYS.LOGGED_IN, 'true');
+                        localStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRY, sessionExpiry.toString());
+                        
+                        showMainInterface();
+                        showToast('✅ Đăng nhập thành công!', 'success');
+                        
+                        // Connect to MQTT
+                        setTimeout(connectMQTT, 500);
+                    } else {
+                        showError(response.message || 'Mật khẩu không đúng');
+                        passwordInput.value = '';
+                        passwordInput.focus();
+                    }
+                })
+                .catch(error => {
+                    showError('Lỗi xác thực: ' + error.message);
+                })
+                .finally(() => {
+                    showLoading(false);
+                });
+        }
+        
+        // Send authentication request via MQTT
+        function sendAuthRequest(authData) {
+            return new Promise((resolve, reject) => {
+                // Create temporary MQTT connection for authentication
+                const tempClient = mqtt.connect(CONFIG.MQTT.broker, {
+                    clientId: 'auth_' + Math.random().toString(16).substr(2, 8),
+                    clean: true,
+                    connectTimeout: 5000
+                });
                 
-                showMainInterface();
-                showToast('✅ Đăng nhập thành công!', 'success');
+                const authTopic = CONFIG.MQTT.topics.auth;
+                const responseTopic = authTopic + '/response/' + authData.clientId;
                 
-                // Auto-connect to MQTT
-                setTimeout(connectMQTT, 500);
-            } else {
-                showError('Mật khẩu không đúng. Vui lòng thử lại.');
-                passwordInput.value = '';
-                passwordInput.focus();
-            }
+                let timeoutId;
+                
+                tempClient.on('connect', () => {
+                    // Subscribe to response topic
+                    tempClient.subscribe(responseTopic, (err) => {
+                        if (err) {
+                            reject(new Error('Không thể subscribe: ' + err.message));
+                            tempClient.end();
+                            return;
+                        }
+                        
+                        // Send authentication request
+                        tempClient.publish(authTopic, JSON.stringify(authData));
+                        
+                        // Set timeout
+                        timeoutId = setTimeout(() => {
+                            tempClient.end();
+                            reject(new Error('Timeout: Không nhận được phản hồi'));
+                        }, 10000);
+                    });
+                });
+                
+                tempClient.on('message', (topic, message) => {
+                    if (topic === responseTopic) {
+                        clearTimeout(timeoutId);
+                        tempClient.end();
+                        
+                        try {
+                            const response = JSON.parse(message.toString());
+                            resolve(response);
+                        } catch (error) {
+                            reject(new Error('Lỗi phân tích phản hồi'));
+                        }
+                    }
+                });
+                
+                tempClient.on('error', (error) => {
+                    clearTimeout(timeoutId);
+                    tempClient.end();
+                    reject(error);
+                });
+            });
         }
         
         // Logout
         function logout() {
             if (confirm('Bạn có chắc muốn đăng xuất?')) {
-                localStorage.removeItem(CONFIG.STORAGE_KEYS.LOGGED_IN);
+                clearAuthData();
                 showLoginScreen();
                 showToast('👋 Đã đăng xuất thành công', 'info');
                 
@@ -1045,19 +1142,19 @@
             errorMessage.textContent = message;
             errorMessage.style.color = '#f44336';
             
-            // Clear error after 3 seconds
+            // Clear error after 5 seconds
             setTimeout(() => {
                 errorMessage.textContent = '';
-            }, 3000);
+            }, 5000);
         }
         
         // ============================
-        // MQTT FUNCTIONS (from original)
+        // MQTT FUNCTIONS với xác thực
         // ============================
         
         // Connect to MQTT Broker
         function connectMQTT() {
-            if (!isAuthenticated) {
+            if (!authToken) {
                 showToast('Vui lòng đăng nhập trước!', 'error');
                 return;
             }
@@ -1073,7 +1170,7 @@
             // Create client options
             const options = {
                 ...CONFIG.MQTT.options,
-                clientId: clientId,
+                clientId: clientId + '_' + Date.now(),
                 username: 'emqx',
                 password: 'public'
             };
@@ -1151,7 +1248,14 @@
         function subscribeToTopics() {
             if (!mqttClient || !isMQTTConnected) return;
             
-            Object.values(CONFIG.MQTT.topics).forEach(topic => {
+            // Only subscribe to status topics, not command topic
+            const topicsToSubscribe = [
+                CONFIG.MQTT.topics.status,
+                CONFIG.MQTT.topics.alarm,
+                CONFIG.MQTT.topics.sensors
+            ];
+            
+            topicsToSubscribe.forEach(topic => {
                 mqttClient.subscribe(topic, (err) => {
                     if (!err) {
                         console.log(`✅ Subscribed to ${topic}`);
@@ -1188,10 +1292,11 @@
             }
         }
         
-        // Send MQTT command
+        // Send authenticated MQTT command
         function sendMQTTCommand(command, data = {}) {
-            if (!isAuthenticated) {
-                showToast('Vui lòng đăng nhập trước!', 'error');
+            if (!authToken) {
+                showToast('Phiên đăng nhập đã hết hạn!', 'error');
+                logout();
                 return false;
             }
             
@@ -1203,14 +1308,16 @@
             const message = {
                 command: command,
                 data: data,
-                timestamp: Date.now(),
-                source: 'web_mqtt_control',
-                authenticated: true
+                auth: {
+                    token: authToken,
+                    clientId: clientId
+                },
+                timestamp: Date.now()
             };
             
             try {
                 mqttClient.publish(CONFIG.MQTT.topics.command, JSON.stringify(message));
-                console.log(`📤 Sent MQTT command: ${command}`, data);
+                console.log(`📤 Sent authenticated MQTT command: ${command}`, data);
                 return true;
             } catch (error) {
                 console.error('Error sending MQTT command:', error);
@@ -1280,9 +1387,13 @@
             }
         }
         
-        // Command functions
+        // Command functions với xác thực
         function setAlarmMQTT(enable) {
-            if (!isAuthenticated) return;
+            if (!authToken) {
+                showToast('Vui lòng đăng nhập lại!', 'error');
+                logout();
+                return;
+            }
             
             const hour = parseInt(document.getElementById('alarmHour').value);
             const minute = parseInt(document.getElementById('alarmMinute').value);
@@ -1306,7 +1417,11 @@
         }
         
         function sendButtonMQTT(buttonNumber) {
-            if (!isAuthenticated) return;
+            if (!authToken) {
+                showToast('Vui lòng đăng nhập lại!', 'error');
+                logout();
+                return;
+            }
             
             const success = sendMQTTCommand('button', { btn: buttonNumber });
             if (success) {
@@ -1315,7 +1430,11 @@
         }
         
         function snoozeAlarmMQTT() {
-            if (!isAuthenticated) return;
+            if (!authToken) {
+                showToast('Vui lòng đăng nhập lại!', 'error');
+                logout();
+                return;
+            }
             
             const success = sendMQTTCommand('snooze', {});
             if (success) {
@@ -1324,7 +1443,11 @@
         }
         
         function resetESP32MQTT() {
-            if (!isAuthenticated) return;
+            if (!authToken) {
+                showToast('Vui lòng đăng nhập lại!', 'error');
+                logout();
+                return;
+            }
             
             if (confirm('Bạn có chắc muốn khởi động lại ESP32? Thiết bị sẽ mất kết nối trong vài giây.')) {
                 const success = sendMQTTCommand('reset', {});
@@ -1335,7 +1458,11 @@
         }
         
         function requestStatusUpdate() {
-            if (!isAuthenticated) return;
+            if (!authToken) {
+                showToast('Vui lòng đăng nhập lại!', 'error');
+                logout();
+                return;
+            }
             
             const success = sendMQTTCommand('get_status', {});
             if (success) {
@@ -1344,7 +1471,7 @@
         }
         
         function testMQTT() {
-            if (!isAuthenticated) {
+            if (!authToken) {
                 showToast('Vui lòng đăng nhập trước!', 'error');
                 return;
             }
@@ -1356,10 +1483,10 @@
             
             const testMessage = {
                 test: true,
-                message: 'Test từ trang web',
+                message: 'Test từ web interface',
                 timestamp: Date.now(),
                 clientId: clientId,
-                authenticated: isAuthenticated
+                auth: { token: authToken }
             };
             
             try {
@@ -1375,6 +1502,12 @@
             const now = new Date();
             const timeStr = now.toLocaleTimeString('vi-VN');
             document.getElementById('currentTime').textContent = timeStr;
+            
+            // Check session expiry every minute
+            if (authToken && sessionExpiry && Date.now() > sessionExpiry) {
+                showToast('Phiên đăng nhập đã hết hạn!', 'warning');
+                logout();
+            }
         }
         
         // Show toast notification
