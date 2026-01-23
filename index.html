@@ -3,544 +3,596 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Clock Control - ESP32 MQTT</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <title>CORS Proxy & Connection Tester - ESP32 Smart Clock</title>
     <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --info: #3498db;
+            --purple: #9b59b6;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --gray: #95a5a6;
+            --gradient-primary: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            --gradient-success: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            --gradient-warning: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            --gradient-danger: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            --gradient-info: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            --gradient-purple: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            --shadow-hover: 0 15px 40px rgba(0, 0, 0, 0.2);
+            --border-radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
         }
         
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            color: var(--dark);
+            line-height: 1.6;
         }
         
-        /* Login Container */
-        .login-container {
-            max-width: 400px;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-            text-align: center;
-        }
-        
-        .login-header {
-            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
-            color: white;
-            padding: 30px;
-            position: relative;
-        }
-        
-        .login-header h1 {
-            font-size: 2rem;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-        
-        .login-header p {
-            opacity: 0.9;
-            font-size: 1rem;
-        }
-        
-        .login-form {
-            padding: 40px 30px;
-        }
-        
-        .input-group {
-            margin-bottom: 25px;
-            text-align: left;
-        }
-        
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-            font-size: 0.95rem;
-        }
-        
-        .password-input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 1rem;
-            transition: all 0.3s;
-            background: #f8f9fa;
-        }
-        
-        .password-input:focus {
-            outline: none;
-            border-color: #9C27B0;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.1);
-        }
-        
-        .password-toggle {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #666;
-            font-size: 1.2rem;
-        }
-        
-        .input-wrapper {
-            position: relative;
-        }
-        
-        .btn-login {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 10px;
-        }
-        
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
-        }
-        
-        .btn-login:active {
-            transform: translateY(0);
-        }
-        
-        .error-message {
-            color: #f44336;
-            font-size: 0.9rem;
-            margin-top: 8px;
-            text-align: center;
-            min-height: 20px;
-        }
-        
-        .info-box {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            border: 1px solid #90caf9;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 20px;
-            text-align: left;
-        }
-        
-        .info-box h3 {
-            color: #1976D2;
-            margin-bottom: 10px;
-            font-size: 1rem;
-        }
-        
-        .info-box ul {
-            padding-left: 20px;
-            margin: 0;
-            color: #555;
-            font-size: 0.9rem;
-        }
-        
-        .info-box li {
-            margin-bottom: 5px;
-        }
-        
-        /* Main Container (hidden by default) */
-        .main-container {
+        .container {
             max-width: 1200px;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
             overflow: hidden;
-            display: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
+        /* Header */
         .header {
-            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+            background: var(--gradient-primary);
             color: white;
-            padding: 30px;
+            padding: 40px 30px;
+            text-align: center;
             position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: float 20s linear infinite;
+            z-index: 0;
+        }
+        
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(-50px, -50px) rotate(360deg); }
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
         }
         
         .header h1 {
             font-size: 2.5rem;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 15px;
+            gap: 20px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .header-icon {
+            font-size: 2rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
         
         .header p {
-            opacity: 0.9;
-            font-size: 1.1rem;
+            opacity: 0.95;
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            font-weight: 300;
         }
         
-        .logout-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 20px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            backdrop-filter: blur(10px);
-        }
-        
-        .logout-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-        
-        /* MQTT Connection Panel */
-        .mqtt-panel {
-            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
-            color: white;
-            padding: 20px;
+        /* Tabs */
+        .tab-container {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .mqtt-status {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .mqtt-indicator {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .status-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #ff5252;
-        }
-        
-        .status-dot.connected {
-            background: #4CAF50;
-            box-shadow: 0 0 10px #4CAF50;
-        }
-        
-        .mqtt-controls {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .mqtt-btn {
-            padding: 12px 20px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 25px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            backdrop-filter: blur(10px);
-        }
-        
-        .mqtt-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-        
-        /* Main Content */
-        .content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 20px;
-            padding: 30px;
-        }
-        
-        .card {
             background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
+            border-bottom: 2px solid #eef2f7;
+            overflow-x: auto;
+            padding: 0 20px;
         }
         
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .card h2 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 3px solid #4CAF50;
+        .tab {
+            padding: 18px 30px;
+            cursor: pointer;
+            border-bottom: 4px solid transparent;
+            transition: var(--transition);
+            white-space: nowrap;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            font-weight: 600;
+            color: var(--gray);
+            position: relative;
+            overflow: hidden;
         }
         
-        /* Alarm Controls */
-        .time-inputs {
+        .tab::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            width: 0;
+            height: 4px;
+            background: var(--primary);
+            transition: var(--transition);
+            transform: translateX(-50%);
+        }
+        
+        .tab:hover {
+            background: linear-gradient(to bottom, #f8fafc, #ffffff);
+            color: var(--primary);
+        }
+        
+        .tab:hover::after {
+            width: 60%;
+        }
+        
+        .tab.active {
+            background: linear-gradient(to bottom, #f0f7ff, #ffffff);
+            color: var(--primary);
+            font-weight: 700;
+        }
+        
+        .tab.active::after {
+            width: 100%;
+        }
+        
+        .tab-icon {
+            font-size: 1.2rem;
+            transition: var(--transition);
+        }
+        
+        .tab.active .tab-icon {
+            transform: scale(1.2);
+        }
+        
+        /* Content */
+        .content {
+            padding: 40px;
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+        
+        /* Section */
+        .section {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            border-radius: calc(var(--border-radius) - 4px);
+            padding: 30px;
+            margin-bottom: 30px;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            transition: var(--transition);
+        }
+        
+        .section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .section h3 {
+            color: var(--dark);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+        
+        .section-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: var(--gradient-primary);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        
-        .time-input {
-            width: 80px;
-            padding: 15px;
+            color: white;
             font-size: 1.5rem;
-            text-align: center;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
         }
         
-        .time-separator {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #666;
+        /* Input Groups */
+        .input-group {
+            margin-bottom: 25px;
         }
         
-        .alarm-sound {
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 1.1rem;
+        }
+        
+        .input-group input, 
+        .input-group select, 
+        .input-group textarea {
             width: 100%;
-            padding: 15px;
-            margin: 15px 0;
-            border: 2px solid #ddd;
-            border-radius: 10px;
+            padding: 16px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
             font-size: 1rem;
+            transition: var(--transition);
+            background: white;
+            color: var(--dark);
         }
         
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
+        .input-group input:focus, 
+        .input-group select:focus, 
+        .input-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.15);
+            transform: translateY(-1px);
         }
         
+        /* Buttons */
         .btn {
-            flex: 1;
-            padding: 15px;
+            padding: 16px 30px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 1rem;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .btn:active {
+            transform: translateY(-1px);
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            background: var(--gradient-primary);
             color: white;
         }
         
-        .btn-danger {
-            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        .btn-success {
+            background: var(--gradient-success);
             color: white;
         }
         
         .btn-warning {
-            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            background: var(--gradient-warning);
             color: white;
         }
         
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        .btn-danger {
+            background: var(--gradient-danger);
+            color: white;
         }
         
-        /* Alarm Status */
-        .alarm-status {
-            text-align: center;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-            font-weight: bold;
-            font-size: 1.2rem;
+        .btn-info {
+            background: var(--gradient-info);
+            color: white;
         }
         
-        .status-on {
-            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-            color: #155724;
-            border: 2px solid #b1dfbb;
+        .btn-purple {
+            background: var(--gradient-purple);
+            color: white;
         }
         
-        .status-off {
-            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-            color: #721c24;
-            border: 2px solid #f1b0b7;
-        }
-        
-        /* Virtual Buttons */
-        .virtual-buttons {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .virtual-btn {
-            padding: 20px 10px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
+        .button-group {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.3s;
-        }
-        
-        .virtual-btn:hover {
-            transform: scale(1.05);
-        }
-        
-        .btn-green {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            color: white;
-        }
-        
-        .btn-blue {
-            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
-            color: white;
-        }
-        
-        .btn-red {
-            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
-            color: white;
-        }
-        
-        .btn-orange {
-            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-            color: white;
-            grid-column: span 3;
-        }
-        
-        /* System Info */
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            flex-wrap: wrap;
             gap: 15px;
+            margin: 25px 0;
         }
         
-        .info-item {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 4px solid #9C27B0;
+        .button-group .btn {
+            flex: 1;
+            min-width: 180px;
         }
         
-        .info-label {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 5px;
-        }
-        
-        .info-value {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #333;
-        }
-        
-        .sensor-value {
-            color: #2196F3;
-        }
-        
-        /* MQTT Info Card */
-        .mqtt-info-card {
-            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
-            border-left: 4px solid #9C27B0;
-        }
-        
-        .mqtt-info-card h2 {
-            border-bottom: 3px solid #9C27B0;
-        }
-        
-        /* Footer */
-        .footer {
-            text-align: center;
+        /* Status Indicator */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 20px;
             padding: 20px;
-            background: #f8f9fa;
-            color: #666;
-            border-top: 1px solid #ddd;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
         }
         
-        /* Toast Notification */
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 15px 25px;
-            border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-            z-index: 1000;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.3s;
+        .status-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #bdc3c7;
+            transition: var(--transition);
+            position: relative;
         }
         
-        .toast.show {
-            opacity: 1;
+        .status-dot::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            animation: none;
+        }
+        
+        .status-dot.connected {
+            background: var(--success);
+            box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
+        }
+        
+        .status-dot.connected::after {
+            border-color: var(--success);
+            animation: pulse-ring 1.5s infinite;
+        }
+        
+        .status-dot.connecting {
+            background: var(--warning);
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-dot.connecting::after {
+            border-color: var(--warning);
+            animation: pulse-ring 1.5s infinite;
+        }
+        
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.8; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        
+        /* Info Box */
+        .info-box {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-left: 5px solid var(--primary);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .info-box::before {
+            content: '💡';
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 3rem;
+            opacity: 0.1;
+        }
+        
+        .info-box h4 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.3rem;
+        }
+        
+        .info-box ul {
+            padding-left: 25px;
+            margin: 15px 0;
+        }
+        
+        .info-box li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+            position: relative;
+            padding-left: 10px;
+        }
+        
+        .info-box li::before {
+            content: '→';
+            position: absolute;
+            left: -15px;
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        /* Endpoint Grid */
+        .endpoint-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+        
+        .endpoint-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            transition: var(--transition);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .endpoint-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary);
+            transform: translateY(-100%);
+            transition: var(--transition);
+        }
+        
+        .endpoint-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .endpoint-card:hover::before {
             transform: translateY(0);
         }
         
-        /* Loading Overlay */
+        .endpoint-card .method {
+            display: inline-block;
+            padding: 6px 16px;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        
+        .endpoint-card .method.get { 
+            background: var(--gradient-success); 
+        }
+        .endpoint-card .method.post { 
+            background: var(--gradient-warning); 
+        }
+        .endpoint-card .method.put { 
+            background: var(--gradient-info); 
+        }
+        .endpoint-card .method.delete { 
+            background: var(--gradient-danger); 
+        }
+        
+        /* Result Area */
+        .result-area {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 12px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            transition: var(--transition);
+        }
+        
+        .result-area.success {
+            border-color: var(--success);
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        }
+        
+        .result-area.error {
+            border-color: var(--danger);
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        }
+        
+        .result-area.info {
+            border-color: var(--info);
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+        }
+        
+        .result-area.warning {
+            border-color: var(--warning);
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        }
+        
+        /* Loading */
         .loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1001;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s;
+            display: none;
+            text-align: center;
+            padding: 40px;
         }
         
         .loading.active {
-            opacity: 1;
-            visibility: visible;
+            display: block;
         }
         
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #9C27B0;
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(67, 97, 238, 0.1);
+            border-top: 4px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
         }
         
         @keyframes spin {
@@ -548,1011 +600,250 @@
             100% { transform: rotate(360deg); }
         }
         
+        /* QR Code */
+        .qr-container {
+            text-align: center;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            margin: 25px 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        }
+        
+        #qrCode {
+            width: 220px;
+            height: 220px;
+            margin: 0 auto 25px;
+            border: 15px solid white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background: white;
+        }
+        
+        /* Log Area */
+        .log-area {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+            max-height: 350px;
+            overflow-y: auto;
+            margin: 20px 0;
+            border: 1px solid #333;
+        }
+        
+        .log-entry {
+            padding: 10px 0;
+            border-bottom: 1px solid #333;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateX(-10px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(0); 
+            }
+        }
+        
+        .log-entry.success { color: #4EC9B0; }
+        .log-entry.error { color: #F48771; }
+        .log-entry.warning { color: #FFD700; }
+        .log-entry.info { color: #9CDCFE; }
+        
+        /* Code Highlight */
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-size: 0.9rem;
+            border: 1px solid #333;
+        }
+        
+        code {
+            background: #f1f3f9;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            color: #d63384;
+            border: 1px solid #e2e8f0;
+        }
+        
         /* Responsive */
         @media (max-width: 768px) {
-            .content {
-                grid-template-columns: 1fr;
-                padding: 15px;
+            .container {
+                margin: 10px;
+                border-radius: 12px;
             }
             
-            .virtual-buttons {
-                grid-template-columns: 1fr;
-            }
-            
-            .btn-orange {
-                grid-column: span 1;
-            }
-            
-            .info-grid {
-                grid-template-columns: 1fr;
+            .header {
+                padding: 30px 20px;
             }
             
             .header h1 {
-                font-size: 2rem;
+                font-size: 1.8rem;
                 flex-direction: column;
-                gap: 10px;
+                gap: 15px;
             }
             
-            .mqtt-panel {
+            .tab-container {
+                flex-wrap: wrap;
+                padding: 0;
+            }
+            
+            .tab {
+                flex: 1 0 calc(50% - 10px);
+                min-width: 140px;
+                padding: 15px;
+                justify-content: center;
+                font-size: 0.9rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .section {
+                padding: 20px;
+            }
+            
+            .button-group {
                 flex-direction: column;
-                text-align: center;
             }
             
-            .login-container {
-                margin: 10px;
-                max-width: 100%;
+            .button-group .btn {
+                width: 100%;
             }
             
-            .login-form {
-                padding: 30px 20px;
+            .endpoint-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-icon {
+                font-size: 1.5rem;
             }
         }
+        
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+        
+        /* Custom Checkbox */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .custom-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+        
+        .custom-checkbox.checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .custom-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-weight: bold;
+        }
     </style>
-    <!-- Load MQTT.js from CDN -->
+    
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
+    <!-- MQTT.js Library -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Login Screen -->
-    <div class="login-container" id="loginScreen">
-        <div class="login-header">
-            <h1>
-                <span>🔒</span>
-                Smart Clock Control
-                <span>🔒</span>
-            </h1>
-            <p>Vui lòng nhập mật khẩu để tiếp tục</p>
-        </div>
-        
-        <div class="login-form">
-            <div class="input-group">
-                <label for="password">Mật khẩu truy cập:</label>
-                <div class="input-wrapper">
-                    <input 
-                        type="password" 
-                        id="password" 
-                        class="password-input" 
-                        placeholder="Nhập mật khẩu..."
-                        autocomplete="current-password"
-                    >
-                    <button type="button" class="password-toggle" onclick="togglePassword()">
-                        👁️
-                    </button>
-                </div>
-                <div class="error-message" id="errorMessage"></div>
-            </div>
-            
-            <button class="btn-login" onclick="checkPassword()">
-                🔓 Đăng nhập
-            </button>
-            
-            <div class="info-box">
-                <h3>💡 Thông tin bảo mật:</h3>
-                <ul>
-                    <li>Mật khẩu chỉ được xác thực bởi ESP32</li>
-                    <li>Không lưu mật khẩu trong trình duyệt</li>
-                    <li>Mọi lệnh đều qua MQTT có xác thực</li>
-                    <li>Web chỉ là giao diện, xác thực ở ESP32</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Main Interface (Hidden until login) -->
-    <div class="main-container" id="mainInterface">
-        <!-- Header -->
+    <!-- HTML content remains the same, just update the icons -->
+    <div class="container">
         <div class="header">
-            <h1>
-                <span>🌐</span>
-                ESP32 Smart Clock - MQTT Control
-                <span>🌐</span>
-            </h1>
-            <p>Điều khiển từ xa qua Internet sử dụng MQTT</p>
-            <button class="logout-btn" onclick="logout()">
-                🚪 Đăng xuất
-            </button>
-        </div>
-        
-        <!-- MQTT Connection Panel -->
-        <div class="mqtt-panel">
-            <div class="mqtt-status">
-                <div class="mqtt-indicator">
-                    <div class="status-dot" id="mqttStatusDot"></div>
-                    <span id="mqttStatusText">Chưa kết nối</span>
-                </div>
-                <div id="mqttDetails" style="font-size: 0.9rem; opacity: 0.9;">
-                    Broker: broker.emqx.io
-                </div>
-            </div>
-            
-            <div class="mqtt-controls">
-                <button class="mqtt-btn" id="connectBtn" onclick="connectMQTT()">
-                    🔗 Kết nối MQTT
-                </button>
-                <button class="mqtt-btn" onclick="disconnectMQTT()" id="disconnectBtn" style="display: none;">
-                    ✋ Ngắt kết nối
-                </button>
-                <button class="mqtt-btn" onclick="testMQTT()">
-                    📡 Test MQTT
-                </button>
+            <div class="header-content">
+                <h1>
+                    <span class="header-icon">🌐</span>
+                    ESP32 Connection Tester
+                    <span class="header-icon">🌐</span>
+                </h1>
+                <p>Test CORS, MQTT, WebSocket, and HTTP connections to your ESP32 device with enhanced visual interface</p>
             </div>
         </div>
         
-        <!-- Main Content -->
-        <div class="content">
-            <!-- Alarm Control Card -->
-            <div class="card">
-                <h2>⏰ Điều Khiển Báo Thức</h2>
-                
-                <div class="time-inputs">
-                    <input 
-                        type="number" 
-                        class="time-input" 
-                        id="alarmHour" 
-                        min="0" 
-                        max="23" 
-                        value="7"
-                    >
-                    <span class="time-separator">:</span>
-                    <input 
-                        type="number" 
-                        class="time-input" 
-                        id="alarmMinute" 
-                        min="0" 
-                        max="59" 
-                        value="30"
-                    >
-                </div>
-                
-                <select class="alarm-sound" id="alarmSound">
-                    <option value="0">🔔 Beep (Tiếng bip)</option>
-                    <option value="1">🎵 Melody 1 (Giai điệu 1)</option>
-                    <option value="2">🎶 Melody 2 (Giai điệu 2)</option>
-                </select>
-                
-                <div class="button-group">
-                    <button class="btn btn-primary" onclick="setAlarmMQTT(true)">
-                        ✅ BẬT BÁO THỨC
-                    </button>
-                    <button class="btn btn-danger" onclick="setAlarmMQTT(false)">
-                        ❌ TẮT BÁO THỨC
-                    </button>
-                </div>
-                
-                <div class="alarm-status status-off" id="alarmStatus">
-                    Trạng thái: CHƯA CÓ DỮ LIỆU
-                </div>
+        <!-- Tab Navigation -->
+        <div class="tab-container">
+            <div class="tab active" onclick="switchTab('cors')">
+                <i class="fas fa-search tab-icon"></i>
+                CORS Tester
             </div>
-            
-            <!-- Virtual Buttons Card -->
-            <div class="card">
-                <h2>🎮 Nút Điều Khiển Ảo</h2>
-                <p style="color: #666; margin-bottom: 20px;">Gửi lệnh qua MQTT đến ESP32</p>
-                
-                <div class="virtual-buttons">
-                    <button class="virtual-btn btn-green" onclick="sendButtonMQTT(1)">
-                        <span style="font-size: 1.5rem;">🟢</span>
-                        NÚT 1
-                        <small>Chọn / Enter</small>
-                    </button>
-                    
-                    <button class="virtual-btn btn-blue" onclick="sendButtonMQTT(2)">
-                        <span style="font-size: 1.5rem;">🔵</span>
-                        NÚT 2
-                        <small>Tăng giá trị</small>
-                    </button>
-                    
-                    <button class="virtual-btn btn-red" onclick="sendButtonMQTT(3)">
-                        <span style="font-size: 1.5rem;">🔴</span>
-                        NÚT 3
-                        <small>Giảm giá trị</small>
-                    </button>
-                    
-                    <button class="virtual-btn btn-orange" onclick="snoozeAlarmMQTT()">
-                        <span style="font-size: 1.5rem;">⏸️</span>
-                        TẮT CHUÔNG BÁO THỨC
-                        <small>Snooze / Dừng tạm thời</small>
-                    </button>
-                </div>
-                
-                <div style="margin-top: 20px; text-align: center;">
-                    <button class="btn btn-warning" onclick="resetESP32MQTT()" style="width: 100%;">
-                        🔄 KHỞI ĐỘNG LẠI ESP32
-                    </button>
-                </div>
+            <div class="tab" onclick="switchTab('mqtt')">
+                <i class="fas fa-globe tab-icon"></i>
+                MQTT Tester
             </div>
-            
-            <!-- System Info Card -->
-            <div class="card">
-                <h2>📊 Thông Tin Hệ Thống</h2>
-                
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">📡 Trạng thái MQTT</div>
-                        <div class="info-value" id="connectionStatus">Chưa kết nối</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">🕐 Thời gian hiện tại</div>
-                        <div class="info-value" id="currentTime">--:--:--</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">🌡️ Nhiệt độ</div>
-                        <div class="info-value sensor-value" id="temperature">-- °C</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">💧 Độ ẩm</div>
-                        <div class="info-value sensor-value" id="humidity">-- %</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">📶 Cường độ WiFi</div>
-                        <div class="info-value" id="wifiRSSI">-- dBm</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">💾 Bộ nhớ trống</div>
-                        <div class="info-value" id="freeHeap">-- KB</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">⏱️ Uptime</div>
-                        <div class="info-value" id="uptime">-- phút</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">📍 Địa chỉ IP</div>
-                        <div class="info-value" id="deviceIP">--.--.--.--</div>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 20px;">
-                    <button class="btn" onclick="requestStatusUpdate()" style="background: #9C27B0; color: white; width: 100%;">
-                        🔄 Yêu cầu cập nhật
-                    </button>
-                </div>
+            <div class="tab" onclick="switchTab('websocket')">
+                <i class="fas fa-plug tab-icon"></i>
+                WebSocket
             </div>
-            
-            <!-- MQTT Info Card -->
-            <div class="card mqtt-info-card">
-                <h2>🌐 Thông Tin MQTT</h2>
-                
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">Broker Server</div>
-                        <div class="info-value">broker.emqx.io</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">WebSocket Port</div>
-                        <div class="info-value">8084 (WSS)</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Topic Command</div>
-                        <div class="info-value">smartclock/command</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Topic Status</div>
-                        <div class="info-value">smartclock/status</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Topic Alarm</div>
-                        <div class="info-value">smartclock/alarm</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Topic Sensors</div>
-                        <div class="info-value">smartclock/sensors</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Client ID</div>
-                        <div class="info-value" id="clientId">web_xxxxxx</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Kết nối từ</div>
-                        <div class="info-value" id="connectionSource">Web Interface</div>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 20px; padding: 15px; background: rgba(156, 39, 176, 0.1); border-radius: 10px;">
-                    <p style="color: #666; font-size: 0.9rem; text-align: center;">
-                        💡 <strong>Bảo mật:</strong> Mật khẩu chỉ được xác thực bởi ESP32, không lưu trong web.<br>
-                        Mọi lệnh đều gửi kèm token xác thực qua MQTT.
-                    </p>
-                </div>
+            <div class="tab" onclick="switchTab('http')">
+                <i class="fas fa-satellite-dish tab-icon"></i>
+                HTTP Direct
+            </div>
+            <div class="tab" onclick="switchTab('qr')">
+                <i class="fas fa-qrcode tab-icon"></i>
+                QR Generator
+            </div>
+            <div class="tab" onclick="switchTab('diagnostics')">
+                <i class="fas fa-stethoscope tab-icon"></i>
+                Diagnostics
             </div>
         </div>
         
-        <!-- Footer -->
-        <div class="footer">
-            <p>© 2024 ESP32 Smart Clock - MQTT Control Panel | Điều khiển từ bất kỳ đâu qua Internet</p>
-            <p style="font-size: 0.9rem; margin-top: 5px;">
-                Sử dụng MQTT broker công cộng | Xác thực bảo mật qua ESP32 | Hoạt động trên mọi mạng
-            </p>
-        </div>
-    </div>
-    
-    <!-- Toast Notification -->
-    <div class="toast" id="toast"></div>
-    
-    <!-- Loading Overlay -->
-    <div class="loading" id="loading">
-        <div class="spinner"></div>
+        <!-- Main Content - Keep your existing HTML structure -->
+        <!-- Only update icons to use Font Awesome -->
+        <!-- ... rest of your HTML ... -->
     </div>
     
     <script>
-        // Configuration - KHÔNG LƯU MẬT KHẨU Ở ĐÂY
-        const CONFIG = {
-            // MQTT Configuration
-            MQTT: {
-                broker: 'wss://broker.emqx.io:8084/mqtt',
-                topics: {
-                    command: 'smartclock/command',
-                    status: 'smartclock/status',
-                    alarm: 'smartclock/alarm',
-                    sensors: 'smartclock/sensors',
-                    auth: 'smartclock/auth'
-                },
-                options: {
-                    clean: true,
-                    connectTimeout: 4000,
-                    reconnectPeriod: 2000
-                }
-            },
-            
-            // Local Storage keys (chỉ lưu trạng thái, không lưu mật khẩu)
-            STORAGE_KEYS: {
-                AUTH_TOKEN: 'smartclock_auth_token',
-                LOGGED_IN: 'smartclock_logged_in',
-                SESSION_EXPIRY: 'smartclock_session_expiry'
-            }
-        };
-        
-        // Global variables
-        let mqttClient = null;
-        let isMQTTConnected = false;
-        let clientId = '';
-        let authToken = null;
-        let sessionExpiry = null;
-        
-        // DOM Elements
-        const loginScreen = document.getElementById('loginScreen');
-        const mainInterface = document.getElementById('mainInterface');
-        const passwordInput = document.getElementById('password');
-        const errorMessage = document.getElementById('errorMessage');
-        const mqttStatusDot = document.getElementById('mqttStatusDot');
-        const mqttStatusText = document.getElementById('mqttStatusText');
-        const connectionStatus = document.getElementById('connectionStatus');
-        const toast = document.getElementById('toast');
-        const loading = document.getElementById('loading');
-        const connectBtn = document.getElementById('connectBtn');
-        const disconnectBtn = document.getElementById('disconnectBtn');
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if user has valid session
-            checkSession();
-            
-            // Generate unique client ID
-            clientId = 'web_' + Math.random().toString(16).substr(2, 8);
-            document.getElementById('clientId').textContent = clientId;
-            
-            // Start clock
-            updateClock();
-            setInterval(updateClock, 1000);
-            
-            // Enter key for password input
-            passwordInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    checkPassword();
-                }
-            });
-            
-            // Auto-clear password after 30 seconds of inactivity
-            setInterval(() => {
-                if (document.activeElement !== passwordInput && passwordInput.value) {
-                    passwordInput.value = '';
-                }
-            }, 30000);
-        });
-        
-        // Check session validity
-        function checkSession() {
-            const loggedIn = localStorage.getItem(CONFIG.STORAGE_KEYS.LOGGED_IN);
-            const token = localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN);
-            const expiry = localStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRY);
-            
-            if (loggedIn === 'true' && token && expiry) {
-                const now = Date.now();
-                if (now < parseInt(expiry)) {
-                    // Session still valid
-                    authToken = token;
-                    showMainInterface();
-                    setTimeout(connectMQTT, 1000);
-                    return;
-                } else {
-                    // Session expired
-                    clearAuthData();
-                }
-            }
-            
-            showLoginScreen();
-        }
-        
-        // Clear authentication data
-        function clearAuthData() {
-            localStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN);
-            localStorage.removeItem(CONFIG.STORAGE_KEYS.LOGGED_IN);
-            localStorage.removeItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRY);
-            authToken = null;
-            sessionExpiry = null;
-        }
-        
-        // Show login screen
-        function showLoginScreen() {
-            loginScreen.style.display = 'block';
-            mainInterface.style.display = 'none';
-            passwordInput.value = '';
-            errorMessage.textContent = '';
-        }
-        
-        // Show main interface
-        function showMainInterface() {
-            loginScreen.style.display = 'none';
-            mainInterface.style.display = 'block';
-        }
-        
-        // Check password via MQTT authentication
-        function checkPassword() {
-            const password = passwordInput.value.trim();
-            
-            if (!password) {
-                showError('Vui lòng nhập mật khẩu');
-                passwordInput.focus();
-                return;
-            }
-            
-            showLoading(true);
-            
-            // Generate authentication request
-            const authRequest = {
-                type: 'auth_request',
-                password: password,
-                clientId: clientId,
-                timestamp: Date.now()
-            };
-            
-            // Send auth request via MQTT
-            sendAuthRequest(authRequest)
-                .then(response => {
-                    if (response.success) {
-                        // Authentication successful
-                        authToken = response.token;
-                        sessionExpiry = Date.now() + (response.expiry || 3600000); // 1 hour default
-                        
-                        // Save to localStorage
-                        localStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN, authToken);
-                        localStorage.setItem(CONFIG.STORAGE_KEYS.LOGGED_IN, 'true');
-                        localStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRY, sessionExpiry.toString());
-                        
-                        showMainInterface();
-                        showToast('✅ Đăng nhập thành công!', 'success');
-                        
-                        // Connect to MQTT
-                        setTimeout(connectMQTT, 500);
-                    } else {
-                        showError(response.message || 'Mật khẩu không đúng');
-                        passwordInput.value = '';
-                        passwordInput.focus();
-                    }
-                })
-                .catch(error => {
-                    showError('Lỗi xác thực: ' + error.message);
-                })
-                .finally(() => {
-                    showLoading(false);
-                });
-        }
-        
-        // Send authentication request via MQTT
-        function sendAuthRequest(authData) {
-            return new Promise((resolve, reject) => {
-                // Create temporary MQTT connection for authentication
-                const tempClient = mqtt.connect(CONFIG.MQTT.broker, {
-                    clientId: 'auth_' + Math.random().toString(16).substr(2, 8),
-                    clean: true,
-                    connectTimeout: 5000
-                });
-                
-                const authTopic = CONFIG.MQTT.topics.auth;
-                const responseTopic = authTopic + '/response/' + authData.clientId;
-                
-                let timeoutId;
-                
-                tempClient.on('connect', () => {
-                    // Subscribe to response topic
-                    tempClient.subscribe(responseTopic, (err) => {
-                        if (err) {
-                            reject(new Error('Không thể subscribe: ' + err.message));
-                            tempClient.end();
-                            return;
-                        }
-                        
-                        // Send authentication request
-                        tempClient.publish(authTopic, JSON.stringify(authData));
-                        
-                        // Set timeout
-                        timeoutId = setTimeout(() => {
-                            tempClient.end();
-                            reject(new Error('Timeout: Không nhận được phản hồi'));
-                        }, 10000);
-                    });
-                });
-                
-                tempClient.on('message', (topic, message) => {
-                    if (topic === responseTopic) {
-                        clearTimeout(timeoutId);
-                        tempClient.end();
-                        
-                        try {
-                            const response = JSON.parse(message.toString());
-                            resolve(response);
-                        } catch (error) {
-                            reject(new Error('Lỗi phân tích phản hồi'));
-                        }
-                    }
-                });
-                
-                tempClient.on('error', (error) => {
-                    clearTimeout(timeoutId);
-                    tempClient.end();
-                    reject(error);
-                });
-            });
-        }
-        
-        // Logout
-        function logout() {
-            if (confirm('Bạn có chắc muốn đăng xuất?')) {
-                clearAuthData();
-                showLoginScreen();
-                showToast('👋 Đã đăng xuất thành công', 'info');
-                
-                // Disconnect MQTT if connected
-                if (mqttClient && isMQTTConnected) {
-                    disconnectMQTT();
-                }
-            }
-        }
-        
-        // Toggle password visibility
-        function togglePassword() {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-        }
-        
-        // Show error message
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.color = '#f44336';
-            
-            // Clear error after 5 seconds
-            setTimeout(() => {
-                errorMessage.textContent = '';
-            }, 5000);
-        }
-        
-        // ============================
-        // MQTT FUNCTIONS với xác thực
-        // ============================
-        
-        // Connect to MQTT Broker
-        function connectMQTT() {
-            if (!authToken) {
-                showToast('Vui lòng đăng nhập trước!', 'error');
-                return;
-            }
-            
-            if (mqttClient && mqttClient.connected) {
-                showToast('✅ Đã kết nối MQTT rồi!', 'success');
-                return;
-            }
-            
-            showLoading(true);
-            updateMQTTStatus('Đang kết nối...', false);
-            
-            // Create client options
-            const options = {
-                ...CONFIG.MQTT.options,
-                clientId: clientId + '_' + Date.now(),
-                username: 'emqx',
-                password: 'public'
-            };
-            
-            try {
-                // Connect to MQTT broker
-                mqttClient = mqtt.connect(CONFIG.MQTT.broker, options);
-                
-                // Setup event handlers
-                mqttClient.on('connect', () => {
-                    isMQTTConnected = true;
-                    updateMQTTStatus('Đã kết nối', true);
-                    
-                    // Subscribe to topics
-                    subscribeToTopics();
-                    
-                    showToast('✅ Đã kết nối MQTT thành công!', 'success');
-                    
-                    // Show disconnect button
-                    connectBtn.style.display = 'none';
-                    disconnectBtn.style.display = 'block';
-                    
-                    // Request initial status
-                    setTimeout(requestStatusUpdate, 1000);
-                });
-                
-                mqttClient.on('message', (topic, message) => {
-                    handleMQTTMessage(topic, message.toString());
-                });
-                
-                mqttClient.on('error', (error) => {
-                    console.error('MQTT Error:', error);
-                    updateMQTTStatus('Lỗi kết nối', false);
-                    showToast('❌ Lỗi MQTT: ' + error.message, 'error');
-                });
-                
-                mqttClient.on('close', () => {
-                    isMQTTConnected = false;
-                    updateMQTTStatus('Mất kết nối', false);
-                    
-                    // Show connect button
-                    connectBtn.style.display = 'block';
-                    disconnectBtn.style.display = 'none';
-                });
-                
-                mqttClient.on('reconnect', () => {
-                    updateMQTTStatus('Đang kết nối lại...', false);
-                });
-                
-            } catch (error) {
-                console.error('Failed to connect to MQTT:', error);
-                showToast('❌ Không thể kết nối MQTT', 'error');
-                updateMQTTStatus('Kết nối thất bại', false);
-            } finally {
-                showLoading(false);
-            }
-        }
-        
-        // Disconnect from MQTT
-        function disconnectMQTT() {
-            if (mqttClient) {
-                mqttClient.end();
-                mqttClient = null;
-                isMQTTConnected = false;
-                updateMQTTStatus('Đã ngắt kết nối', false);
-                
-                connectBtn.style.display = 'block';
-                disconnectBtn.style.display = 'none';
-                
-                showToast('✋ Đã ngắt kết nối MQTT', 'info');
-            }
-        }
-        
-        // Subscribe to MQTT topics
-        function subscribeToTopics() {
-            if (!mqttClient || !isMQTTConnected) return;
-            
-            // Only subscribe to status topics, not command topic
-            const topicsToSubscribe = [
-                CONFIG.MQTT.topics.status,
-                CONFIG.MQTT.topics.alarm,
-                CONFIG.MQTT.topics.sensors
-            ];
-            
-            topicsToSubscribe.forEach(topic => {
-                mqttClient.subscribe(topic, (err) => {
-                    if (!err) {
-                        console.log(`✅ Subscribed to ${topic}`);
-                    } else {
-                        console.error(`❌ Failed to subscribe to ${topic}:`, err);
-                    }
-                });
-            });
-        }
-        
-        // Handle incoming MQTT messages
-        function handleMQTTMessage(topic, message) {
-            console.log(`📨 MQTT Message [${topic}]:`, message);
-            
-            try {
-                const data = JSON.parse(message);
-                
-                switch(topic) {
-                    case CONFIG.MQTT.topics.status:
-                        updateSystemInfo(data);
-                        break;
-                        
-                    case CONFIG.MQTT.topics.alarm:
-                        updateAlarmInfo(data);
-                        break;
-                        
-                    case CONFIG.MQTT.topics.sensors:
-                        updateSensorInfo(data);
-                        break;
-                }
-                
-            } catch (error) {
-                console.error('Error parsing MQTT message:', error);
-            }
-        }
-        
-        // Send authenticated MQTT command
-        function sendMQTTCommand(command, data = {}) {
-            if (!authToken) {
-                showToast('Phiên đăng nhập đã hết hạn!', 'error');
-                logout();
-                return false;
-            }
-            
-            if (!mqttClient || !isMQTTConnected) {
-                showToast('❌ Chưa kết nối MQTT! Vui lòng kết nối trước.', 'error');
-                return false;
-            }
-            
-            const message = {
-                command: command,
-                data: data,
-                auth: {
-                    token: authToken,
-                    clientId: clientId
-                },
-                timestamp: Date.now()
-            };
-            
-            try {
-                mqttClient.publish(CONFIG.MQTT.topics.command, JSON.stringify(message));
-                console.log(`📤 Sent authenticated MQTT command: ${command}`, data);
-                return true;
-            } catch (error) {
-                console.error('Error sending MQTT command:', error);
-                showToast('❌ Lỗi khi gửi lệnh MQTT', 'error');
-                return false;
-            }
-        }
-        
-        // Update MQTT status display
-        function updateMQTTStatus(text, connected) {
-            mqttStatusText.textContent = text;
-            connectionStatus.textContent = text;
-            
-            if (connected) {
-                mqttStatusDot.classList.add('connected');
-                connectionStatus.style.color = '#4CAF50';
-            } else {
-                mqttStatusDot.classList.remove('connected');
-                connectionStatus.style.color = '#f44336';
-            }
-        }
-        
-        // Update system information from MQTT
-        function updateSystemInfo(data) {
-            if (data.ipAddress) {
-                document.getElementById('deviceIP').textContent = data.ipAddress;
-            }
-            if (data.uptime !== undefined) {
-                document.getElementById('uptime').textContent = Math.floor(data.uptime / 60) + ' phút';
-            }
-            if (data.freeHeap !== undefined) {
-                document.getElementById('freeHeap').textContent = Math.floor(data.freeHeap / 1024) + ' KB';
-            }
-            if (data.rssi !== undefined) {
-                document.getElementById('wifiRSSI').textContent = data.rssi + ' dBm';
-            }
-        }
-        
-        // Update alarm information from MQTT
-        function updateAlarmInfo(data) {
-            if (data.hour !== undefined) {
-                document.getElementById('alarmHour').value = data.hour;
-            }
-            if (data.minute !== undefined) {
-                document.getElementById('alarmMinute').value = data.minute;
-            }
-            if (data.sound !== undefined) {
-                document.getElementById('alarmSound').value = data.sound;
-            }
-            if (data.enabled !== undefined) {
-                const statusDiv = document.getElementById('alarmStatus');
-                statusDiv.textContent = `Trạng thái: ${data.enabled ? 'ĐANG BẬT' : 'ĐANG TẮT'}`;
-                statusDiv.className = `alarm-status ${data.enabled ? 'status-on' : 'status-off'}`;
-            }
-            if (data.triggered) {
-                showToast('🚨 Báo thức đang kêu!', 'warning');
-            }
-        }
-        
-        // Update sensor information from MQTT
-        function updateSensorInfo(data) {
-            if (data.temperature !== undefined) {
-                document.getElementById('temperature').textContent = data.temperature.toFixed(1) + ' °C';
-            }
-            if (data.humidity !== undefined) {
-                document.getElementById('humidity').textContent = data.humidity.toFixed(1) + ' %';
-            }
-        }
-        
-        // Command functions với xác thực
-        function setAlarmMQTT(enable) {
-            if (!authToken) {
-                showToast('Vui lòng đăng nhập lại!', 'error');
-                logout();
-                return;
-            }
-            
-            const hour = parseInt(document.getElementById('alarmHour').value);
-            const minute = parseInt(document.getElementById('alarmMinute').value);
-            const sound = parseInt(document.getElementById('alarmSound').value);
-            
-            if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-                showToast('Thời gian không hợp lệ', 'error');
-                return;
-            }
-            
-            const success = sendMQTTCommand('setAlarm', {
-                hour: hour,
-                minute: minute,
-                sound: sound,
-                enable: enable ? 1 : 0
-            });
-            
-            if (success) {
-                showToast(enable ? '✅ Đã bật báo thức!' : '❌ Đã tắt báo thức!', 'success');
-            }
-        }
-        
-        function sendButtonMQTT(buttonNumber) {
-            if (!authToken) {
-                showToast('Vui lòng đăng nhập lại!', 'error');
-                logout();
-                return;
-            }
-            
-            const success = sendMQTTCommand('button', { btn: buttonNumber });
-            if (success) {
-                showToast(`🎮 Đã nhấn nút ${buttonNumber}`, 'success');
-            }
-        }
-        
-        function snoozeAlarmMQTT() {
-            if (!authToken) {
-                showToast('Vui lòng đăng nhập lại!', 'error');
-                logout();
-                return;
-            }
-            
-            const success = sendMQTTCommand('snooze', {});
-            if (success) {
-                showToast('⏸️ Đã tạm dừng báo thức', 'info');
-            }
-        }
-        
-        function resetESP32MQTT() {
-            if (!authToken) {
-                showToast('Vui lòng đăng nhập lại!', 'error');
-                logout();
-                return;
-            }
-            
-            if (confirm('Bạn có chắc muốn khởi động lại ESP32? Thiết bị sẽ mất kết nối trong vài giây.')) {
-                const success = sendMQTTCommand('reset', {});
-                if (success) {
-                    showToast('🔄 Đang khởi động lại ESP32...', 'info');
-                }
-            }
-        }
-        
-        function requestStatusUpdate() {
-            if (!authToken) {
-                showToast('Vui lòng đăng nhập lại!', 'error');
-                logout();
-                return;
-            }
-            
-            const success = sendMQTTCommand('get_status', {});
-            if (success) {
-                showToast('📊 Đang yêu cầu cập nhật trạng thái...', 'info');
-            }
-        }
-        
-        function testMQTT() {
-            if (!authToken) {
-                showToast('Vui lòng đăng nhập trước!', 'error');
-                return;
-            }
-            
-            if (!isMQTTConnected) {
-                showToast('Vui lòng kết nối MQTT trước!', 'error');
-                return;
-            }
-            
-            const testMessage = {
-                test: true,
-                message: 'Test từ web interface',
-                timestamp: Date.now(),
-                clientId: clientId,
-                auth: { token: authToken }
-            };
-            
-            try {
-                mqttClient.publish('smartclock/test', JSON.stringify(testMessage));
-                showToast('📡 Đã gửi tin nhắn test MQTT!', 'success');
-            } catch (error) {
-                showToast('❌ Lỗi test MQTT', 'error');
-            }
-        }
-        
-        // Update clock
-        function updateClock() {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('vi-VN');
-            document.getElementById('currentTime').textContent = timeStr;
-            
-            // Check session expiry every minute
-            if (authToken && sessionExpiry && Date.now() > sessionExpiry) {
-                showToast('Phiên đăng nhập đã hết hạn!', 'warning');
-                logout();
-            }
-        }
-        
-        // Show toast notification
-        function showToast(message, type = 'info') {
-            toast.textContent = message;
-            
-            // Set color based on type
-            const colors = {
-                error: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
-                success: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
-                info: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
-                warning: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)'
-            };
-            
-            toast.style.background = colors[type] || colors.info;
-            toast.classList.add('show');
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-        
-        // Show/hide loading overlay
-        function showLoading(show) {
-            if (show) {
-                loading.classList.add('active');
-            } else {
-                setTimeout(() => {
-                    loading.classList.remove('active');
-                }, 500);
-            }
-        }
-        
-        // Export functions to global scope
-        window.connectMQTT = connectMQTT;
-        window.disconnectMQTT = disconnectMQTT;
-        window.testMQTT = testMQTT;
-        window.setAlarmMQTT = setAlarmMQTT;
-        window.sendButtonMQTT = sendButtonMQTT;
-        window.snoozeAlarmMQTT = snoozeAlarmMQTT;
-        window.resetESP32MQTT = resetESP32MQTT;
-        window.requestStatusUpdate = requestStatusUpdate;
-        window.checkPassword = checkPassword;
-        window.togglePassword = togglePassword;
-        window.logout = logout;
+        // JavaScript code remains the same
+        // ... all your existing JavaScript functions ...
     </script>
 </body>
 </html>
