@@ -25,7 +25,7 @@
         
         /* Login Container */
         .login-container {
-            max-width: 400px;
+            max-width: 450px;
             width: 100%;
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
@@ -56,11 +56,11 @@
         }
         
         .login-form {
-            padding: 40px 30px;
+            padding: 35px 30px;
         }
         
         .input-group {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             text-align: left;
         }
         
@@ -72,7 +72,7 @@
             font-size: 0.95rem;
         }
         
-        .password-input {
+        .input-field {
             width: 100%;
             padding: 15px;
             border: 2px solid #e0e0e0;
@@ -82,11 +82,15 @@
             background: #f8f9fa;
         }
         
-        .password-input:focus {
+        .input-field:focus {
             outline: none;
             border-color: #9C27B0;
             background: white;
             box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.1);
+        }
+        
+        .password-input {
+            padding-right: 50px;
         }
         
         .password-toggle {
@@ -116,7 +120,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
-            margin-top: 10px;
+            margin-top: 15px;
         }
         
         .btn-login:hover {
@@ -136,12 +140,30 @@
             min-height: 20px;
         }
         
+        .device-id-hint {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            padding: 8px 12px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .device-id-hint:hover {
+            background: #e9e9e9;
+        }
+        
         .info-box {
             background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
             border: 1px solid #90caf9;
             border-radius: 10px;
             padding: 15px;
-            margin-top: 20px;
+            margin-top: 25px;
             text-align: left;
         }
         
@@ -149,6 +171,9 @@
             color: #1976D2;
             margin-bottom: 10px;
             font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .info-box ul {
@@ -160,6 +185,21 @@
         
         .info-box li {
             margin-bottom: 5px;
+        }
+        
+        /* Device Info Tag */
+        .device-info-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            font-weight: 500;
+            border: 1px solid #c8e6c9;
         }
         
         /* Main Container (hidden by default) */
@@ -187,6 +227,16 @@
             align-items: center;
             justify-content: center;
             gap: 15px;
+        }
+        
+        .device-id-header {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
         
         .header p {
@@ -482,6 +532,21 @@
             border-bottom: 3px solid #9C27B0;
         }
         
+        /* Device ID Badge */
+        .device-id-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 1rem;
+            border: 2px solid #90caf9;
+            margin-left: 10px;
+        }
+        
         /* Footer */
         .footer {
             text-align: center;
@@ -584,7 +649,7 @@
             }
             
             .login-form {
-                padding: 30px 20px;
+                padding: 25px 20px;
             }
         }
     </style>
@@ -600,17 +665,37 @@
                 Smart Clock Control
                 <span>🔒</span>
             </h1>
-            <p>Vui lòng nhập mật khẩu để tiếp tục</p>
+            <p>Nhập thông tin để kết nối với thiết bị</p>
         </div>
         
         <div class="login-form">
             <div class="input-group">
-                <label for="password">Mật khẩu truy cập:</label>
+                <label for="deviceId">
+                    <span>🆔</span> ID Thiết bị (Device ID):
+                </label>
+                <input 
+                    type="text" 
+                    id="deviceId" 
+                    class="input-field" 
+                    placeholder="VD: ESP32_CLOCK_001, HOME_BEDROOM, ..."
+                    autocomplete="off"
+                    maxlength="50"
+                >
+                <div class="device-id-hint" onclick="showDeviceIdInfo()">
+                    <span>💡</span>
+                    <span>ID này được lập trình sẵn trong ESP32 (thường là tên thiết bị)</span>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label for="password">
+                    <span>🔑</span> Mật khẩu thiết bị:
+                </label>
                 <div class="input-wrapper">
                     <input 
                         type="password" 
                         id="password" 
-                        class="password-input" 
+                        class="input-field password-input" 
                         placeholder="Nhập mật khẩu..."
                         autocomplete="current-password"
                     >
@@ -621,18 +706,39 @@
                 <div class="error-message" id="errorMessage"></div>
             </div>
             
-            <button class="btn-login" onclick="checkPassword()">
-                🔓 Đăng nhập
+            <button class="btn-login" onclick="checkCredentials()">
+                🔓 Kết nối thiết bị
             </button>
             
             <div class="info-box">
-                <h3>💡 Thông tin bảo mật:</h3>
+                <h3>
+                    <span>🔍</span>
+                    Cách tìm Device ID:
+                </h3>
                 <ul>
-                    <li>Mật khẩu chỉ được xác thực bởi ESP32</li>
-                    <li>Không lưu mật khẩu trong trình duyệt</li>
-                    <li>Mọi lệnh đều qua MQTT có xác thực</li>
-                    <li>Web chỉ là giao diện, xác thực ở ESP32</li>
+                    <li>Được lập trình sẵn trong code ESP32</li>
+                    <li>Thường là tên duy nhất của từng thiết bị</li>
+                    <li>Ví dụ: ESP32_CLOCK_001, ESP32_CLOCK_002, ...</li>
+                    <li>Hoặc theo vị trí: LIVING_ROOM, BEDROOM, KITCHEN</li>
                 </ul>
+            </div>
+            
+            <!-- Sample Device IDs for demo -->
+            <div id="sampleDevices" style="display: none; margin-top: 15px;">
+                <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
+                    <strong>💡 Thiết bị mẫu (cho demo):</strong>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <button class="device-info-tag" onclick="fillSampleDevice('ESP32_CLOCK_001', '123456')">
+                        ESP32_CLOCK_001 (mật khẩu: 123456)
+                    </button>
+                    <button class="device-info-tag" onclick="fillSampleDevice('BEDROOM_CLOCK', '789012')">
+                        BEDROOM_CLOCK (mật khẩu: 789012)
+                    </button>
+                    <button class="device-info-tag" onclick="fillSampleDevice('LIVING_ROOM_CLOCK', 'abcdef')">
+                        LIVING_ROOM_CLOCK (mật khẩu: abcdef)
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -643,9 +749,13 @@
         <div class="header">
             <h1>
                 <span>🌐</span>
-                ESP32 Smart Clock - MQTT Control
+                ESP32 Smart Clock Control
                 <span>🌐</span>
             </h1>
+            <div class="device-id-header">
+                <span>📱 Đang điều khiển:</span>
+                <span class="device-id-badge" id="currentDeviceId">--</span>
+            </div>
             <p>Điều khiển từ xa qua Internet sử dụng MQTT</p>
             <button class="logout-btn" onclick="logout()">
                 🚪 Đăng xuất
@@ -660,7 +770,8 @@
                     <span id="mqttStatusText">Chưa kết nối</span>
                 </div>
                 <div id="mqttDetails" style="font-size: 0.9rem; opacity: 0.9;">
-                    Broker: broker.emqx.io
+                    <span>Thiết bị: </span>
+                    <span id="deviceIdDisplay">--</span>
                 </div>
             </div>
             
@@ -673,6 +784,9 @@
                 </button>
                 <button class="mqtt-btn" onclick="testMQTT()">
                     📡 Test MQTT
+                </button>
+                <button class="mqtt-btn" onclick="switchDevice()" style="background: rgba(255, 255, 255, 0.1);">
+                    🔄 Đổi thiết bị
                 </button>
             </div>
         </div>
@@ -772,6 +886,11 @@
                     </div>
                     
                     <div class="info-item">
+                        <div class="info-label">🆔 Device ID</div>
+                        <div class="info-value" id="systemDeviceId">--</div>
+                    </div>
+                    
+                    <div class="info-item">
                         <div class="info-label">🕐 Thời gian hiện tại</div>
                         <div class="info-value" id="currentTime">--:--:--</div>
                     </div>
@@ -794,11 +913,6 @@
                     <div class="info-item">
                         <div class="info-label">💾 Bộ nhớ trống</div>
                         <div class="info-value" id="freeHeap">-- KB</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">⏱️ Uptime</div>
-                        <div class="info-value" id="uptime">-- phút</div>
                     </div>
                     
                     <div class="info-item">
@@ -831,22 +945,22 @@
                     
                     <div class="info-item">
                         <div class="info-label">Topic Command</div>
-                        <div class="info-value">smartclock/command</div>
+                        <div class="info-value" id="commandTopicDisplay">--</div>
                     </div>
                     
                     <div class="info-item">
                         <div class="info-label">Topic Status</div>
-                        <div class="info-value">smartclock/status</div>
+                        <div class="info-value" id="statusTopicDisplay">--</div>
                     </div>
                     
                     <div class="info-item">
                         <div class="info-label">Topic Alarm</div>
-                        <div class="info-value">smartclock/alarm</div>
+                        <div class="info-value" id="alarmTopicDisplay">--</div>
                     </div>
                     
                     <div class="info-item">
                         <div class="info-label">Topic Sensors</div>
-                        <div class="info-value">smartclock/sensors</div>
+                        <div class="info-value" id="sensorTopicDisplay">--</div>
                     </div>
                     
                     <div class="info-item">
@@ -855,15 +969,15 @@
                     </div>
                     
                     <div class="info-item">
-                        <div class="info-label">Kết nối từ</div>
-                        <div class="info-value" id="connectionSource">Web Interface</div>
+                        <div class="info-label">Device ID</div>
+                        <div class="info-value" id="mqttDeviceId">--</div>
                     </div>
                 </div>
                 
                 <div style="margin-top: 20px; padding: 15px; background: rgba(156, 39, 176, 0.1); border-radius: 10px;">
                     <p style="color: #666; font-size: 0.9rem; text-align: center;">
-                        💡 <strong>Bảo mật:</strong> Mật khẩu chỉ được xác thực bởi ESP32, không lưu trong web.<br>
-                        Mọi lệnh đều gửi kèm token xác thực qua MQTT.
+                        💡 <strong>Bảo mật đa thiết bị:</strong> Mỗi thiết bị có Device ID duy nhất và mật khẩu riêng.<br>
+                        Mọi lệnh đều được gửi kèm Device ID để tránh xung đột.
                     </p>
                 </div>
             </div>
@@ -871,9 +985,10 @@
         
         <!-- Footer -->
         <div class="footer">
-            <p>© 2024 ESP32 Smart Clock - MQTT Control Panel | Điều khiển từ bất kỳ đâu qua Internet</p>
+            <p>© 2024 ESP32 Smart Clock - MQTT Control Panel | Hỗ trợ đa thiết bị - Không xung đột</p>
             <p style="font-size: 0.9rem; margin-top: 5px;">
-                Sử dụng MQTT broker công cộng | Xác thực bảo mật qua ESP32 | Hoạt động trên mọi mạng
+                Device ID: <span id="footerDeviceId">Chưa chọn thiết bị</span> | 
+                MQTT Broker công cộng | Xác thực bảo mật qua ESP32
             </p>
         </div>
     </div>
@@ -887,18 +1002,12 @@
     </div>
     
     <script>
-        // Configuration - KHÔNG LƯU MẬT KHẨU Ở ĐÂY
+        // Configuration với Device ID
         const CONFIG = {
             // MQTT Configuration
             MQTT: {
                 broker: 'wss://broker.emqx.io:8084/mqtt',
-                topics: {
-                    command: 'smartclock/command',
-                    status: 'smartclock/status',
-                    alarm: 'smartclock/alarm',
-                    sensors: 'smartclock/sensors',
-                    auth: 'smartclock/auth'
-                },
+                topicPrefix: 'smartclock/',  // Base prefix
                 options: {
                     clean: true,
                     connectTimeout: 4000,
@@ -906,24 +1015,26 @@
                 }
             },
             
-            // Local Storage keys (chỉ lưu trạng thái, không lưu mật khẩu)
+            // Local Storage keys (lưu theo Device ID)
             STORAGE_KEYS: {
-                AUTH_TOKEN: 'smartclock_auth_token',
-                LOGGED_IN: 'smartclock_logged_in',
-                SESSION_EXPIRY: 'smartclock_session_expiry'
+                LAST_DEVICE_ID: 'smartclock_last_device_id',
+                AUTH_TOKENS: 'smartclock_auth_tokens',  // Lưu nhiều token theo device
+                SESSION_EXPIRIES: 'smartclock_session_expiries'
             }
         };
         
-        // Global variables
+        // Global variables với Device ID
         let mqttClient = null;
         let isMQTTConnected = false;
         let clientId = '';
+        let currentDeviceId = '';
         let authToken = null;
         let sessionExpiry = null;
         
         // DOM Elements
         const loginScreen = document.getElementById('loginScreen');
         const mainInterface = document.getElementById('mainInterface');
+        const deviceIdInput = document.getElementById('deviceId');
         const passwordInput = document.getElementById('password');
         const errorMessage = document.getElementById('errorMessage');
         const mqttStatusDot = document.getElementById('mqttStatusDot');
@@ -933,65 +1044,133 @@
         const loading = document.getElementById('loading');
         const connectBtn = document.getElementById('connectBtn');
         const disconnectBtn = document.getElementById('disconnectBtn');
+        const sampleDevices = document.getElementById('sampleDevices');
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Check if user has valid session
-            checkSession();
-            
             // Generate unique client ID
             clientId = 'web_' + Math.random().toString(16).substr(2, 8);
             document.getElementById('clientId').textContent = clientId;
+            
+            // Check if user has valid session for any device
+            checkExistingSession();
             
             // Start clock
             updateClock();
             setInterval(updateClock, 1000);
             
-            // Enter key for password input
-            passwordInput.addEventListener('keypress', function(e) {
+            // Enter key for login form
+            deviceIdInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
-                    checkPassword();
+                    passwordInput.focus();
                 }
             });
             
-            // Auto-clear password after 30 seconds of inactivity
+            passwordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkCredentials();
+                }
+            });
+            
+            // Auto-clear sensitive data
             setInterval(() => {
                 if (document.activeElement !== passwordInput && passwordInput.value) {
                     passwordInput.value = '';
                 }
             }, 30000);
+            
+            // Show sample devices for demo
+            setTimeout(() => {
+                sampleDevices.style.display = 'block';
+            }, 1000);
         });
         
-        // Check session validity
-        function checkSession() {
-            const loggedIn = localStorage.getItem(CONFIG.STORAGE_KEYS.LOGGED_IN);
-            const token = localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN);
-            const expiry = localStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRY);
+        // Check existing session
+        function checkExistingSession() {
+            const lastDeviceId = localStorage.getItem(CONFIG.STORAGE_KEYS.LAST_DEVICE_ID);
             
-            if (loggedIn === 'true' && token && expiry) {
-                const now = Date.now();
-                if (now < parseInt(expiry)) {
-                    // Session still valid
-                    authToken = token;
-                    showMainInterface();
-                    setTimeout(connectMQTT, 1000);
-                    return;
-                } else {
-                    // Session expired
-                    clearAuthData();
+            if (lastDeviceId) {
+                // Load saved token and expiry for this device
+                const authTokens = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS) || '{}');
+                const sessionExpiries = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES) || '{}');
+                
+                authToken = authTokens[lastDeviceId];
+                sessionExpiry = sessionExpiries[lastDeviceId];
+                
+                if (authToken && sessionExpiry) {
+                    const now = Date.now();
+                    if (now < sessionExpiry) {
+                        // Session still valid
+                        currentDeviceId = lastDeviceId;
+                        deviceIdInput.value = lastDeviceId;
+                        passwordInput.placeholder = 'Mật khẩu đã lưu, nhập mới nếu cần';
+                        showToast(`🔍 Phát hiện phiên cũ cho ${lastDeviceId}`, 'info');
+                    } else {
+                        // Session expired
+                        clearDeviceSession(lastDeviceId);
+                    }
                 }
             }
-            
-            showLoginScreen();
         }
         
-        // Clear authentication data
-        function clearAuthData() {
-            localStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN);
-            localStorage.removeItem(CONFIG.STORAGE_KEYS.LOGGED_IN);
-            localStorage.removeItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRY);
+        // Get topic names for current device
+        function getDeviceTopics() {
+            const deviceKey = currentDeviceId.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            return {
+                command: `${CONFIG.MQTT.topicPrefix}${deviceKey}/command`,
+                status: `${CONFIG.MQTT.topicPrefix}${deviceKey}/status`,
+                alarm: `${CONFIG.MQTT.topicPrefix}${deviceKey}/alarm`,
+                sensors: `${CONFIG.MQTT.topicPrefix}${deviceKey}/sensors`,
+                auth: `${CONFIG.MQTT.topicPrefix}${deviceKey}/auth`
+            };
+        }
+        
+        // Update topic displays
+        function updateTopicDisplays() {
+            const topics = getDeviceTopics();
+            document.getElementById('commandTopicDisplay').textContent = topics.command;
+            document.getElementById('statusTopicDisplay').textContent = topics.status;
+            document.getElementById('alarmTopicDisplay').textContent = topics.alarm;
+            document.getElementById('sensorTopicDisplay').textContent = topics.sensors;
+        }
+        
+        // Save device session
+        function saveDeviceSession(deviceId, token, expiry) {
+            // Save as last used device
+            localStorage.setItem(CONFIG.STORAGE_KEYS.LAST_DEVICE_ID, deviceId);
+            
+            // Save token
+            const authTokens = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS) || '{}');
+            authTokens[deviceId] = token;
+            localStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS, JSON.stringify(authTokens));
+            
+            // Save expiry
+            const sessionExpiries = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES) || '{}');
+            sessionExpiries[deviceId] = expiry;
+            localStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES, JSON.stringify(sessionExpiries));
+        }
+        
+        // Clear device session
+        function clearDeviceSession(deviceId) {
+            // Remove token
+            const authTokens = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS) || '{}');
+            delete authTokens[deviceId];
+            localStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS, JSON.stringify(authTokens));
+            
+            // Remove expiry
+            const sessionExpiries = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES) || '{}');
+            delete sessionExpiries[deviceId];
+            localStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES, JSON.stringify(sessionExpiries));
+        }
+        
+        // Clear all sessions
+        function clearAllSessions() {
+            localStorage.removeItem(CONFIG.STORAGE_KEYS.LAST_DEVICE_ID);
+            localStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_TOKENS);
+            localStorage.removeItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRIES);
             authToken = null;
             sessionExpiry = null;
+            currentDeviceId = '';
         }
         
         // Show login screen
@@ -1006,11 +1185,28 @@
         function showMainInterface() {
             loginScreen.style.display = 'none';
             mainInterface.style.display = 'block';
+            
+            // Update UI with device info
+            document.getElementById('currentDeviceId').textContent = currentDeviceId;
+            document.getElementById('deviceIdDisplay').textContent = currentDeviceId;
+            document.getElementById('systemDeviceId').textContent = currentDeviceId;
+            document.getElementById('mqttDeviceId').textContent = currentDeviceId;
+            document.getElementById('footerDeviceId').textContent = currentDeviceId;
+            
+            // Update topic displays
+            updateTopicDisplays();
         }
         
-        // Check password via MQTT authentication
-        function checkPassword() {
+        // Check credentials via MQTT authentication
+        function checkCredentials() {
+            currentDeviceId = deviceIdInput.value.trim();
             const password = passwordInput.value.trim();
+            
+            if (!currentDeviceId) {
+                showError('Vui lòng nhập Device ID');
+                deviceIdInput.focus();
+                return;
+            }
             
             if (!password) {
                 showError('Vui lòng nhập mật khẩu');
@@ -1018,11 +1214,18 @@
                 return;
             }
             
+            // Validate Device ID format
+            if (currentDeviceId.length > 50) {
+                showError('Device ID quá dài (tối đa 50 ký tự)');
+                return;
+            }
+            
             showLoading(true);
             
-            // Generate authentication request
+            // Generate authentication request with Device ID
             const authRequest = {
                 type: 'auth_request',
+                deviceId: currentDeviceId,
                 password: password,
                 clientId: clientId,
                 timestamp: Date.now()
@@ -1036,24 +1239,23 @@
                         authToken = response.token;
                         sessionExpiry = Date.now() + (response.expiry || 3600000); // 1 hour default
                         
-                        // Save to localStorage
-                        localStorage.setItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN, authToken);
-                        localStorage.setItem(CONFIG.STORAGE_KEYS.LOGGED_IN, 'true');
-                        localStorage.setItem(CONFIG.STORAGE_KEYS.SESSION_EXPIRY, sessionExpiry.toString());
+                        // Save device session
+                        saveDeviceSession(currentDeviceId, authToken, sessionExpiry);
                         
                         showMainInterface();
-                        showToast('✅ Đăng nhập thành công!', 'success');
+                        showToast(`✅ Đã kết nối với ${currentDeviceId}`, 'success');
                         
                         // Connect to MQTT
                         setTimeout(connectMQTT, 500);
                     } else {
-                        showError(response.message || 'Mật khẩu không đúng');
+                        showError(response.message || 'Device ID hoặc mật khẩu không đúng');
                         passwordInput.value = '';
                         passwordInput.focus();
                     }
                 })
                 .catch(error => {
                     showError('Lỗi xác thực: ' + error.message);
+                    console.error('Auth error:', error);
                 })
                 .finally(() => {
                     showLoading(false);
@@ -1063,15 +1265,17 @@
         // Send authentication request via MQTT
         function sendAuthRequest(authData) {
             return new Promise((resolve, reject) => {
+                // Get auth topic for this device
+                const topics = getDeviceTopics();
+                const authTopic = topics.auth;
+                const responseTopic = authTopic + '/response/' + authData.clientId;
+                
                 // Create temporary MQTT connection for authentication
                 const tempClient = mqtt.connect(CONFIG.MQTT.broker, {
                     clientId: 'auth_' + Math.random().toString(16).substr(2, 8),
                     clean: true,
                     connectTimeout: 5000
                 });
-                
-                const authTopic = CONFIG.MQTT.topics.auth;
-                const responseTopic = authTopic + '/response/' + authData.clientId;
                 
                 let timeoutId;
                 
@@ -1090,7 +1294,7 @@
                         // Set timeout
                         timeoutId = setTimeout(() => {
                             tempClient.end();
-                            reject(new Error('Timeout: Không nhận được phản hồi'));
+                            reject(new Error('Timeout: Thiết bị không phản hồi. Kiểm tra Device ID và kết nối mạng.'));
                         }, 10000);
                     });
                 });
@@ -1104,7 +1308,7 @@
                             const response = JSON.parse(message.toString());
                             resolve(response);
                         } catch (error) {
-                            reject(new Error('Lỗi phân tích phản hồi'));
+                            reject(new Error('Lỗi phân tích phản hồi từ thiết bị'));
                         }
                     }
                 });
@@ -1119,15 +1323,30 @@
         
         // Logout
         function logout() {
-            if (confirm('Bạn có chắc muốn đăng xuất?')) {
-                clearAuthData();
+            if (confirm('Bạn có chắc muốn đăng xuất khỏi thiết bị này?')) {
+                clearDeviceSession(currentDeviceId);
                 showLoginScreen();
-                showToast('👋 Đã đăng xuất thành công', 'info');
+                showToast(`👋 Đã đăng xuất khỏi ${currentDeviceId}`, 'info');
                 
                 // Disconnect MQTT if connected
                 if (mqttClient && isMQTTConnected) {
                     disconnectMQTT();
                 }
+            }
+        }
+        
+        // Switch to another device
+        function switchDevice() {
+            if (confirm('Bạn có muốn chuyển sang thiết bị khác?')) {
+                clearDeviceSession(currentDeviceId);
+                
+                // Disconnect MQTT if connected
+                if (mqttClient && isMQTTConnected) {
+                    disconnectMQTT();
+                }
+                
+                showLoginScreen();
+                showToast('🔀 Chọn thiết bị mới để kết nối', 'info');
             }
         }
         
@@ -1148,19 +1367,31 @@
             }, 5000);
         }
         
+        // Show device ID info
+        function showDeviceIdInfo() {
+            showToast('Device ID là mã duy nhất để phân biệt các thiết bị ESP32', 'info');
+        }
+        
+        // Fill sample device info (for demo)
+        function fillSampleDevice(deviceId, password) {
+            deviceIdInput.value = deviceId;
+            passwordInput.value = password;
+            showToast(`Đã điền thông tin thiết bị ${deviceId}`, 'success');
+        }
+        
         // ============================
-        // MQTT FUNCTIONS với xác thực
+        // MQTT FUNCTIONS với Device ID
         // ============================
         
         // Connect to MQTT Broker
         function connectMQTT() {
-            if (!authToken) {
-                showToast('Vui lòng đăng nhập trước!', 'error');
+            if (!authToken || !currentDeviceId) {
+                showToast('Vui lòng đăng nhập vào thiết bị trước!', 'error');
                 return;
             }
             
             if (mqttClient && mqttClient.connected) {
-                showToast('✅ Đã kết nối MQTT rồi!', 'success');
+                showToast(`✅ Đã kết nối MQTT với ${currentDeviceId}!`, 'success');
                 return;
             }
             
@@ -1170,7 +1401,7 @@
             // Create client options
             const options = {
                 ...CONFIG.MQTT.options,
-                clientId: clientId + '_' + Date.now(),
+                clientId: clientId + '_' + currentDeviceId + '_' + Date.now(),
                 username: 'emqx',
                 password: 'public'
             };
@@ -1184,10 +1415,10 @@
                     isMQTTConnected = true;
                     updateMQTTStatus('Đã kết nối', true);
                     
-                    // Subscribe to topics
+                    // Subscribe to device-specific topics
                     subscribeToTopics();
                     
-                    showToast('✅ Đã kết nối MQTT thành công!', 'success');
+                    showToast(`✅ Đã kết nối MQTT với ${currentDeviceId} thành công!`, 'success');
                     
                     // Show disconnect button
                     connectBtn.style.display = 'none';
@@ -1240,19 +1471,21 @@
                 connectBtn.style.display = 'block';
                 disconnectBtn.style.display = 'none';
                 
-                showToast('✋ Đã ngắt kết nối MQTT', 'info');
+                showToast(`✋ Đã ngắt kết nối MQTT khỏi ${currentDeviceId}`, 'info');
             }
         }
         
-        // Subscribe to MQTT topics
+        // Subscribe to device-specific MQTT topics
         function subscribeToTopics() {
             if (!mqttClient || !isMQTTConnected) return;
             
-            // Only subscribe to status topics, not command topic
+            const topics = getDeviceTopics();
+            
+            // Subscribe to device-specific topics
             const topicsToSubscribe = [
-                CONFIG.MQTT.topics.status,
-                CONFIG.MQTT.topics.alarm,
-                CONFIG.MQTT.topics.sensors
+                topics.status,
+                topics.alarm,
+                topics.sensors
             ];
             
             topicsToSubscribe.forEach(topic => {
@@ -1273,16 +1506,19 @@
             try {
                 const data = JSON.parse(message);
                 
+                // Extract topics
+                const topics = getDeviceTopics();
+                
                 switch(topic) {
-                    case CONFIG.MQTT.topics.status:
+                    case topics.status:
                         updateSystemInfo(data);
                         break;
                         
-                    case CONFIG.MQTT.topics.alarm:
+                    case topics.alarm:
                         updateAlarmInfo(data);
                         break;
                         
-                    case CONFIG.MQTT.topics.sensors:
+                    case topics.sensors:
                         updateSensorInfo(data);
                         break;
                 }
@@ -1292,9 +1528,9 @@
             }
         }
         
-        // Send authenticated MQTT command
+        // Send authenticated MQTT command với Device ID
         function sendMQTTCommand(command, data = {}) {
-            if (!authToken) {
+            if (!authToken || !currentDeviceId) {
                 showToast('Phiên đăng nhập đã hết hạn!', 'error');
                 logout();
                 return false;
@@ -1305,19 +1541,21 @@
                 return false;
             }
             
+            const topics = getDeviceTopics();
             const message = {
                 command: command,
                 data: data,
                 auth: {
                     token: authToken,
+                    deviceId: currentDeviceId,
                     clientId: clientId
                 },
                 timestamp: Date.now()
             };
             
             try {
-                mqttClient.publish(CONFIG.MQTT.topics.command, JSON.stringify(message));
-                console.log(`📤 Sent authenticated MQTT command: ${command}`, data);
+                mqttClient.publish(topics.command, JSON.stringify(message));
+                console.log(`📤 Sent authenticated MQTT command to ${currentDeviceId}: ${command}`, data);
                 return true;
             } catch (error) {
                 console.error('Error sending MQTT command:', error);
@@ -1342,6 +1580,9 @@
         
         // Update system information from MQTT
         function updateSystemInfo(data) {
+            if (data.deviceId) {
+                document.getElementById('systemDeviceId').textContent = data.deviceId;
+            }
             if (data.ipAddress) {
                 document.getElementById('deviceIP').textContent = data.ipAddress;
             }
@@ -1373,7 +1614,7 @@
                 statusDiv.className = `alarm-status ${data.enabled ? 'status-on' : 'status-off'}`;
             }
             if (data.triggered) {
-                showToast('🚨 Báo thức đang kêu!', 'warning');
+                showToast(`🚨 ${currentDeviceId}: Báo thức đang kêu!`, 'warning');
             }
         }
         
@@ -1387,7 +1628,7 @@
             }
         }
         
-        // Command functions với xác thực
+        // Command functions với Device ID
         function setAlarmMQTT(enable) {
             if (!authToken) {
                 showToast('Vui lòng đăng nhập lại!', 'error');
@@ -1412,7 +1653,7 @@
             });
             
             if (success) {
-                showToast(enable ? '✅ Đã bật báo thức!' : '❌ Đã tắt báo thức!', 'success');
+                showToast(enable ? `✅ Đã bật báo thức ${currentDeviceId}!` : `❌ Đã tắt báo thức ${currentDeviceId}!`, 'success');
             }
         }
         
@@ -1425,7 +1666,7 @@
             
             const success = sendMQTTCommand('button', { btn: buttonNumber });
             if (success) {
-                showToast(`🎮 Đã nhấn nút ${buttonNumber}`, 'success');
+                showToast(`🎮 ${currentDeviceId}: Đã nhấn nút ${buttonNumber}`, 'success');
             }
         }
         
@@ -1438,7 +1679,7 @@
             
             const success = sendMQTTCommand('snooze', {});
             if (success) {
-                showToast('⏸️ Đã tạm dừng báo thức', 'info');
+                showToast(`⏸️ ${currentDeviceId}: Đã tạm dừng báo thức`, 'info');
             }
         }
         
@@ -1449,10 +1690,10 @@
                 return;
             }
             
-            if (confirm('Bạn có chắc muốn khởi động lại ESP32? Thiết bị sẽ mất kết nối trong vài giây.')) {
+            if (confirm(`Bạn có chắc muốn khởi động lại ${currentDeviceId}? Thiết bị sẽ mất kết nối trong vài giây.`)) {
                 const success = sendMQTTCommand('reset', {});
                 if (success) {
-                    showToast('🔄 Đang khởi động lại ESP32...', 'info');
+                    showToast(`🔄 Đang khởi động lại ${currentDeviceId}...`, 'info');
                 }
             }
         }
@@ -1466,7 +1707,7 @@
             
             const success = sendMQTTCommand('get_status', {});
             if (success) {
-                showToast('📊 Đang yêu cầu cập nhật trạng thái...', 'info');
+                showToast(`📊 Đang yêu cầu cập nhật trạng thái ${currentDeviceId}...`, 'info');
             }
         }
         
@@ -1481,8 +1722,10 @@
                 return;
             }
             
+            const topics = getDeviceTopics();
             const testMessage = {
                 test: true,
+                deviceId: currentDeviceId,
                 message: 'Test từ web interface',
                 timestamp: Date.now(),
                 clientId: clientId,
@@ -1490,8 +1733,8 @@
             };
             
             try {
-                mqttClient.publish('smartclock/test', JSON.stringify(testMessage));
-                showToast('📡 Đã gửi tin nhắn test MQTT!', 'success');
+                mqttClient.publish(topics.command + '/test', JSON.stringify(testMessage));
+                showToast(`📡 Đã gửi tin nhắn test đến ${currentDeviceId}!`, 'success');
             } catch (error) {
                 showToast('❌ Lỗi test MQTT', 'error');
             }
@@ -1505,7 +1748,7 @@
             
             // Check session expiry every minute
             if (authToken && sessionExpiry && Date.now() > sessionExpiry) {
-                showToast('Phiên đăng nhập đã hết hạn!', 'warning');
+                showToast(`Phiên đăng nhập ${currentDeviceId} đã hết hạn!`, 'warning');
                 logout();
             }
         }
@@ -1550,9 +1793,12 @@
         window.snoozeAlarmMQTT = snoozeAlarmMQTT;
         window.resetESP32MQTT = resetESP32MQTT;
         window.requestStatusUpdate = requestStatusUpdate;
-        window.checkPassword = checkPassword;
+        window.checkCredentials = checkCredentials;
         window.togglePassword = togglePassword;
         window.logout = logout;
+        window.switchDevice = switchDevice;
+        window.showDeviceIdInfo = showDeviceIdInfo;
+        window.fillSampleDevice = fillSampleDevice;
     </script>
 </body>
 </html>
