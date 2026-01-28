@@ -14,10 +14,10 @@
         }
         
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #000000;
             min-height: 100vh;
             padding: 20px;
-            color: #333;
+            color: #ffffff;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -200,6 +200,13 @@
             margin-top: 10px;
             font-weight: 500;
             border: 1px solid #c8e6c9;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .device-info-tag:hover {
+            background: #d4edda;
+            transform: translateY(-2px);
         }
         
         /* Main Container (hidden by default) */
@@ -293,6 +300,7 @@
             height: 12px;
             border-radius: 50%;
             background: #ff5252;
+            transition: all 0.3s;
         }
         
         .status-dot.connected {
@@ -315,6 +323,7 @@
             cursor: pointer;
             transition: all 0.3s;
             backdrop-filter: blur(10px);
+            white-space: nowrap;
         }
         
         .mqtt-btn:hover {
@@ -325,7 +334,7 @@
         /* Main Content */
         .content {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 20px;
             padding: 30px;
         }
@@ -336,6 +345,9 @@
             padding: 25px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             transition: transform 0.3s;
+            display: flex;
+            flex-direction: column;
+            height: 650px;
         }
         
         .card:hover {
@@ -344,12 +356,15 @@
         
         .card h2 {
             color: #2c3e50;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
+            margin-bottom: 25px;
+            padding-bottom: 12px;
             border-bottom: 3px solid #4CAF50;
             display: flex;
             align-items: center;
             gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            min-height: 40px;
         }
         
         /* Alarm Controls */
@@ -369,6 +384,13 @@
             border: 2px solid #ddd;
             border-radius: 10px;
             font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .time-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
         }
         
         .time-separator {
@@ -384,6 +406,14 @@
             border: 2px solid #ddd;
             border-radius: 10px;
             font-size: 1rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .alarm-sound:focus {
+            outline: none;
+            border-color: #4CAF50;
         }
         
         .button-group {
@@ -401,6 +431,10 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .btn-primary {
@@ -431,6 +465,11 @@
             margin-top: 20px;
             font-weight: bold;
             font-size: 1.2rem;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
         }
         
         .status-on {
@@ -465,6 +504,7 @@
             align-items: center;
             gap: 10px;
             transition: all 0.3s;
+            min-height: 100px;
         }
         
         .virtual-btn:hover {
@@ -492,44 +532,154 @@
             grid-column: span 3;
         }
         
-        /* System Info */
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-        
-        .info-item {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 4px solid #9C27B0;
-        }
-        
-        .info-label {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 5px;
-        }
-        
-        .info-value {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #333;
-        }
-        
-        .sensor-value {
-            color: #2196F3;
+        /* System Info Card */
+        .system-info-card {
+            display: flex;
+            flex-direction: column;
         }
         
         /* MQTT Info Card */
         .mqtt-info-card {
+            display: flex;
+            flex-direction: column;
             background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
             border-left: 4px solid #9C27B0;
         }
         
         .mqtt-info-card h2 {
             border-bottom: 3px solid #9C27B0;
+        }
+        
+        /* Info Grid cho System Info */
+        .system-info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+            max-height: 450px;
+            margin-bottom: 20px;
+        }
+        
+        /* Info Grid cho MQTT Info */
+        .mqtt-info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+            max-height: 450px;
+            margin-bottom: 20px;
+        }
+        
+        /* Info Item chung */
+        .info-item {
+            background: #f8f9fa;
+            padding: 18px 15px;
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+            transition: all 0.3s;
+            min-height: 85px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .info-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background: white;
+        }
+        
+        /* Màu cho các loại thông tin khác nhau */
+        .info-item.status {
+            border-left-color: #4CAF50;
+        }
+        
+        .info-item.device {
+            border-left-color: #9C27B0;
+        }
+        
+        .info-item.sensor {
+            border-left-color: #FF9800;
+        }
+        
+        .info-item.network {
+            border-left-color: #2196F3;
+        }
+        
+        .info-item.storage {
+            border-left-color: #795548;
+        }
+        
+        .info-item.mqtt {
+            border-left-color: #2196F3;
+        }
+        
+        .info-item.broker {
+            border-left-color: #3F51B5;
+        }
+        
+        .info-item.topic {
+            border-left-color: #9C27B0;
+        }
+        
+        .info-item.connection {
+            border-left-color: #4CAF50;
+        }
+        
+        .info-item.stats {
+            border-left-color: #FF9800;
+        }
+        
+        /* Căn chỉnh label và value */
+        .info-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            min-height: 24px;
+        }
+        
+        .info-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #333;
+            word-break: break-all;
+            min-height: 32px;
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
+        }
+        
+        /* Trạng thái màu sắc */
+        .info-value.online {
+            color: #4CAF50;
+        }
+        
+        .info-value.offline {
+            color: #f44336;
+        }
+        
+        .info-value.warning {
+            color: #FF9800;
+        }
+        
+        .info-value.good {
+            color: #4CAF50;
+        }
+        
+        .info-value.average {
+            color: #FF9800;
+        }
+        
+        .info-value.poor {
+            color: #f44336;
         }
         
         /* Device ID Badge */
@@ -570,6 +720,8 @@
             opacity: 0;
             transform: translateY(20px);
             transition: all 0.3s;
+            max-width: 400px;
+            word-wrap: break-word;
         }
         
         .toast.show {
@@ -613,11 +765,51 @@
             100% { transform: rotate(360deg); }
         }
         
+        /* Scrollbar styling */
+        .system-info-grid::-webkit-scrollbar,
+        .mqtt-info-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .system-info-grid::-webkit-scrollbar-track,
+        .mqtt-info-grid::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .system-info-grid::-webkit-scrollbar-thumb,
+        .mqtt-info-grid::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        
+        .system-info-grid::-webkit-scrollbar-thumb:hover,
+        .mqtt-info-grid::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
         /* Responsive */
+        @media (max-width: 992px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .card {
+                height: auto;
+                min-height: 500px;
+            }
+            
+            .system-info-grid,
+            .mqtt-info-grid {
+                max-height: 400px;
+            }
+        }
+        
         @media (max-width: 768px) {
             .content {
                 grid-template-columns: 1fr;
                 padding: 15px;
+                gap: 15px;
             }
             
             .virtual-buttons {
@@ -628,12 +820,8 @@
                 grid-column: span 1;
             }
             
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-            
             .header h1 {
-                font-size: 2rem;
+                font-size: 1.8rem;
                 flex-direction: column;
                 gap: 10px;
             }
@@ -641,6 +829,17 @@
             .mqtt-panel {
                 flex-direction: column;
                 text-align: center;
+                gap: 10px;
+            }
+            
+            .mqtt-controls {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .mqtt-btn {
+                padding: 10px 15px;
+                font-size: 0.9rem;
             }
             
             .login-container {
@@ -650,6 +849,59 @@
             
             .login-form {
                 padding: 25px 20px;
+            }
+            
+            .info-item {
+                min-height: 75px;
+                padding: 15px;
+            }
+            
+            .info-value {
+                font-size: 1.2rem;
+            }
+            
+            .virtual-btn {
+                min-height: 80px;
+                padding: 15px 10px;
+            }
+            
+            .btn {
+                height: 55px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .card h2 {
+                font-size: 1.3rem;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+            }
+            
+            .time-input {
+                width: 70px;
+                padding: 12px;
+                font-size: 1.3rem;
+            }
+            
+            .time-separator {
+                font-size: 1.5rem;
+            }
+            
+            .info-label {
+                font-size: 0.8rem;
+            }
+            
+            .info-value {
+                font-size: 1.1rem;
             }
         }
     </style>
@@ -728,7 +980,7 @@
                 <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
                     <strong>💡 Thiết bị mẫu (cho demo):</strong>
                 </div>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
                     <button class="device-info-tag" onclick="fillSampleDevice('ESP32_CLOCK_001', '123456')">
                         ESP32_CLOCK_001 (mật khẩu: 123456)
                     </button>
@@ -791,194 +1043,320 @@
             </div>
         </div>
         
-        <!-- Main Content -->
+        <!-- Main Content - CHIA 2 CỘT -->
         <div class="content">
-            <!-- Alarm Control Card -->
-            <div class="card">
-                <h2>⏰ Điều Khiển Báo Thức</h2>
-                
-                <div class="time-inputs">
-                    <input 
-                        type="number" 
-                        class="time-input" 
-                        id="alarmHour" 
-                        min="0" 
-                        max="23" 
-                        value="7"
-                    >
-                    <span class="time-separator">:</span>
-                    <input 
-                        type="number" 
-                        class="time-input" 
-                        id="alarmMinute" 
-                        min="0" 
-                        max="59" 
-                        value="30"
-                    >
-                </div>
-                
-                <select class="alarm-sound" id="alarmSound">
-                    <option value="0">🔔 Beep (Tiếng bip)</option>
-                    <option value="1">🎵 Melody 1 (Giai điệu 1)</option>
-                    <option value="2">🎶 Melody 2 (Giai điệu 2)</option>
-                </select>
-                
-                <div class="button-group">
-                    <button class="btn btn-primary" onclick="setAlarmMQTT(true)">
-                        ✅ BẬT BÁO THỨC
-                    </button>
-                    <button class="btn btn-danger" onclick="setAlarmMQTT(false)">
-                        ❌ TẮT BÁO THỨC
-                    </button>
-                </div>
-                
-                <div class="alarm-status status-off" id="alarmStatus">
-                    Trạng thái: CHƯA CÓ DỮ LIỆU
-                </div>
-            </div>
-            
-            <!-- Virtual Buttons Card -->
-            <div class="card">
-                <h2>🎮 Nút Điều Khiển Ảo</h2>
-                <p style="color: #666; margin-bottom: 20px;">Gửi lệnh qua MQTT đến ESP32</p>
-                
-                <div class="virtual-buttons">
-                    <button class="virtual-btn btn-green" onclick="sendButtonMQTT(1)">
-                        <span style="font-size: 1.5rem;">🟢</span>
-                        NÚT 1
-                        <small>Chọn / Enter</small>
-                    </button>
+            <!-- Cột trái: Báo thức và Nút điều khiển -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- Alarm Control Card -->
+                <div class="card">
+                    <h2>⏰ Điều Khiển Báo Thức</h2>
                     
-                    <button class="virtual-btn btn-blue" onclick="sendButtonMQTT(2)">
-                        <span style="font-size: 1.5rem;">🔵</span>
-                        NÚT 2
-                        <small>Tăng giá trị</small>
-                    </button>
-                    
-                    <button class="virtual-btn btn-red" onclick="sendButtonMQTT(3)">
-                        <span style="font-size: 1.5rem;">🔴</span>
-                        NÚT 3
-                        <small>Giảm giá trị</small>
-                    </button>
-                    
-                    <button class="virtual-btn btn-orange" onclick="snoozeAlarmMQTT()">
-                        <span style="font-size: 1.5rem;">⏸️</span>
-                        TẮT CHUÔNG BÁO THỨC
-                        <small>Snooze / Dừng tạm thời</small>
-                    </button>
-                </div>
-                
-                <div style="margin-top: 20px; text-align: center;">
-                    <button class="btn btn-warning" onclick="resetESP32MQTT()" style="width: 100%;">
-                        🔄 KHỞI ĐỘNG LẠI ESP32
-                    </button>
-                </div>
-            </div>
-            
-            <!-- System Info Card -->
-            <div class="card">
-                <h2>📊 Thông Tin Hệ Thống</h2>
-                
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">📡 Trạng thái MQTT</div>
-                        <div class="info-value" id="connectionStatus">Chưa kết nối</div>
+                    <div class="time-inputs">
+                        <input 
+                            type="number" 
+                            class="time-input" 
+                            id="alarmHour" 
+                            min="0" 
+                            max="23" 
+                            value="7"
+                        >
+                        <span class="time-separator">:</span>
+                        <input 
+                            type="number" 
+                            class="time-input" 
+                            id="alarmMinute" 
+                            min="0" 
+                            max="59" 
+                            value="30"
+                        >
                     </div>
                     
-                    <div class="info-item">
-                        <div class="info-label">🆔 Device ID</div>
-                        <div class="info-value" id="systemDeviceId">--</div>
+                    <select class="alarm-sound" id="alarmSound">
+                        <option value="0">🔔 Beep (Tiếng bip)</option>
+                        <option value="1">🎵 Melody 1 (Giai điệu 1)</option>
+                        <option value="2">🎶 Melody 2 (Giai điệu 2)</option>
+                    </select>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="setAlarmMQTT(true)">
+                            ✅ BẬT BÁO THỨC
+                        </button>
+                        <button class="btn btn-danger" onclick="setAlarmMQTT(false)">
+                            ❌ TẮT BÁO THỨC
+                        </button>
                     </div>
                     
-                    <div class="info-item">
-                        <div class="info-label">🕐 Thời gian hiện tại</div>
-                        <div class="info-value" id="currentTime">--:--:--</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">🌡️ Nhiệt độ</div>
-                        <div class="info-value sensor-value" id="temperature">-- °C</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">💧 Độ ẩm</div>
-                        <div class="info-value sensor-value" id="humidity">-- %</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">📶 Cường độ WiFi</div>
-                        <div class="info-value" id="wifiRSSI">-- dBm</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">💾 Bộ nhớ trống</div>
-                        <div class="info-value" id="freeHeap">-- KB</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">📍 Địa chỉ IP</div>
-                        <div class="info-value" id="deviceIP">--.--.--.--</div>
+                    <div class="alarm-status status-off" id="alarmStatus">
+                        Trạng thái: CHƯA CÓ DỮ LIỆU
                     </div>
                 </div>
                 
-                <div style="margin-top: 20px;">
-                    <button class="btn" onclick="requestStatusUpdate()" style="background: #9C27B0; color: white; width: 100%;">
-                        🔄 Yêu cầu cập nhật
-                    </button>
+                <!-- Virtual Buttons Card -->
+                <div class="card">
+                    <h2>🎮 Nút Điều Khiển Ảo</h2>
+                    <p style="color: #666; margin-bottom: 20px;">Gửi lệnh qua MQTT đến ESP32</p>
+                    
+                    <div class="virtual-buttons">
+                        <button class="virtual-btn btn-green" onclick="sendButtonMQTT(1)">
+                            <span style="font-size: 1.5rem;">🟢</span>
+                            NÚT 1
+                            <small>Chọn / Enter</small>
+                        </button>
+                        
+                        <button class="virtual-btn btn-blue" onclick="sendButtonMQTT(2)">
+                            <span style="font-size: 1.5rem;">🔵</span>
+                            NÚT 2
+                            <small>Tăng giá trị</small>
+                        </button>
+                        
+                        <button class="virtual-btn btn-red" onclick="sendButtonMQTT(3)">
+                            <span style="font-size: 1.5rem;">🔴</span>
+                            NÚT 3
+                            <small>Giảm giá trị</small>
+                        </button>
+                        
+                        <button class="virtual-btn btn-orange" onclick="snoozeAlarmMQTT()">
+                            <span style="font-size: 1.5rem;">⏸️</span>
+                            TẮT CHUÔNG BÁO THỨC
+                            <small>Snooze / Dừng tạm thời</small>
+                        </button>
+                    </div>
+                    
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button class="btn btn-warning" onclick="resetESP32MQTT()" style="width: 100%;">
+                            🔄 KHỞI ĐỘNG LẠI ESP32
+                        </button>
+                    </div>
                 </div>
             </div>
             
-            <!-- MQTT Info Card -->
-            <div class="card mqtt-info-card">
-                <h2>🌐 Thông Tin MQTT</h2>
-                
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">Broker Server</div>
-                        <div class="info-value">broker.emqx.io</div>
+            <!-- Cột phải: Thông tin hệ thống và MQTT -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- System Info Card -->
+                <div class="card system-info-card">
+                    <h2>📊 Thông Tin Hệ Thống</h2>
+                    
+                    <div class="system-info-grid">
+                        <!-- Trạng thái MQTT -->
+                        <div class="info-item status">
+                            <div class="info-label">
+                                <span>📡</span> Trạng thái MQTT
+                            </div>
+                            <div class="info-value" id="systemConnectionStatus">Chưa kết nối</div>
+                        </div>
+                        
+                        <!-- Device ID -->
+                        <div class="info-item device">
+                            <div class="info-label">
+                                <span>🆔</span> Device ID
+                            </div>
+                            <div class="info-value" id="systemDeviceId">--</div>
+                        </div>
+                        
+                        <!-- Thời gian hiện tại -->
+                        <div class="info-item device">
+                            <div class="info-label">
+                                <span>⏰</span> Thời gian hiện tại
+                            </div>
+                            <div class="info-value" id="currentTime">--:--:--</div>
+                        </div>
+                        
+                        <!-- Nhiệt độ -->
+                        <div class="info-item sensor">
+                            <div class="info-label">
+                                <span>🌡️</span> Nhiệt độ
+                            </div>
+                            <div class="info-value" id="temperature">-- °C</div>
+                        </div>
+                        
+                        <!-- Độ ẩm -->
+                        <div class="info-item sensor">
+                            <div class="info-label">
+                                <span>💧</span> Độ ẩm
+                            </div>
+                            <div class="info-value" id="humidity">-- %</div>
+                        </div>
+                        
+                        <!-- Ánh sáng -->
+                        <div class="info-item sensor">
+                            <div class="info-label">
+                                <span>💡</span> Ánh sáng
+                            </div>
+                            <div class="info-value" id="lightLevel">-- lux</div>
+                        </div>
+                        
+                        <!-- Cường độ WiFi -->
+                        <div class="info-item network">
+                            <div class="info-label">
+                                <span>📶</span> Cường độ WiFi
+                            </div>
+                            <div class="info-value" id="wifiRSSI">-- dBm</div>
+                        </div>
+                        
+                        <!-- Địa chỉ IP -->
+                        <div class="info-item network">
+                            <div class="info-label">
+                                <span>📍</span> Địa chỉ IP
+                            </div>
+                            <div class="info-value" id="deviceIP">--.--.--.--</div>
+                        </div>
+                        
+                        <!-- Thời gian hoạt động -->
+                        <div class="info-item device">
+                            <div class="info-label">
+                                <span>⏱️</span> Thời gian hoạt động
+                            </div>
+                            <div class="info-value" id="uptime">-- phút</div>
+                        </div>
+                        
+                        <!-- Bộ nhớ trống -->
+                        <div class="info-item storage">
+                            <div class="info-label">
+                                <span>💾</span> Bộ nhớ trống
+                            </div>
+                            <div class="info-value" id="freeHeap">-- KB</div>
+                        </div>
+                        
+                        <!-- Pin -->
+                        <div class="info-item status">
+                            <div class="info-label">
+                                <span>🔋</span> Pin (nếu có)
+                            </div>
+                            <div class="info-value" id="batteryLevel">-- %</div>
+                        </div>
+                        
+                        <!-- Lần cập nhật cuối -->
+                        <div class="info-item status">
+                            <div class="info-label">
+                                <span>🔄</span> Lần cập nhật cuối
+                            </div>
+                            <div class="info-value" id="lastUpdate">--:--:--</div>
+                        </div>
                     </div>
                     
-                    <div class="info-item">
-                        <div class="info-label">WebSocket Port</div>
-                        <div class="info-value">8084 (WSS)</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Topic Command</div>
-                        <div class="info-value" id="commandTopicDisplay">--</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Topic Status</div>
-                        <div class="info-value" id="statusTopicDisplay">--</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Topic Alarm</div>
-                        <div class="info-value" id="alarmTopicDisplay">--</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Topic Sensors</div>
-                        <div class="info-value" id="sensorTopicDisplay">--</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Client ID</div>
-                        <div class="info-value" id="clientId">web_xxxxxx</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Device ID</div>
-                        <div class="info-value" id="mqttDeviceId">--</div>
+                    <div style="margin-top: auto;">
+                        <button class="btn" onclick="requestStatusUpdate()" style="background: #4CAF50; color: white; width: 100%; padding: 15px; font-size: 1rem;">
+                            🔄 Yêu cầu cập nhật
+                        </button>
                     </div>
                 </div>
                 
-                <div style="margin-top: 20px; padding: 15px; background: rgba(156, 39, 176, 0.1); border-radius: 10px;">
-                    <p style="color: #666; font-size: 0.9rem; text-align: center;">
-                        💡 <strong>Bảo mật đa thiết bị:</strong> Mỗi thiết bị có Device ID duy nhất và mật khẩu riêng.<br>
-                        Mọi lệnh đều được gửi kèm Device ID để tránh xung đột.
-                    </p>
+                <!-- MQTT Info Card -->
+                <div class="card mqtt-info-card">
+                    <h2>🌐 Thông Tin MQTT</h2>
+                    
+                    <div class="mqtt-info-grid">
+                        <!-- Broker Server -->
+                        <div class="info-item broker">
+                            <div class="info-label">
+                                <span>🖥️</span> Broker Server
+                            </div>
+                            <div class="info-value">broker.emqx.io</div>
+                        </div>
+                        
+                        <!-- WebSocket Port -->
+                        <div class="info-item broker">
+                            <div class="info-label">
+                                <span>🔌</span> WebSocket Port
+                            </div>
+                            <div class="info-value">8084 (WSS)</div>
+                        </div>
+                        
+                        <!-- Topic Command -->
+                        <div class="info-item topic">
+                            <div class="info-label">
+                                <span>📤</span> Topic Command
+                            </div>
+                            <div class="info-value" id="commandTopicDisplay">--</div>
+                        </div>
+                        
+                        <!-- Topic Status -->
+                        <div class="info-item topic">
+                            <div class="info-label">
+                                <span>📥</span> Topic Status
+                            </div>
+                            <div class="info-value" id="statusTopicDisplay">--</div>
+                        </div>
+                        
+                        <!-- Topic Alarm -->
+                        <div class="info-item topic">
+                            <div class="info-label">
+                                <span>⏰</span> Topic Alarm
+                            </div>
+                            <div class="info-value" id="alarmTopicDisplay">--</div>
+                        </div>
+                        
+                        <!-- Topic Sensors -->
+                        <div class="info-item topic">
+                            <div class="info-label">
+                                <span>📊</span> Topic Sensors
+                            </div>
+                            <div class="info-value" id="sensorTopicDisplay">--</div>
+                        </div>
+                        
+                        <!-- Topic Auth -->
+                        <div class="info-item topic">
+                            <div class="info-label">
+                                <span>🔐</span> Topic Auth
+                            </div>
+                            <div class="info-value" id="authTopicDisplay">--</div>
+                        </div>
+                        
+                        <!-- Client ID -->
+                        <div class="info-item mqtt">
+                            <div class="info-label">
+                                <span>🆔</span> Client ID
+                            </div>
+                            <div class="info-value" id="clientId">web_xxxxxx</div>
+                        </div>
+                        
+                        <!-- Device ID -->
+                        <div class="info-item mqtt">
+                            <div class="info-label">
+                                <span>📱</span> Device ID
+                            </div>
+                            <div class="info-value" id="mqttDeviceId">--</div>
+                        </div>
+                        
+                        <!-- Trạng thái kết nối -->
+                        <div class="info-item connection">
+                            <div class="info-label">
+                                <span>🔗</span> Trạng thái kết nối
+                            </div>
+                            <div class="info-value" id="mqttConnectionStatus">Đang chờ...</div>
+                        </div>
+                        
+                        <!-- Tin nhắn đã gửi -->
+                        <div class="info-item stats">
+                            <div class="info-label">
+                                <span>📨</span> Tin nhắn đã gửi
+                            </div>
+                            <div class="info-value" id="messagesSent">0</div>
+                        </div>
+                        
+                        <!-- Tin nhắn đã nhận -->
+                        <div class="info-item stats">
+                            <div class="info-label">
+                                <span>📩</span> Tin nhắn đã nhận
+                            </div>
+                            <div class="info-value" id="messagesReceived">0</div>
+                        </div>
+                        
+                        <!-- Thời gian kết nối -->
+                        <div class="info-item connection">
+                            <div class="info-label">
+                                <span>⏱️</span> Thời gian kết nối
+                            </div>
+                            <div class="info-value" id="mqttUptime">--:--:--</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: auto; padding: 15px; background: rgba(156, 39, 176, 0.1); border-radius: 10px;">
+                        <p style="color: #666; font-size: 0.9rem; text-align: center; margin: 0;">
+                            💡 <strong>Bảo mật đa thiết bị:</strong> Mỗi thiết bị có Device ID duy nhất và mật khẩu riêng.<br>
+                            Mọi lệnh đều được gửi kèm Device ID để tránh xung đột.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1031,6 +1409,11 @@
         let authToken = null;
         let sessionExpiry = null;
         
+        // Biến đếm tin nhắn
+        let messagesSentCount = 0;
+        let messagesReceivedCount = 0;
+        let mqttConnectTime = null;
+        
         // DOM Elements
         const loginScreen = document.getElementById('loginScreen');
         const mainInterface = document.getElementById('mainInterface');
@@ -1039,7 +1422,7 @@
         const errorMessage = document.getElementById('errorMessage');
         const mqttStatusDot = document.getElementById('mqttStatusDot');
         const mqttStatusText = document.getElementById('mqttStatusText');
-        const connectionStatus = document.getElementById('connectionStatus');
+        const connectionStatus = document.getElementById('systemConnectionStatus');
         const toast = document.getElementById('toast');
         const loading = document.getElementById('loading');
         const connectBtn = document.getElementById('connectBtn');
@@ -1083,7 +1466,22 @@
             setTimeout(() => {
                 sampleDevices.style.display = 'block';
             }, 1000);
+            
+            // Khởi tạo các giá trị mặc định
+            initializeDefaultValues();
         });
+        
+        // Khởi tạo các giá trị mặc định
+        function initializeDefaultValues() {
+            document.getElementById('lightLevel').textContent = '-- lux';
+            document.getElementById('batteryLevel').textContent = '-- %';
+            document.getElementById('lastUpdate').textContent = '--:--:--';
+            document.getElementById('authTopicDisplay').textContent = '--';
+            document.getElementById('mqttConnectionStatus').textContent = 'Chưa kết nối';
+            document.getElementById('mqttUptime').textContent = '--:--:--';
+            document.getElementById('messagesSent').textContent = '0';
+            document.getElementById('messagesReceived').textContent = '0';
+        }
         
         // Check existing session
         function checkExistingSession() {
@@ -1132,6 +1530,7 @@
             document.getElementById('statusTopicDisplay').textContent = topics.status;
             document.getElementById('alarmTopicDisplay').textContent = topics.alarm;
             document.getElementById('sensorTopicDisplay').textContent = topics.sensors;
+            document.getElementById('authTopicDisplay').textContent = topics.auth;
         }
         
         // Save device session
@@ -1354,6 +1753,8 @@
         function togglePassword() {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
+            const toggleBtn = document.querySelector('.password-toggle');
+            toggleBtn.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
         }
         
         // Show error message
@@ -1413,7 +1814,13 @@
                 // Setup event handlers
                 mqttClient.on('connect', () => {
                     isMQTTConnected = true;
+                    mqttConnectTime = new Date();
                     updateMQTTStatus('Đã kết nối', true);
+                    
+                    // Update MQTT connection status
+                    const mqttStatusElement = document.getElementById('mqttConnectionStatus');
+                    mqttStatusElement.textContent = 'Đã kết nối';
+                    mqttStatusElement.className = 'info-value online';
                     
                     // Subscribe to device-specific topics
                     subscribeToTopics();
@@ -1435,12 +1842,18 @@
                 mqttClient.on('error', (error) => {
                     console.error('MQTT Error:', error);
                     updateMQTTStatus('Lỗi kết nối', false);
+                    const mqttStatusElement = document.getElementById('mqttConnectionStatus');
+                    mqttStatusElement.textContent = 'Lỗi kết nối';
+                    mqttStatusElement.className = 'info-value offline';
                     showToast('❌ Lỗi MQTT: ' + error.message, 'error');
                 });
                 
                 mqttClient.on('close', () => {
                     isMQTTConnected = false;
                     updateMQTTStatus('Mất kết nối', false);
+                    const mqttStatusElement = document.getElementById('mqttConnectionStatus');
+                    mqttStatusElement.textContent = 'Mất kết nối';
+                    mqttStatusElement.className = 'info-value offline';
                     
                     // Show connect button
                     connectBtn.style.display = 'block';
@@ -1449,6 +1862,9 @@
                 
                 mqttClient.on('reconnect', () => {
                     updateMQTTStatus('Đang kết nối lại...', false);
+                    const mqttStatusElement = document.getElementById('mqttConnectionStatus');
+                    mqttStatusElement.textContent = 'Đang kết nối lại...';
+                    mqttStatusElement.className = 'info-value warning';
                 });
                 
             } catch (error) {
@@ -1467,6 +1883,9 @@
                 mqttClient = null;
                 isMQTTConnected = false;
                 updateMQTTStatus('Đã ngắt kết nối', false);
+                const mqttStatusElement = document.getElementById('mqttConnectionStatus');
+                mqttStatusElement.textContent = 'Đã ngắt kết nối';
+                mqttStatusElement.className = 'info-value offline';
                 
                 connectBtn.style.display = 'block';
                 disconnectBtn.style.display = 'none';
@@ -1502,6 +1921,8 @@
         // Handle incoming MQTT messages
         function handleMQTTMessage(topic, message) {
             console.log(`📨 MQTT Message [${topic}]:`, message);
+            messagesReceivedCount++;
+            document.getElementById('messagesReceived').textContent = messagesReceivedCount;
             
             try {
                 const data = JSON.parse(message);
@@ -1555,6 +1976,8 @@
             
             try {
                 mqttClient.publish(topics.command, JSON.stringify(message));
+                messagesSentCount++;
+                document.getElementById('messagesSent').textContent = messagesSentCount;
                 console.log(`📤 Sent authenticated MQTT command to ${currentDeviceId}: ${command}`, data);
                 return true;
             } catch (error) {
@@ -1571,10 +1994,10 @@
             
             if (connected) {
                 mqttStatusDot.classList.add('connected');
-                connectionStatus.style.color = '#4CAF50';
+                connectionStatus.className = 'info-value online';
             } else {
                 mqttStatusDot.classList.remove('connected');
-                connectionStatus.style.color = '#f44336';
+                connectionStatus.className = 'info-value offline';
             }
         }
         
@@ -1587,14 +2010,28 @@
                 document.getElementById('deviceIP').textContent = data.ipAddress;
             }
             if (data.uptime !== undefined) {
-                document.getElementById('uptime').textContent = Math.floor(data.uptime / 60) + ' phút';
+                const uptimeMinutes = Math.floor(data.uptime / 60);
+                document.getElementById('uptime').textContent = uptimeMinutes + ' phút';
             }
             if (data.freeHeap !== undefined) {
                 document.getElementById('freeHeap').textContent = Math.floor(data.freeHeap / 1024) + ' KB';
             }
             if (data.rssi !== undefined) {
                 document.getElementById('wifiRSSI').textContent = data.rssi + ' dBm';
+                // Cập nhật màu sắc theo cường độ tín hiệu
+                const rssiElement = document.getElementById('wifiRSSI');
+                if (data.rssi >= -50) {
+                    rssiElement.style.color = '#4CAF50'; // Tốt
+                } else if (data.rssi >= -70) {
+                    rssiElement.style.color = '#FF9800'; // Trung bình
+                } else {
+                    rssiElement.style.color = '#f44336'; // Yếu
+                }
             }
+            
+            // Cập nhật thời gian cập nhật cuối
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = now.toLocaleTimeString('vi-VN');
         }
         
         // Update alarm information from MQTT
@@ -1626,6 +2063,35 @@
             if (data.humidity !== undefined) {
                 document.getElementById('humidity').textContent = data.humidity.toFixed(1) + ' %';
             }
+            if (data.lightLevel !== undefined) {
+                document.getElementById('lightLevel').textContent = data.lightLevel + ' lux';
+            }
+            if (data.batteryLevel !== undefined) {
+                document.getElementById('batteryLevel').textContent = data.batteryLevel + ' %';
+                // Cập nhật màu sắc theo mức pin
+                const batteryElement = document.getElementById('batteryLevel');
+                if (data.batteryLevel >= 70) {
+                    batteryElement.style.color = '#4CAF50';
+                } else if (data.batteryLevel >= 30) {
+                    batteryElement.style.color = '#FF9800';
+                } else {
+                    batteryElement.style.color = '#f44336';
+                }
+            }
+        }
+        
+        // Hàm cập nhật thời gian kết nối MQTT
+        function updateMqttUptime() {
+            if (mqttConnectTime) {
+                const now = new Date();
+                const diff = now - mqttConnectTime;
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                const uptimeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                document.getElementById('mqttUptime').textContent = uptimeStr;
+            }
         }
         
         // Command functions với Device ID
@@ -1642,6 +2108,11 @@
             
             if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
                 showToast('Thời gian không hợp lệ', 'error');
+                return;
+            }
+            
+            if (isNaN(hour) || isNaN(minute)) {
+                showToast('Vui lòng nhập thời gian hợp lệ', 'error');
                 return;
             }
             
@@ -1746,6 +2217,9 @@
             const timeStr = now.toLocaleTimeString('vi-VN');
             document.getElementById('currentTime').textContent = timeStr;
             
+            // Cập nhật thời gian kết nối MQTT
+            updateMqttUptime();
+            
             // Check session expiry every minute
             if (authToken && sessionExpiry && Date.now() > sessionExpiry) {
                 showToast(`Phiên đăng nhập ${currentDeviceId} đã hết hạn!`, 'warning');
@@ -1802,4 +2276,3 @@
     </script>
 </body>
 </html>
-)
